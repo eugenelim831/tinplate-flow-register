@@ -114,7 +114,13 @@ main { width: min(1240px, calc(100% - 32px)); margin: 24px auto 60px; }
 .filter-row select { width: 180px; }
 .records-filter select { width: 150px; }
 
-label { display: grid; gap: 7px; color: #314a43; font-weight: 750; }
+label {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  color: #314a43;
+  font-weight: 750;
+}
 .input-hint { color: var(--muted); font-size: 12px; font-weight: 500; }
 .field-status {
   margin: -8px 0 0;
