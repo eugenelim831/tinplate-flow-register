@@ -3764,7 +3764,7 @@
 
   // app.source.js
   var API_URL = window.TINPLATE_API_URL || "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";
-  var APP_BUILD = "20260805-import-fix-1";
+  var APP_BUILD = "20260805-worker-url-fix-1";
   var PIN_STORAGE_KEY = "movementAppPin";
   var LOCATIONS = ["STORAGE", "PRINTING", "SLITTER", "PRODUCTION_LINE"];
   var LOCATION_LABELS = {
@@ -3814,7 +3814,12 @@
       { "Content-Type": "application/json", "X-App-Pin": pinOverride == null ? getPin() : pinOverride },
       settings.headers || {}
     );
-    const response = await fetch(API_URL.replace(/\/$/, "") + path, Object.assign({}, settings, { headers }));
+    let response;
+    try {
+      response = await fetch(API_URL.replace(/\/$/, "") + path, Object.assign({}, settings, { headers }));
+    } catch (error) {
+      throw new Error("Cannot connect to the Tinplate Flow API. Confirm the tinplate-flow-api Worker is deployed and try again.");
+    }
     const body = await response.json().catch(function() {
       return {};
     });
@@ -3822,9 +3827,14 @@
     return body;
   }
   async function apiBlob(path) {
-    const response = await fetch(API_URL.replace(/\/$/, "") + path, {
-      headers: { "X-App-Pin": getPin() }
-    });
+    let response;
+    try {
+      response = await fetch(API_URL.replace(/\/$/, "") + path, {
+        headers: { "X-App-Pin": getPin() }
+      });
+    } catch (error) {
+      throw new Error("Cannot connect to the Tinplate Flow API.");
+    }
     if (!response.ok) {
       const body = await response.json().catch(function() {
         return {};
