@@ -3763,7 +3763,7 @@
   }
 
   // app.source.js
-  var API_URL = window.TINPLATE_API_URL || "https://factory-movement-api.eugenelim831-1b3.workers.dev";
+  var API_URL = window.TINPLATE_API_URL || "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";
   var APP_BUILD = "20260805-import-fix-1";
   var PIN_STORAGE_KEY = "movementAppPin";
   var LOCATIONS = ["STORAGE", "PRINTING", "SLITTER", "PRODUCTION_LINE"];
