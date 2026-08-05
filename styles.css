@@ -168,6 +168,11 @@ header .secondary { border-color: rgba(255,255,255,.45); color: white; backgroun
   text-transform: uppercase;
 }
 .kpi-card strong { font-size: 24px; }
+.kpi-card.success { border-color: #b9d8cd; background: #eff8f4; }
+.kpi-card.muted { background: #f3f5f4; }
+.kpi-card.danger { border-color: #edc5c1; background: #fff5f3; }
+.kpi-card.success strong { color: var(--green); }
+.kpi-card.danger strong { color: var(--danger); }
 
 .table-wrap {
   overflow-x: auto;
@@ -190,6 +195,14 @@ tbody tr:hover td { background: #fbfdfc; }
 .status-cell.POSTED { color: var(--green); }
 .status-cell.CANCELLED { color: var(--danger); }
 .table-action { min-height: 34px; padding: 6px 11px; }
+.import-preview-wrap { max-height: 360px; }
+.import-preview-table .import-result { font-weight: 850; }
+.import-preview-table .import-result.NEW { color: var(--green); }
+.import-preview-table .import-result.DUPLICATE_EXISTING,
+.import-preview-table .import-result.DUPLICATE_IN_FILE { color: var(--amber); }
+.import-preview-table .import-result.INVALID { color: var(--danger); }
+.import-preview-table tr.INVALID td { background: #fff8f7; }
+.import-instructions { margin-top: 0; }
 
 .info-banner {
   margin: 16px 0 0;
@@ -205,6 +218,7 @@ tbody tr:hover td { background: #fbfdfc; }
 dialog {
   width: min(760px, calc(100% - 28px));
   max-height: calc(100vh - 28px);
+  overflow-y: auto;
   padding: 0;
   border: 0;
   border-radius: 18px;
