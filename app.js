@@ -3764,6 +3764,7 @@
 
   // app.source.js
   var API_URL = window.TINPLATE_API_URL || "https://factory-movement-api.eugenelim831-1b3.workers.dev";
+  var APP_BUILD = "20260805-import-fix-1";
   var PIN_STORAGE_KEY = "movementAppPin";
   var LOCATIONS = ["STORAGE", "PRINTING", "SLITTER", "PRODUCTION_LINE"];
   var LOCATION_LABELS = {
@@ -3794,6 +3795,7 @@
   var $$ = function(selector) {
     return Array.from(document.querySelectorAll(selector));
   };
+  document.documentElement.dataset.appBuild = APP_BUILD;
   function showToast(message, error) {
     const toast = $("#toast");
     toast.textContent = message;
@@ -3934,7 +3936,12 @@
     canvas.prepareSignature = function() {
       requestAnimationFrame(resize);
     };
-    new ResizeObserver(resize).observe(canvas);
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(resize).observe(canvas);
+    } else {
+      window.addEventListener("resize", resize);
+      resize();
+    }
   }
   $$(".signature").forEach(setupSignature);
   $$(".clear-signature").forEach(function(button) {
