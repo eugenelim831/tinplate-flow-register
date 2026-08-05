@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#173f35">
   <title>Tinplate Flow Register</title>
-  <link rel="stylesheet" href="styles.css?v=20260805-worker-url-fix-1">
+  <link rel="stylesheet" href="styles.css?v=20260805-manual-stock-1">
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
@@ -34,9 +34,9 @@
     <main>
       <nav class="tabs" aria-label="Tinplate locations and records">
         <button class="tab active" data-location="STORAGE" type="button">Storage</button>
-        <button class="tab" data-location="PRINTING" type="button">Printing</button>
         <button class="tab" data-location="SLITTER" type="button">Slitter</button>
         <button class="tab" data-location="PRODUCTION_LINE" type="button">Production Line</button>
+        <button class="tab" data-location="PRINTING" type="button">Printing</button>
         <button class="tab" data-view="records" type="button">Records</button>
       </nav>
 
@@ -47,6 +47,7 @@
             <h2 id="locationTitle">Storage</h2>
           </div>
           <div class="actions">
+            <button id="addTinplate" class="secondary" type="button">Add Tinplate</button>
             <button id="importStock" class="secondary" type="button">Import Excel Stock</button>
             <button id="refreshInventory" class="secondary" type="button">Refresh</button>
             <button id="transferSelected" class="primary compact" type="button" disabled>Transfer Selected</button>
@@ -90,7 +91,7 @@
             </tbody>
           </table>
         </div>
-        <p id="openingStockNotice" class="info-banner hidden">No tinplate stock has been loaded yet. Open the Storage tab and select <strong>Import Excel Stock</strong>.</p>
+        <p id="openingStockNotice" class="info-banner hidden">No tinplate stock has been loaded yet. Use <strong>Add Tinplate</strong> on the required location tab or select <strong>Import Excel Stock</strong> from Storage.</p>
       </section>
 
       <section id="recordsPanel" class="panel">
@@ -106,6 +107,7 @@
           <select id="recordTypeFilter">
             <option value="">All types</option>
             <option value="STOCK_IMPORT">Stock Import</option>
+            <option value="MANUAL_ADDITION">Manual Addition</option>
             <option value="TRANSFER">Transfer</option>
             <option value="SLITTING">Slitting</option>
           </select>
@@ -126,6 +128,113 @@
       </section>
     </main>
   </div>
+
+  <dialog id="manualStockDialog" class="wide-dialog">
+    <form id="manualStockForm">
+      <div class="dialog-heading">
+        <div><p class="step">Signed stock correction</p><h2>Add Tinplate Manually</h2></div>
+        <button class="icon-button close-dialog" type="button" aria-label="Close manual stock form">×</button>
+      </div>
+      <p class="info-banner import-instructions">This creates a new batch directly at the selected location. The batch is checked against current stock and the full record history. Existing or previously recorded batches cannot be added again.</p>
+
+      <div class="form-grid">
+        <label>Stock location<input id="manualLocation" type="text" readonly></label>
+        <label>Batch number
+          <input id="manualBatch" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="26/460" required>
+          <span class="input-hint">Enter digits only. The slash is inserted after the first two digits.</span>
+        </label>
+        <p id="manualBatchStatus" class="field-status wide" aria-live="polite">Enter a new batch number.</p>
+
+        <label>Supplier
+          <select id="manualSupplier" required>
+            <option value="">Select supplier</option>
+            <option value="GDH ZHONGYUE">GDH ZHONGYUE</option>
+            <option value="ZHONGSHAN">ZHONGSHAN</option>
+            <option value="OTHER">Other supplier</option>
+          </select>
+        </label>
+        <label id="manualSupplierOtherLabel" class="hidden">Other supplier
+          <input id="manualSupplierOther" maxlength="180" placeholder="Supplier name">
+        </label>
+
+        <div class="wide">
+          <p class="field-heading dimension-heading">Tinplate size</p>
+          <div class="dimension-entry-grid">
+            <label>Thickness
+              <input id="manualThickness" type="text" inputmode="numeric" autocomplete="off" maxlength="2" placeholder="23" required>
+              <span class="input-hint">Enter 23 for 0.23 mm</span>
+            </label>
+            <label>Width (mm)
+              <input id="manualWidth" type="number" inputmode="numeric" min="1" step="1" placeholder="960" required>
+            </label>
+            <label>Length (mm)
+              <input id="manualLength" type="number" inputmode="numeric" min="1" step="1" placeholder="905" required>
+            </label>
+            <label>Stored dimensions
+              <input id="manualDimensions" type="text" readonly placeholder="0.23*960*905">
+            </label>
+          </div>
+        </div>
+
+        <label>Temper
+          <select id="manualTemper" required>
+            <option value="">Select temper</option>
+            <option value="T-3">T-3</option>
+            <option value="T2.5">T2.5</option>
+            <option value="T4">T4</option>
+            <option value="OTHER">Other temper</option>
+          </select>
+        </label>
+        <label id="manualTemperOtherLabel" class="hidden">Other temper
+          <input id="manualTemperOther" maxlength="80" placeholder="Temper">
+        </label>
+
+        <label>Tin coating
+          <select id="manualCoating" required>
+            <option value="">Select coating</option>
+            <option value="2.8/2.8">2.8/2.8</option>
+            <option value="OTHER">Other coating</option>
+          </select>
+        </label>
+        <label id="manualCoatingOtherLabel" class="hidden">Other coating
+          <input id="manualCoatingOther" maxlength="80" placeholder="Coating">
+        </label>
+
+        <label>Sheets
+          <input id="manualSheets" type="number" inputmode="numeric" min="1" step="1" required>
+        </label>
+        <label>Weight (KG)
+          <input id="manualKg" type="number" inputmode="numeric" min="1" step="1" required>
+        </label>
+        <label>Price (RM)
+          <input id="manualPrice" class="currency-input" type="text" inputmode="numeric" autocomplete="off" value="0.00" required>
+          <span class="input-hint">Enter 432 to record RM4.32.</span>
+        </label>
+        <label>Total amount (RM)
+          <input id="manualTotalAmount" class="currency-input" type="text" inputmode="numeric" autocomplete="off" value="0.00" required>
+          <span class="input-hint">Digits move from cents to ringgit automatically.</span>
+        </label>
+        <label>Date received (DD/MM/YYYY)
+          <input id="manualDateReceived" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="05/08/2026" required>
+          <span class="input-hint">Enter digits only; the slashes are inserted automatically.</span>
+        </label>
+        <label class="wide">Reason for manual addition
+          <textarea id="manualReason" rows="3" maxlength="500" required placeholder="Explain the missing stock or discrepancy being corrected"></textarea>
+        </label>
+        <label class="wide">Person-in-charge
+          <input id="manualPic" maxlength="120" autocomplete="name" required placeholder="Full name">
+        </label>
+      </div>
+
+      <div class="signature-group">
+        <div><h3>PIC signature</h3><p>This signature confirms the new batch, quantity, value, location and correction reason.</p></div>
+        <canvas id="manualSignature" class="signature" aria-label="Manual stock addition PIC signature"></canvas>
+        <button class="link-button clear-signature" data-canvas="manualSignature" type="button">Clear signature</button>
+      </div>
+      <p class="server-time-note">The record ID and date/time are generated by the Cloudflare Worker.</p>
+      <button id="submitManualStock" class="primary submit-button" type="submit">Add New Batch</button>
+    </form>
+  </dialog>
 
   <dialog id="importDialog" class="wide-dialog">
     <form id="importForm">
@@ -285,6 +394,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20260805-worker-url-fix-1"></script>
+  <script src="app.js?v=20260805-manual-stock-1"></script>
 </body>
 </html>

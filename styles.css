@@ -115,6 +115,18 @@ main { width: min(1240px, calc(100% - 32px)); margin: 24px auto 60px; }
 .records-filter select { width: 150px; }
 
 label { display: grid; gap: 7px; color: #314a43; font-weight: 750; }
+.input-hint { color: var(--muted); font-size: 12px; font-weight: 500; }
+.field-status {
+  margin: -8px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  background: #f3f6f5;
+  font-size: 13px;
+  font-weight: 750;
+}
+.field-status.success { color: var(--green); background: var(--green-soft); }
+.field-status.error { color: var(--danger-dark); background: #fff0ee; }
 input, select, textarea {
   width: 100%;
   min-height: 48px;
@@ -134,6 +146,13 @@ input:focus, select:focus, textarea:focus {
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .wide { grid-column: 1 / -1; }
 .field-heading { margin: 24px 0 10px; color: #314a43; font-weight: 800; }
+.dimension-heading { margin-top: 0; }
+.dimension-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+}
+.currency-input { font-variant-numeric: tabular-nums; }
 
 .primary, .secondary, .danger-button {
   min-height: 44px;
@@ -332,6 +351,7 @@ dialog > form, .dialog-content {
   .filter-row select, .records-filter select { width: 100%; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .detail-grid { grid-template-columns: 1fr 1fr; }
+  .dimension-entry-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 620px) {
@@ -339,6 +359,7 @@ dialog > form, .dialog-content {
   .wide { grid-column: auto; }
   .stock-snapshot { grid-template-columns: 1fr 1fr; }
   .detail-grid { grid-template-columns: 1fr; }
+  .dimension-entry-grid { grid-template-columns: 1fr; }
   dialog, dialog.wide-dialog { width: calc(100% - 14px); max-height: calc(100vh - 14px); border-radius: 14px; }
   dialog > form, .dialog-content { padding: 18px 14px 24px; }
   .signature { height: 150px; }

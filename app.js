@@ -1,1005 +1,12 @@
 (() => {
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/saxen/parser.js
-  function _typeof(o) {
-    "@babel/helpers - typeof";
-    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof(o);
-  }
-  function Parser_(options) {
-    var fromCharCode = String.fromCharCode;
-    var hasOwnProperty = Object.prototype.hasOwnProperty;
-    var ENTITY_PATTERN = /&#(\d+);|&#x([0-9a-f]+);|&(\w+);/ig;
-    var ENTITY_MAPPING = {
-      "amp": "&",
-      "apos": "'",
-      "gt": ">",
-      "lt": "<",
-      "quot": '"'
-    };
-    Object.keys(ENTITY_MAPPING).forEach(function(k) {
-      ENTITY_MAPPING[k.toUpperCase()] = ENTITY_MAPPING[k];
-    });
-    function replaceEntities(_, d, x, z) {
-      if (z) {
-        if (hasOwnProperty.call(ENTITY_MAPPING, z)) {
-          return ENTITY_MAPPING[z];
-        } else {
-          return "&" + z + ";";
-        }
-      }
-      if (d) {
-        return fromCharCode(d);
-      }
-      return fromCharCode(parseInt(x, 16));
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xml/xmlBrowser.js
+  var xmlBrowser_default = {
+    createDocument: function createDocument(content) {
+      return new DOMParser().parseFromString(content.trim(), "text/xml");
     }
-    function decodeEntities(s) {
-      if (s.length > 3 && s.indexOf("&") !== -1) {
-        return s.replace(ENTITY_PATTERN, replaceEntities);
-      }
-      return s;
-    }
-    var NON_WHITESPACE_OUTSIDE_ROOT_NODE = "non-whitespace outside of root node";
-    function error(msg) {
-      return new Error(msg);
-    }
-    function missingNamespaceForPrefix(prefix) {
-      return "missing namespace for prefix <" + prefix + ">";
-    }
-    function getter(getFn) {
-      return {
-        "get": getFn,
-        "enumerable": true
-      };
-    }
-    function cloneNsMatrix(nsMatrix) {
-      var clone = {}, key;
-      for (key in nsMatrix) {
-        clone[key] = nsMatrix[key];
-      }
-      return clone;
-    }
-    var NAME_CACHE = Symbol("nameCache");
-    function uriPrefix(prefix) {
-      return prefix + "$uri";
-    }
-    function buildNsMatrix(nsUriToPrefix) {
-      var nsMatrix = {}, uri, prefix;
-      for (uri in nsUriToPrefix) {
-        prefix = nsUriToPrefix[uri];
-        nsMatrix[prefix] = prefix;
-        nsMatrix[uriPrefix(prefix)] = uri;
-      }
-      return nsMatrix;
-    }
-    function noopGetContext() {
-      return {
-        line: 0,
-        column: 0
-      };
-    }
-    function throwFunc(err2) {
-      throw err2;
-    }
-    function Parser(options2) {
-      if (!this) {
-        return new Parser(options2);
-      }
-      var proxy = options2 && options2["proxy"];
-      var onText, onOpenTag, onCloseTag, onCDATA, onError = throwFunc, onWarning, onComment, onQuestion, onAttention;
-      var getContext = noopGetContext;
-      var streaming = false;
-      var rootTagFound = false;
-      var leftoverXml = "";
-      var maybeNS = false;
-      var isNamespace = false;
-      var returnError = null;
-      var parseStop = false;
-      var nsMatrixStack, nsMatrix, nodeStack;
-      var nsUriToPrefix;
-      function handleError(err2) {
-        if (!(err2 instanceof Error)) {
-          err2 = error(err2);
-        }
-        returnError = err2;
-        onError(err2, getContext);
-      }
-      function handleWarning(err2) {
-        if (!onWarning) {
-          return;
-        }
-        if (!(err2 instanceof Error)) {
-          err2 = error(err2);
-        }
-        onWarning(err2, getContext);
-      }
-      this["on"] = function(name, cb) {
-        if (typeof cb !== "function") {
-          throw error("required args <name, cb>");
-        }
-        switch (name) {
-          case "openTag":
-            onOpenTag = cb;
-            break;
-          case "text":
-            onText = cb;
-            break;
-          case "closeTag":
-            onCloseTag = cb;
-            break;
-          case "error":
-            onError = cb;
-            break;
-          case "warn":
-            onWarning = cb;
-            break;
-          case "cdata":
-            onCDATA = cb;
-            break;
-          case "attention":
-            onAttention = cb;
-            break;
-          // <!XXXXX zzzz="eeee">
-          case "question":
-            onQuestion = cb;
-            break;
-          // <? ....  ?>
-          case "comment":
-            onComment = cb;
-            break;
-          default:
-            throw error("unsupported event: " + name);
-        }
-        return this;
-      };
-      this["ns"] = function(nsMap) {
-        if (typeof nsMap === "undefined") {
-          nsMap = {};
-        }
-        if (_typeof(nsMap) !== "object") {
-          throw error("required args <nsMap={}>");
-        }
-        var _nsUriToPrefix = {}, k;
-        for (k in nsMap) {
-          _nsUriToPrefix[k] = nsMap[k];
-        }
-        isNamespace = true;
-        nsUriToPrefix = _nsUriToPrefix;
-        return this;
-      };
-      function resetState() {
-        nsMatrixStack = isNamespace ? [] : null;
-        nsMatrix = isNamespace ? buildNsMatrix(nsUriToPrefix) : null;
-        nodeStack = [];
-        getContext = noopGetContext;
-        parseStop = false;
-        returnError = null;
-        rootTagFound = false;
-        leftoverXml = "";
-      }
-      this["parse"] = function(xml) {
-        if (typeof xml !== "string") {
-          throw error("required args <xml=string>");
-        }
-        if (streaming) {
-          throw error("parse during stream; call end() first");
-        }
-        resetState();
-        parse(xml);
-        getContext = noopGetContext;
-        parseStop = false;
-        return returnError;
-      };
-      this["write"] = function(xml) {
-        if (typeof xml !== "string") {
-          throw error("required args <xml=string>");
-        }
-        if (!streaming) {
-          resetState();
-          streaming = true;
-        }
-        if (!returnError) {
-          leftoverXml = parse(leftoverXml + xml, true) || "";
-        }
-        return this;
-      };
-      this["end"] = function() {
-        if (!streaming) {
-          resetState();
-        }
-        streaming = false;
-        if (!returnError) {
-          parse(leftoverXml);
-        }
-        leftoverXml = "";
-        getContext = noopGetContext;
-        parseStop = false;
-        return returnError;
-      };
-      this["stop"] = function() {
-        parseStop = true;
-      };
-      function parse(xml) {
-        var streaming2 = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : false;
-        var elNameCache = null, elNameCacheMatrix = null;
-        var _nsMatrix, anonymousNsCount = 0, tagStart = false, tagEnd = false, i = 0, j = 0, x, y, q, w, v, xmlns, elementName, _elementName, elementProxy;
-        var attrsString = "", attrsStart = 0, cachedAttrs;
-        function normalizeAttrName(name, defaultAlias) {
-          var w2 = name.indexOf(":");
-          if (w2 === -1) {
-            return name;
-          }
-          var nsName = nsMatrix[name.substring(0, w2)];
-          if (!nsName) {
-            handleWarning(missingNamespaceForPrefix(name.substring(0, w2)));
-            return null;
-          }
-          return defaultAlias === nsName ? name.substr(w2 + 1) : nsName + name.substr(w2);
-        }
-        function getAttrs() {
-          if (cachedAttrs !== null) {
-            return cachedAttrs;
-          }
-          var nsUri, nsUriPrefix, defaultAlias = isNamespace && nsMatrix["xmlns"], attrList = isNamespace && maybeNS ? [] : null, i2 = attrsStart, s = attrsString, l = s.length, hasNewMatrix, newalias, value, alias, name, attrs = {}, seenAttrs = /* @__PURE__ */ new Set(), skipAttr, w2, j2;
-          parseAttr: for (; i2 < l; i2++) {
-            skipAttr = false;
-            w2 = s.charCodeAt(i2);
-            if (w2 === 32 || w2 < 14 && w2 > 8) {
-              continue;
-            }
-            if (w2 < 65 || w2 > 122 || w2 > 90 && w2 < 97) {
-              if (w2 !== 95 && w2 !== 58) {
-                handleWarning("illegal first char attribute name");
-                skipAttr = true;
-              }
-            }
-            for (j2 = i2 + 1; j2 < l; j2++) {
-              w2 = s.charCodeAt(j2);
-              if (w2 > 96 && w2 < 123 || w2 > 64 && w2 < 91 || w2 > 47 && w2 < 59 || w2 === 46 || // '.'
-              w2 === 45 || // '-'
-              w2 === 95) {
-                continue;
-              }
-              if (w2 === 32 || w2 < 14 && w2 > 8) {
-                handleWarning("missing attribute value");
-                i2 = j2;
-                continue parseAttr;
-              }
-              if (w2 === 61) {
-                break;
-              }
-              handleWarning("illegal attribute name char");
-              skipAttr = true;
-            }
-            name = s.substring(i2, j2);
-            if (name === "xmlns:xmlns") {
-              handleWarning("illegal declaration of xmlns");
-              skipAttr = true;
-            }
-            w2 = s.charCodeAt(j2 + 1);
-            if (w2 === 34) {
-              j2 = s.indexOf('"', i2 = j2 + 2);
-              if (j2 === -1) {
-                j2 = s.indexOf("'", i2);
-                if (j2 !== -1) {
-                  handleWarning("attribute value quote missmatch");
-                  skipAttr = true;
-                }
-              }
-            } else if (w2 === 39) {
-              j2 = s.indexOf("'", i2 = j2 + 2);
-              if (j2 === -1) {
-                j2 = s.indexOf('"', i2);
-                if (j2 !== -1) {
-                  handleWarning("attribute value quote missmatch");
-                  skipAttr = true;
-                }
-              }
-            } else {
-              handleWarning("missing attribute value quotes");
-              skipAttr = true;
-              for (j2 = j2 + 1; j2 < l; j2++) {
-                w2 = s.charCodeAt(j2 + 1);
-                if (w2 === 32 || w2 < 14 && w2 > 8) {
-                  break;
-                }
-              }
-            }
-            if (j2 === -1) {
-              handleWarning("missing closing quotes");
-              j2 = l;
-              skipAttr = true;
-            }
-            if (!skipAttr) {
-              value = s.substring(i2, j2);
-            }
-            i2 = j2;
-            for (; j2 + 1 < l; j2++) {
-              w2 = s.charCodeAt(j2 + 1);
-              if (w2 === 32 || w2 < 14 && w2 > 8) {
-                break;
-              }
-              if (i2 === j2) {
-                handleWarning("illegal character after attribute end");
-                skipAttr = true;
-              }
-            }
-            i2 = j2 + 1;
-            if (skipAttr) {
-              continue parseAttr;
-            }
-            if (seenAttrs.has(name)) {
-              handleWarning("attribute <" + name + "> already defined");
-              continue;
-            }
-            seenAttrs.add(name);
-            if (!isNamespace) {
-              attrs[name] = value;
-              continue;
-            }
-            if (maybeNS) {
-              newalias = name === "xmlns" ? "xmlns" : name.charCodeAt(0) === 120 && name.substr(0, 6) === "xmlns:" ? name.substr(6) : null;
-              if (newalias !== null) {
-                nsUri = decodeEntities(value);
-                nsUriPrefix = uriPrefix(newalias);
-                alias = nsUriToPrefix[nsUri];
-                if (!alias) {
-                  if (newalias === "xmlns" || nsUriPrefix in nsMatrix && nsMatrix[nsUriPrefix] !== nsUri) {
-                    do {
-                      alias = "ns" + anonymousNsCount++;
-                    } while (typeof nsMatrix[alias] !== "undefined");
-                  } else {
-                    alias = newalias;
-                  }
-                  nsUriToPrefix[nsUri] = alias;
-                }
-                if (nsMatrix[newalias] !== alias) {
-                  if (!hasNewMatrix) {
-                    nsMatrix = cloneNsMatrix(nsMatrix);
-                    hasNewMatrix = true;
-                  }
-                  nsMatrix[newalias] = alias;
-                  if (newalias === "xmlns") {
-                    nsMatrix[uriPrefix(alias)] = nsUri;
-                    defaultAlias = alias;
-                  }
-                  nsMatrix[nsUriPrefix] = nsUri;
-                }
-                attrs[name] = value;
-                continue;
-              }
-              attrList.push(name, value);
-              continue;
-            }
-            name = normalizeAttrName(name, defaultAlias);
-            if (name === null) {
-              continue;
-            }
-            attrs[name] = value;
-          }
-          if (maybeNS) {
-            for (i2 = 0, l = attrList.length; i2 < l; i2++) {
-              name = normalizeAttrName(attrList[i2++], defaultAlias);
-              value = attrList[i2];
-              if (name === null) {
-                continue;
-              }
-              attrs[name] = value;
-            }
-          }
-          return cachedAttrs = attrs;
-        }
-        function getParseContext() {
-          var splitsRe = /(\r\n|\r|\n)/g;
-          var line = 0;
-          var column = 0;
-          var startOfLine = 0;
-          var endOfLine = j;
-          var match;
-          var data;
-          while (i >= startOfLine) {
-            match = splitsRe.exec(xml);
-            if (!match) {
-              break;
-            }
-            endOfLine = match[0].length + match.index;
-            if (endOfLine > i) {
-              break;
-            }
-            line += 1;
-            startOfLine = endOfLine;
-          }
-          if (i == -1) {
-            column = endOfLine;
-            data = xml.substring(j);
-          } else if (j === 0) {
-            data = xml.substring(j, i);
-          } else {
-            column = i - startOfLine;
-            data = j == -1 ? xml.substring(i) : xml.substring(i, j + 1);
-          }
-          return {
-            "data": data,
-            "line": line,
-            "column": column
-          };
-        }
-        getContext = getParseContext;
-        if (proxy) {
-          elementProxy = Object.create({}, {
-            "name": getter(function() {
-              return elementName;
-            }),
-            "originalName": getter(function() {
-              return _elementName;
-            }),
-            "attrs": getter(getAttrs),
-            "ns": getter(function() {
-              return nsMatrix;
-            })
-          });
-        }
-        while (j !== -1) {
-          if (xml.charCodeAt(j) === 60) {
-            i = j;
-          } else {
-            i = xml.indexOf("<", j);
-          }
-          if (i === -1) {
-            if (streaming2) {
-              return xml.substring(j);
-            }
-            if (nodeStack.length) {
-              return handleError("unexpected end of file");
-            }
-            if (!rootTagFound) {
-              return handleError("missing start tag");
-            }
-            if (j < xml.length) {
-              if (xml.substring(j).trim()) {
-                handleWarning(NON_WHITESPACE_OUTSIDE_ROOT_NODE);
-              }
-            }
-            return;
-          }
-          if (!rootTagFound) {
-            rootTagFound = true;
-          }
-          if (j !== i) {
-            if (nodeStack.length) {
-              if (onText) {
-                onText(xml.substring(j, i), decodeEntities, getContext);
-                if (parseStop) {
-                  return;
-                }
-              }
-            } else {
-              if (xml.substring(j, i).trim()) {
-                handleWarning(NON_WHITESPACE_OUTSIDE_ROOT_NODE);
-                if (parseStop) {
-                  return;
-                }
-              }
-            }
-          }
-          w = xml.charCodeAt(i + 1);
-          if (w === 33) {
-            q = xml.charCodeAt(i + 2);
-            if (q === 91 && xml.substr(i + 3, 6) === "CDATA[") {
-              j = xml.indexOf("]]>", i);
-              if (j === -1) {
-                if (streaming2) {
-                  return xml.substring(i);
-                }
-                return handleError("unclosed cdata");
-              }
-              if (onCDATA) {
-                onCDATA(xml.substring(i + 9, j), getContext);
-                if (parseStop) {
-                  return;
-                }
-              }
-              j += 3;
-              continue;
-            }
-            if (q === 45 && xml.charCodeAt(i + 3) === 45) {
-              j = xml.indexOf("-->", i);
-              if (j === -1) {
-                if (streaming2) {
-                  return xml.substring(i);
-                }
-                return handleError("unclosed comment");
-              }
-              if (onComment) {
-                onComment(xml.substring(i + 4, j), decodeEntities, getContext);
-                if (parseStop) {
-                  return;
-                }
-              }
-              j += 3;
-              continue;
-            }
-          }
-          if (w === 63) {
-            j = xml.indexOf("?>", i);
-            if (j === -1) {
-              if (streaming2) {
-                return xml.substring(i);
-              }
-              return handleError("unclosed question");
-            }
-            if (onQuestion) {
-              onQuestion(xml.substring(i, j + 2), getContext);
-              if (parseStop) {
-                return;
-              }
-            }
-            j += 2;
-            continue;
-          }
-          for (x = i + 1; ; x++) {
-            v = xml.charCodeAt(x);
-            if (isNaN(v)) {
-              if (streaming2) {
-                return xml.substring(i);
-              }
-              j = -1;
-              return handleError("unclosed tag");
-            }
-            if (v === 34) {
-              q = xml.indexOf('"', x + 1);
-              x = q !== -1 ? q : x;
-            } else if (v === 39) {
-              q = xml.indexOf("'", x + 1);
-              x = q !== -1 ? q : x;
-            } else if (v === 62) {
-              j = x;
-              break;
-            }
-          }
-          if (w === 33) {
-            if (onAttention) {
-              onAttention(xml.substring(i, j + 1), decodeEntities, getContext);
-              if (parseStop) {
-                return;
-              }
-            }
-            j += 1;
-            continue;
-          }
-          cachedAttrs = {};
-          if (w === 47) {
-            tagStart = false;
-            tagEnd = true;
-            if (!nodeStack.length) {
-              return handleError("missing open tag");
-            }
-            x = elementName = nodeStack.pop();
-            q = i + 2 + x.length;
-            if (xml.substring(i + 2, q) !== x) {
-              return handleError("closing tag mismatch");
-            }
-            for (; q < j; q++) {
-              w = xml.charCodeAt(q);
-              if (w === 32 || w > 8 && w < 14) {
-                continue;
-              }
-              return handleError("close tag");
-            }
-          } else {
-            if (xml.charCodeAt(j - 1) === 47) {
-              x = elementName = xml.substring(i + 1, j - 1);
-              tagStart = true;
-              tagEnd = true;
-            } else {
-              x = elementName = xml.substring(i + 1, j);
-              tagStart = true;
-              tagEnd = false;
-            }
-            if (!(w > 96 && w < 123 || w > 64 && w < 91 || w === 95 || w === 58)) {
-              return handleError("illegal first char nodeName");
-            }
-            for (q = 1, y = x.length; q < y; q++) {
-              w = x.charCodeAt(q);
-              if (w > 96 && w < 123 || w > 64 && w < 91 || w > 47 && w < 59 || w === 45 || w === 95 || w == 46) {
-                continue;
-              }
-              if (w === 32 || w < 14 && w > 8) {
-                elementName = x.substring(0, q);
-                cachedAttrs = null;
-                break;
-              }
-              return handleError("invalid nodeName");
-            }
-            if (!tagEnd) {
-              nodeStack.push(elementName);
-            }
-          }
-          if (isNamespace) {
-            _nsMatrix = nsMatrix;
-            if (tagStart) {
-              if (!tagEnd) {
-                nsMatrixStack.push(_nsMatrix);
-              }
-              if (cachedAttrs === null) {
-                if (maybeNS = x.indexOf("xmlns", q) !== -1) {
-                  attrsStart = q;
-                  attrsString = x;
-                  getAttrs();
-                  maybeNS = false;
-                }
-              }
-            }
-            _elementName = elementName;
-            if (elNameCacheMatrix !== nsMatrix) {
-              elNameCache = nsMatrix[NAME_CACHE];
-              if (elNameCache === void 0) {
-                elNameCache = nsMatrix[NAME_CACHE] = {};
-              }
-              elNameCacheMatrix = nsMatrix;
-            }
-            var _cachedName = elNameCache[elementName];
-            if (_cachedName !== void 0) {
-              elementName = _cachedName;
-            } else {
-              w = elementName.indexOf(":");
-              if (w !== -1) {
-                xmlns = nsMatrix[elementName.substring(0, w)];
-                if (!xmlns) {
-                  return handleError("missing namespace on <" + _elementName + ">");
-                }
-                elementName = elementName.substr(w + 1);
-              } else {
-                xmlns = nsMatrix["xmlns"];
-              }
-              if (xmlns) {
-                elementName = xmlns + ":" + elementName;
-              }
-              elNameCache[_elementName] = elementName;
-            }
-          }
-          if (tagStart) {
-            attrsStart = q;
-            attrsString = x;
-            if (onOpenTag) {
-              if (proxy) {
-                onOpenTag(elementProxy, decodeEntities, tagEnd, getContext);
-              } else {
-                onOpenTag(elementName, getAttrs, decodeEntities, tagEnd, getContext);
-              }
-              if (parseStop) {
-                return;
-              }
-            }
-          }
-          if (tagEnd) {
-            if (onCloseTag) {
-              onCloseTag(proxy ? elementProxy : elementName, decodeEntities, tagStart, getContext);
-              if (parseStop) {
-                return;
-              }
-            }
-            if (isNamespace) {
-              if (!tagStart) {
-                nsMatrix = nsMatrixStack.pop();
-              } else {
-                nsMatrix = _nsMatrix;
-              }
-            }
-          }
-          j += 1;
-        }
-      }
-    }
-    return new Parser(options);
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xml/parseXmlStream.saxen.js
-  function parseXmlStream(state2, onOpenTag, onCloseTag, onText) {
-    var errored = false;
-    var mustNotHaveErrored = function mustNotHaveErrored2() {
-      if (errored) {
-        throw new Error("Errored");
-      }
-    };
-    var resolvePromise;
-    var xmlns = true;
-    var parser = new Parser_({
-      proxy: true
-    });
-    if (xmlns) {
-      parser.ns();
-    }
-    var write = function write2(xml) {
-      mustNotHaveErrored();
-      parser.write(xml);
-    };
-    var end = function end2() {
-      mustNotHaveErrored();
-      parser.end();
-      resolvePromise();
-    };
-    var promise = new Promise(function(resolve, reject) {
-      resolvePromise = resolve;
-      var onerror = function onerror2(error) {
-        errored = true;
-        throw error;
-      };
-      var ontext = function ontext2(text, decodeEntities) {
-        if (onText) {
-          onText(decodeEntities(text), state2);
-        }
-      };
-      var onopentag = function onopentag2(element, decodeEntities, selfClosing, getContext) {
-        if (onOpenTag) {
-          var attributes = element.attrs;
-          for (var name in attributes) {
-            attributes[name] = decodeEntities(attributes[name]);
-          }
-          onOpenTag(xmlns ? trimXmlnsPrefix(element.originalName) : element.name, attributes, state2);
-        }
-      };
-      var onclosetag = function onclosetag2(element) {
-        if (onCloseTag) {
-          var tagName = xmlns ? trimXmlnsPrefix(element.originalName) : element.name;
-          onCloseTag(tagName, state2);
-        }
-      };
-      parser.on("error", onerror);
-      parser.on("text", ontext);
-      parser.on("openTag", onopentag);
-      parser.on("closeTag", onclosetag);
-    });
-    return {
-      promise,
-      write,
-      end
-    };
-  }
-  var TAG_NAME_PREFIX = /.+:/;
-  function trimXmlnsPrefix(tagName) {
-    return tagName.replace(TAG_NAME_PREFIX, "");
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/InvalidSpreadsheetError.js
-  function _typeof2(o) {
-    "@babel/helpers - typeof";
-    return _typeof2 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof2(o);
-  }
-  function _defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor);
-    }
-  }
-  function _createClass(Constructor, protoProps, staticProps) {
-    if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) _defineProperties(Constructor, staticProps);
-    Object.defineProperty(Constructor, "prototype", { writable: false });
-    return Constructor;
-  }
-  function _toPropertyKey(arg) {
-    var key = _toPrimitive(arg, "string");
-    return _typeof2(key) === "symbol" ? key : String(key);
-  }
-  function _toPrimitive(input, hint) {
-    if (_typeof2(input) !== "object" || input === null) return input;
-    var prim = input[Symbol.toPrimitive];
-    if (prim !== void 0) {
-      var res = prim.call(input, hint || "default");
-      if (_typeof2(res) !== "object") return res;
-      throw new TypeError("@@toPrimitive must return a primitive value.");
-    }
-    return (hint === "string" ? String : Number)(input);
-  }
-  function _classCallCheck(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
-    }
-  }
-  function _inherits(subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-    subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } });
-    Object.defineProperty(subClass, "prototype", { writable: false });
-    if (superClass) _setPrototypeOf(subClass, superClass);
-  }
-  function _createSuper(Derived) {
-    var hasNativeReflectConstruct = _isNativeReflectConstruct();
-    return function _createSuperInternal() {
-      var Super = _getPrototypeOf(Derived), result;
-      if (hasNativeReflectConstruct) {
-        var NewTarget = _getPrototypeOf(this).constructor;
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-      return _possibleConstructorReturn(this, result);
-    };
-  }
-  function _possibleConstructorReturn(self, call) {
-    if (call && (_typeof2(call) === "object" || typeof call === "function")) {
-      return call;
-    } else if (call !== void 0) {
-      throw new TypeError("Derived constructors may only return object or undefined");
-    }
-    return _assertThisInitialized(self);
-  }
-  function _assertThisInitialized(self) {
-    if (self === void 0) {
-      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-    }
-    return self;
-  }
-  function _wrapNativeSuper(Class) {
-    var _cache = typeof Map === "function" ? /* @__PURE__ */ new Map() : void 0;
-    _wrapNativeSuper = function _wrapNativeSuper5(Class2) {
-      if (Class2 === null || !_isNativeFunction(Class2)) return Class2;
-      if (typeof Class2 !== "function") {
-        throw new TypeError("Super expression must either be null or a function");
-      }
-      if (typeof _cache !== "undefined") {
-        if (_cache.has(Class2)) return _cache.get(Class2);
-        _cache.set(Class2, Wrapper);
-      }
-      function Wrapper() {
-        return _construct(Class2, arguments, _getPrototypeOf(this).constructor);
-      }
-      Wrapper.prototype = Object.create(Class2.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } });
-      return _setPrototypeOf(Wrapper, Class2);
-    };
-    return _wrapNativeSuper(Class);
-  }
-  function _construct(Parent, args, Class) {
-    if (_isNativeReflectConstruct()) {
-      _construct = Reflect.construct.bind();
-    } else {
-      _construct = function _construct5(Parent2, args2, Class2) {
-        var a = [null];
-        a.push.apply(a, args2);
-        var Constructor = Function.bind.apply(Parent2, a);
-        var instance = new Constructor();
-        if (Class2) _setPrototypeOf(instance, Class2.prototype);
-        return instance;
-      };
-    }
-    return _construct.apply(null, arguments);
-  }
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-    try {
-      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function() {
-      }));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  function _isNativeFunction(fn) {
-    return Function.toString.call(fn).indexOf("[native code]") !== -1;
-  }
-  function _setPrototypeOf(o, p) {
-    _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf5(o2, p2) {
-      o2.__proto__ = p2;
-      return o2;
-    };
-    return _setPrototypeOf(o, p);
-  }
-  function _getPrototypeOf(o) {
-    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf5(o2) {
-      return o2.__proto__ || Object.getPrototypeOf(o2);
-    };
-    return _getPrototypeOf(o);
-  }
-  var InvalidSpreadsheetError = /* @__PURE__ */ function(_Error) {
-    _inherits(InvalidSpreadsheetError2, _Error);
-    var _super = _createSuper(InvalidSpreadsheetError2);
-    function InvalidSpreadsheetError2(message) {
-      var _this;
-      _classCallCheck(this, InvalidSpreadsheetError2);
-      _this = _super.call(this, message);
-      _this.name = "InvalidSpreadsheetError";
-      return _this;
-    }
-    return _createClass(InvalidSpreadsheetError2);
-  }(/* @__PURE__ */ _wrapNativeSuper(Error));
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xml/parseXml.js
-  function parseXml(xml, state2, onOpenTag, onCloseTag, onText, onProgress) {
-    var parser = parseXmlStream(state2, onOpenTag, onCloseTag, onText);
-    if (onProgress) {
-      parseXmlInChunks(parser, xml, onProgress);
-    } else {
-      parser.write(xml);
-      parser.end();
-    }
-    return parser.promise.then(function(result) {
-      return result;
-    }, function(error) {
-      var spreadsheetError = new InvalidSpreadsheetError(error.message);
-      spreadsheetError.stack = error.stack;
-      spreadsheetError.cause = error;
-      throw spreadsheetError;
-    });
-    function parseXmlInChunks(parser2, xml2, onProgress2, nonBlocking) {
-      var MAX_CHUNK_PROCESSING_TIME = 7;
-      var INITIAL_CHUNK_SIZE = 64 * 1024;
-      var chunksCount = 0;
-      var chunkSize = INITIAL_CHUNK_SIZE;
-      var parseNextChunk = function parseNextChunk2() {
-        chunksCount++;
-        var startedAt = Date.now();
-        if (xml2.length > chunkSize) {
-          parser2.write(xml2.slice(0, chunkSize));
-          if (onProgress2) {
-            onProgress2(false);
-          }
-          xml2 = xml2.slice(chunkSize);
-          var chunkProcessingTime = Date.now() - startedAt;
-          if (chunkProcessingTime < MAX_CHUNK_PROCESSING_TIME * 0.5) {
-            chunkSize *= 2;
-          } else if (chunkProcessingTime > MAX_CHUNK_PROCESSING_TIME) {
-            chunkSize /= 2;
-          }
-          return true;
-        } else {
-          parser2.write(xml2);
-          parser2.end();
-          if (onProgress2) {
-            onProgress2(true);
-          }
-          return false;
-        }
-      };
-      var loop = function loop2() {
-        if (parseNextChunk()) {
-          if (nonBlocking) {
-            if (typeof setImmediate !== "undefined") {
-              setImmediate(loop2);
-            } else {
-              setTimeout(loop2, 0);
-            }
-          } else {
-            loop2();
-          }
-        } else {
-        }
-      };
-      loop();
-    }
-  }
+  };
 
   // ../../../../../tmp/tinplate-web-build/node_modules/fflate/esm/browser.js
-  var ch2 = {};
-  var wk = function(c, id, msg, transfer, cb) {
-    var w = new Worker(ch2[id] || (ch2[id] = URL.createObjectURL(new Blob([
-      c + ';addEventListener("error",function(e){e=e.error;postMessage({$e$:[e.message,e.code,e.stack]})})'
-    ], { type: "text/javascript" }))));
-    w.onmessage = function(e) {
-      var d = e.data, ed = d.$e$;
-      if (ed) {
-        var err2 = new Error(ed[0]);
-        err2["code"] = ed[1];
-        err2.stack = ed[2];
-        cb(err2, null);
-      } else
-        cb(null, d);
-    };
-    w.postMessage(msg, transfer);
-    return w;
-  };
   var u8 = Uint8Array;
   var u16 = Uint16Array;
   var i32 = Int32Array;
@@ -1104,7 +111,7 @@
   }
   var x;
   var i;
-  var hMap = function(cd, mb, r) {
+  var hMap = (function(cd, mb, r) {
     var s = cd.length;
     var i = 0;
     var l = new u16(mb);
@@ -1139,7 +146,7 @@
       }
     }
     return co;
-  };
+  });
   var flt = new u8(288);
   for (i = 0; i < 144; ++i)
     flt[i] = 8;
@@ -1354,81 +361,6 @@
     return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
   };
   var et = /* @__PURE__ */ new u8(0);
-  var mrg = function(a, b) {
-    var o = {};
-    for (var k in a)
-      o[k] = a[k];
-    for (var k in b)
-      o[k] = b[k];
-    return o;
-  };
-  var wcln = function(fn, fnStr, td2) {
-    var dt = fn();
-    var st = fn.toString();
-    var ks = st.slice(st.indexOf("[") + 1, st.lastIndexOf("]")).replace(/\s+/g, "").split(",");
-    for (var i = 0; i < dt.length; ++i) {
-      var v = dt[i], k = ks[i];
-      if (typeof v == "function") {
-        fnStr += ";" + k + "=";
-        var st_1 = v.toString();
-        if (v.prototype) {
-          if (st_1.indexOf("[native code]") != -1) {
-            var spInd = st_1.indexOf(" ", 8) + 1;
-            fnStr += st_1.slice(spInd, st_1.indexOf("(", spInd));
-          } else {
-            fnStr += st_1;
-            for (var t in v.prototype)
-              fnStr += ";" + k + ".prototype." + t + "=" + v.prototype[t].toString();
-          }
-        } else
-          fnStr += st_1;
-      } else
-        td2[k] = v;
-    }
-    return fnStr;
-  };
-  var ch = [];
-  var cbfs = function(v) {
-    var tl = [];
-    for (var k in v) {
-      if (v[k].buffer) {
-        tl.push((v[k] = new v[k].constructor(v[k])).buffer);
-      }
-    }
-    return tl;
-  };
-  var wrkr = function(fns, init, id, cb) {
-    if (!ch[id]) {
-      var fnStr = "", td_1 = {}, m = fns.length - 1;
-      for (var i = 0; i < m; ++i)
-        fnStr = wcln(fns[i], fnStr, td_1);
-      ch[id] = { c: wcln(fns[m], fnStr, td_1), e: td_1 };
-    }
-    var td2 = mrg({}, ch[id].e);
-    return wk(ch[id].c + ";onmessage=function(e){for(var k in e.data)self[k]=e.data[k];onmessage=" + init.toString() + "}", id, td2, cbfs(td2), cb);
-  };
-  var bInflt = function() {
-    return [u8, u16, i32, fleb, fdeb, clim, fl, fd, flrm, fdrm, rev, ec, hMap, max, bits, bits16, shft, slc, err, inflt, inflateSync, pbf, gopt];
-  };
-  var pbf = function(msg) {
-    return postMessage(msg, [msg.buffer]);
-  };
-  var gopt = function(o) {
-    return o && {
-      out: o.size && new u8(o.size),
-      dictionary: o.dictionary
-    };
-  };
-  var cbify = function(dat, opts, fns, init, id, cb) {
-    var w = wrkr(fns, init, id, function(err2, dat2) {
-      w.terminate();
-      cb(err2, dat2);
-    });
-    w.postMessage([dat, opts], opts.consume ? [dat.buffer] : []);
-    return function() {
-      w.terminate();
-    };
-  };
   var b2 = function(d, b) {
     return d[b] | d[b + 1] << 8;
   };
@@ -1438,17 +370,6 @@
   var b8 = function(d, b) {
     return b4(d, b) + b4(d, b + 4) * 4294967296;
   };
-  function inflate(data, opts, cb) {
-    if (!cb)
-      cb = opts, opts = {};
-    if (typeof cb != "function")
-      err(7);
-    return cbify(data, opts, [
-      bInflt
-    ], function(ev) {
-      return pbf(inflateSync(ev.data[0], gopt(ev.data[1])));
-    }, 1, cb);
-  }
   function inflateSync(data, opts) {
     return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
   }
@@ -1517,508 +438,386 @@
     }
     return [sc, su, off, 0];
   };
-  var mt = typeof queueMicrotask == "function" ? queueMicrotask : typeof setTimeout == "function" ? setTimeout : function(fn) {
-    fn();
-  };
-  function unzip(data, opts, cb) {
-    if (!cb)
-      cb = opts, opts = {};
-    if (typeof cb != "function")
-      err(7);
-    var term = [];
-    var tAll = function() {
-      for (var i2 = 0; i2 < term.length; ++i2)
-        term[i2]();
-    };
+  function unzipSync(data, opts) {
     var files = {};
-    var cbd = function(a, b) {
-      mt(function() {
-        cb(a, b);
-      });
-    };
-    mt(function() {
-      cbd = cb;
-    });
     var e = data.length - 22;
     for (; b4(data, e) != 101010256; --e) {
-      if (!e || data.length - e > 65558) {
-        cbd(err(13, 0, 1), null);
-        return tAll;
-      }
+      if (!e || data.length - e > 65558)
+        err(13);
     }
     ;
-    var lft = b2(data, e + 8);
-    if (lft) {
-      var c = lft;
-      var o = b4(data, e + 16);
-      var z = b4(data, e - 20) == 117853008;
+    var c = b2(data, e + 8);
+    if (!c)
+      return {};
+    var o = b4(data, e + 16);
+    var z = b4(data, e - 20) == 117853008;
+    if (z) {
+      var ze = b4(data, e - 12);
+      z = b4(data, ze) == 101075792;
       if (z) {
-        var ze = b4(data, e - 12);
-        z = b4(data, ze) == 101075792;
-        if (z) {
-          c = lft = b4(data, ze + 32);
-          o = b4(data, ze + 48);
-        }
+        c = b4(data, ze + 32);
+        o = b4(data, ze + 48);
       }
-      var fltr = opts && opts.filter;
-      var _loop_3 = function(i2) {
-        var _a2 = zh(data, o, z), c_1 = _a2[0], sc = _a2[1], su = _a2[2], fn = _a2[3], no = _a2[4], off = _a2[5], b = slzh(data, off);
-        o = no;
-        var cbl = function(e2, d) {
-          if (e2) {
-            tAll();
-            cbd(e2, null);
-          } else {
-            if (d)
-              files[fn] = d;
-            if (!--lft)
-              cbd(null, files);
-          }
-        };
-        if (!fltr || fltr({
-          name: fn,
-          size: sc,
-          originalSize: su,
-          compression: c_1
-        })) {
-          if (!c_1)
-            cbl(null, slc(data, b, b + sc));
-          else if (c_1 == 8) {
-            var infl = data.subarray(b, b + sc);
-            if (su < 524288 || sc > 0.8 * su) {
-              try {
-                cbl(null, inflateSync(infl, { out: new u8(su) }));
-              } catch (e2) {
-                cbl(e2, null);
-              }
-            } else
-              term.push(inflate(infl, { size: su }, cbl));
-          } else
-            cbl(err(14, "unknown compression type " + c_1, 1), null);
-        } else
-          cbl(null, null);
-      };
-      for (var i = 0; i < c; ++i) {
-        _loop_3(i);
+    }
+    var fltr = opts && opts.filter;
+    for (var i = 0; i < c; ++i) {
+      var _a2 = zh(data, o, z), c_2 = _a2[0], sc = _a2[1], su = _a2[2], fn = _a2[3], no = _a2[4], off = _a2[5], b = slzh(data, off);
+      o = no;
+      if (!fltr || fltr({
+        name: fn,
+        size: sc,
+        originalSize: su,
+        compression: c_2
+      })) {
+        if (!c_2)
+          files[fn] = slc(data, b, b + sc);
+        else if (c_2 == 8)
+          files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
+        else
+          err(14, "unknown compression type " + c_2);
       }
-    } else
-      cbd(null, {});
-    return tAll;
+    }
+    return files;
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/zip/UnzipError.js
-  function _typeof3(o) {
-    "@babel/helpers - typeof";
-    return _typeof3 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof3(o);
-  }
-  function _defineProperties2(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, _toPropertyKey2(descriptor.key), descriptor);
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/unpackXlsxFileBrowser.js
+  function unpackXlsxFile(input) {
+    if (input instanceof File) {
+      return input.arrayBuffer().then(unpackXlsxArrayBuffer);
     }
-  }
-  function _createClass2(Constructor, protoProps, staticProps) {
-    if (protoProps) _defineProperties2(Constructor.prototype, protoProps);
-    if (staticProps) _defineProperties2(Constructor, staticProps);
-    Object.defineProperty(Constructor, "prototype", { writable: false });
-    return Constructor;
-  }
-  function _toPropertyKey2(arg) {
-    var key = _toPrimitive2(arg, "string");
-    return _typeof3(key) === "symbol" ? key : String(key);
-  }
-  function _toPrimitive2(input, hint) {
-    if (_typeof3(input) !== "object" || input === null) return input;
-    var prim = input[Symbol.toPrimitive];
-    if (prim !== void 0) {
-      var res = prim.call(input, hint || "default");
-      if (_typeof3(res) !== "object") return res;
-      throw new TypeError("@@toPrimitive must return a primitive value.");
+    if (input instanceof Blob) {
+      return input.arrayBuffer().then(unpackXlsxArrayBuffer);
     }
-    return (hint === "string" ? String : Number)(input);
+    return unpackXlsxArrayBuffer(input);
   }
-  function _classCallCheck2(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
+  function unpackXlsxArrayBuffer(arrayBuffer) {
+    var archive = new Uint8Array(arrayBuffer);
+    var contents = unzipSync(archive);
+    return Promise.resolve(getContents(contents));
+  }
+  function getContents(contents) {
+    var unzippedFiles = [];
+    for (var _i = 0, _Object$keys = Object.keys(contents); _i < _Object$keys.length; _i++) {
+      var key = _Object$keys[_i];
+      unzippedFiles[key] = strFromU8(contents[key]);
     }
-  }
-  function _inherits2(subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-    subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } });
-    Object.defineProperty(subClass, "prototype", { writable: false });
-    if (superClass) _setPrototypeOf2(subClass, superClass);
-  }
-  function _createSuper2(Derived) {
-    var hasNativeReflectConstruct = _isNativeReflectConstruct2();
-    return function _createSuperInternal() {
-      var Super = _getPrototypeOf2(Derived), result;
-      if (hasNativeReflectConstruct) {
-        var NewTarget = _getPrototypeOf2(this).constructor;
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-      return _possibleConstructorReturn2(this, result);
-    };
-  }
-  function _possibleConstructorReturn2(self, call) {
-    if (call && (_typeof3(call) === "object" || typeof call === "function")) {
-      return call;
-    } else if (call !== void 0) {
-      throw new TypeError("Derived constructors may only return object or undefined");
-    }
-    return _assertThisInitialized2(self);
-  }
-  function _assertThisInitialized2(self) {
-    if (self === void 0) {
-      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-    }
-    return self;
-  }
-  function _wrapNativeSuper2(Class) {
-    var _cache = typeof Map === "function" ? /* @__PURE__ */ new Map() : void 0;
-    _wrapNativeSuper2 = function _wrapNativeSuper5(Class2) {
-      if (Class2 === null || !_isNativeFunction2(Class2)) return Class2;
-      if (typeof Class2 !== "function") {
-        throw new TypeError("Super expression must either be null or a function");
-      }
-      if (typeof _cache !== "undefined") {
-        if (_cache.has(Class2)) return _cache.get(Class2);
-        _cache.set(Class2, Wrapper);
-      }
-      function Wrapper() {
-        return _construct2(Class2, arguments, _getPrototypeOf2(this).constructor);
-      }
-      Wrapper.prototype = Object.create(Class2.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } });
-      return _setPrototypeOf2(Wrapper, Class2);
-    };
-    return _wrapNativeSuper2(Class);
-  }
-  function _construct2(Parent, args, Class) {
-    if (_isNativeReflectConstruct2()) {
-      _construct2 = Reflect.construct.bind();
-    } else {
-      _construct2 = function _construct5(Parent2, args2, Class2) {
-        var a = [null];
-        a.push.apply(a, args2);
-        var Constructor = Function.bind.apply(Parent2, a);
-        var instance = new Constructor();
-        if (Class2) _setPrototypeOf2(instance, Class2.prototype);
-        return instance;
-      };
-    }
-    return _construct2.apply(null, arguments);
-  }
-  function _isNativeReflectConstruct2() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-    try {
-      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function() {
-      }));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  function _isNativeFunction2(fn) {
-    return Function.toString.call(fn).indexOf("[native code]") !== -1;
-  }
-  function _setPrototypeOf2(o, p) {
-    _setPrototypeOf2 = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf5(o2, p2) {
-      o2.__proto__ = p2;
-      return o2;
-    };
-    return _setPrototypeOf2(o, p);
-  }
-  function _getPrototypeOf2(o) {
-    _getPrototypeOf2 = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf5(o2) {
-      return o2.__proto__ || Object.getPrototypeOf(o2);
-    };
-    return _getPrototypeOf2(o);
-  }
-  var UnzipError = /* @__PURE__ */ function(_Error) {
-    _inherits2(UnzipError2, _Error);
-    var _super = _createSuper2(UnzipError2);
-    function UnzipError2() {
-      _classCallCheck2(this, UnzipError2);
-      return _super.apply(this, arguments);
-    }
-    return _createClass2(UnzipError2);
-  }(/* @__PURE__ */ _wrapNativeSuper2(Error));
-  function createUnzipError(error) {
-    var unzipError = new UnzipError(error.message);
-    if (error.stack) {
-      unzipError.stack = error.stack;
-    }
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(unzipError, createUnzipError);
-    }
-    unzipError.cause = error;
-    return unzipError;
+    return unzippedFiles;
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/zip/unzipFromArrayBuffer.js
-  function unzipFromArrayBuffer(input, options) {
-    return unzipFromArrayBufferUsingFunction(input, options, unzipAsync, true);
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xml/dom.js
+  function findChild(node, tagName) {
+    var i = 0;
+    while (i < node.childNodes.length) {
+      var childNode = node.childNodes[i];
+      if (childNode.nodeType === 1 && getTagName(childNode) === tagName) {
+        return childNode;
+      }
+      i++;
+    }
   }
-  function unzipFromArrayBufferUsingFunction(input) {
-    var _ref = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, _filter = _ref.filter;
-    var unzip2 = arguments.length > 2 ? arguments[2] : void 0;
-    var isAsync = arguments.length > 3 ? arguments[3] : void 0;
-    return unzip2(new Uint8Array(input), {
-      // Ignore certain types of files.
-      filter: function filter(file) {
-        if (_filter) {
-          return _filter({
-            path: file.name
-          });
+  function findChildren(node, tagName) {
+    var results = [];
+    var i = 0;
+    while (i < node.childNodes.length) {
+      var childNode = node.childNodes[i];
+      if (childNode.nodeType === 1 && getTagName(childNode) === tagName) {
+        results.push(childNode);
+      }
+      i++;
+    }
+    return results;
+  }
+  function forEach(node, tagName, func) {
+    var i = 0;
+    while (i < node.childNodes.length) {
+      var childNode = node.childNodes[i];
+      if (tagName) {
+        if (childNode.nodeType === 1 && getTagName(childNode) === tagName) {
+          func(childNode, i);
         }
-        return true;
-      }
-    }).then(function(result) {
-      return result;
-    }, function(error) {
-      if (isFlateError(error)) {
-        throw createUnzipError(error);
       } else {
-        throw error;
+        func(childNode, i);
       }
+      i++;
+    }
+  }
+  function map(node, tagName, func) {
+    var results = [];
+    forEach(node, tagName, function(node2, i) {
+      results.push(func(node2, i));
     });
+    return results;
   }
-  function unzipAsync(archive) {
-    return new Promise(function(resolve, reject) {
-      unzip(archive, function(error, files) {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(files);
-        }
+  var NAMESPACE_REG_EXP = /.+\:/;
+  function getTagName(element) {
+    return element.tagName.replace(NAMESPACE_REG_EXP, "");
+  }
+  function getOuterXml(node) {
+    if (node.nodeType !== 1) {
+      return node.textContent;
+    }
+    var xml = "<" + getTagName(node);
+    var j = 0;
+    while (j < node.attributes.length) {
+      xml += " " + node.attributes[j].name + '="' + node.attributes[j].value + '"';
+      j++;
+    }
+    xml += ">";
+    var i = 0;
+    while (i < node.childNodes.length) {
+      xml += getOuterXml(node.childNodes[i]);
+      i++;
+    }
+    xml += "</" + getTagName(node) + ">";
+    return xml;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xml/xlsx.js
+  function getCells(document2) {
+    var worksheet = document2.documentElement;
+    var sheetData = findChild(worksheet, "sheetData");
+    var cells = [];
+    forEach(sheetData, "row", function(row) {
+      forEach(row, "c", function(cell) {
+        cells.push(cell);
       });
     });
+    return cells;
   }
-  function isFlateError(error) {
-    return typeof error.code === "number";
+  function getCellValue(document2, node) {
+    return findChild(node, "v");
+  }
+  function getCellInlineStringValue(document2, node) {
+    if (node.firstChild && getTagName(node.firstChild) === "is" && node.firstChild.firstChild && getTagName(node.firstChild.firstChild) === "t") {
+      return node.firstChild.firstChild.textContent;
+    }
+  }
+  function getDimensions(document2) {
+    var worksheet = document2.documentElement;
+    var dimensions = findChild(worksheet, "dimension");
+    if (dimensions) {
+      return dimensions.getAttribute("ref");
+    }
+  }
+  function getBaseStyles(document2) {
+    var styleSheet = document2.documentElement;
+    var cellStyleXfs = findChild(styleSheet, "cellStyleXfs");
+    if (cellStyleXfs) {
+      return findChildren(cellStyleXfs, "xf");
+    }
+    return [];
+  }
+  function getCellStyles(document2) {
+    var styleSheet = document2.documentElement;
+    var cellXfs = findChild(styleSheet, "cellXfs");
+    if (!cellXfs) {
+      return [];
+    }
+    return findChildren(cellXfs, "xf");
+  }
+  function getNumberFormats(document2) {
+    var styleSheet = document2.documentElement;
+    var numberFormats = [];
+    var numFmts = findChild(styleSheet, "numFmts");
+    if (numFmts) {
+      return findChildren(numFmts, "numFmt");
+    }
+    return [];
+  }
+  function getSharedStrings(document2) {
+    var sst = document2.documentElement;
+    return map(sst, "si", function(string) {
+      var t = findChild(string, "t");
+      if (t) {
+        return t.textContent;
+      }
+      var value = "";
+      forEach(string, "r", function(r) {
+        value += findChild(r, "t").textContent;
+      });
+      return value;
+    });
+  }
+  function getWorkbookProperties(document2) {
+    var workbook = document2.documentElement;
+    return findChild(workbook, "workbookPr");
+  }
+  function getRelationships(document2) {
+    var relationships = document2.documentElement;
+    return findChildren(relationships, "Relationship");
+  }
+  function getSheets(document2) {
+    var workbook = document2.documentElement;
+    var sheets = findChild(workbook, "sheets");
+    return findChildren(sheets, "sheet");
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/file/InvalidInputError.js
-  function _typeof4(o) {
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseProperties.js
+  function parseProperties(content, xml) {
+    var book = xml.createDocument(content);
+    var properties = {};
+    var workbookProperties = getWorkbookProperties(book);
+    if (workbookProperties && workbookProperties.getAttribute("date1904") === "1") {
+      properties.epoch1904 = true;
+    }
+    properties.sheets = [];
+    var addSheetInfo = function addSheetInfo2(sheet) {
+      if (sheet.getAttribute("name")) {
+        properties.sheets.push({
+          id: sheet.getAttribute("sheetId"),
+          name: sheet.getAttribute("name"),
+          relationId: sheet.getAttribute("r:id")
+        });
+      }
+    };
+    getSheets(book).forEach(addSheetInfo);
+    return properties;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseFilePaths.js
+  function parseFilePaths(content, xml) {
+    var document2 = xml.createDocument(content);
+    var filePaths = {
+      sheets: {},
+      sharedStrings: void 0,
+      styles: void 0
+    };
+    var addFilePathInfo = function addFilePathInfo2(relationship) {
+      var filePath = relationship.getAttribute("Target");
+      var fileType = relationship.getAttribute("Type");
+      switch (fileType) {
+        case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles":
+          filePaths.styles = getFilePath(filePath);
+          break;
+        case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings":
+          filePaths.sharedStrings = getFilePath(filePath);
+          break;
+        case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet":
+          filePaths.sheets[relationship.getAttribute("Id")] = getFilePath(filePath);
+          break;
+      }
+    };
+    getRelationships(document2).forEach(addFilePathInfo);
+    return filePaths;
+  }
+  function getFilePath(path) {
+    if (path[0] === "/") {
+      return path.slice("/".length);
+    }
+    return "xl/" + path;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseStyles.js
+  function _typeof(o) {
     "@babel/helpers - typeof";
-    return _typeof4 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
       return typeof o2;
     } : function(o2) {
       return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof4(o);
+    }, _typeof(o);
   }
-  function _defineProperties3(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, _toPropertyKey3(descriptor.key), descriptor);
+  function ownKeys(e, r) {
+    var t = Object.keys(e);
+    if (Object.getOwnPropertySymbols) {
+      var o = Object.getOwnPropertySymbols(e);
+      r && (o = o.filter(function(r2) {
+        return Object.getOwnPropertyDescriptor(e, r2).enumerable;
+      })), t.push.apply(t, o);
     }
+    return t;
   }
-  function _createClass3(Constructor, protoProps, staticProps) {
-    if (protoProps) _defineProperties3(Constructor.prototype, protoProps);
-    if (staticProps) _defineProperties3(Constructor, staticProps);
-    Object.defineProperty(Constructor, "prototype", { writable: false });
-    return Constructor;
+  function _objectSpread(e) {
+    for (var r = 1; r < arguments.length; r++) {
+      var t = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys(Object(t), true).forEach(function(r2) {
+        _defineProperty(e, r2, t[r2]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r2) {
+        Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
+      });
+    }
+    return e;
   }
-  function _toPropertyKey3(arg) {
-    var key = _toPrimitive3(arg, "string");
-    return _typeof4(key) === "symbol" ? key : String(key);
+  function _defineProperty(obj, key, value) {
+    key = _toPropertyKey(key);
+    if (key in obj) {
+      Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
+    } else {
+      obj[key] = value;
+    }
+    return obj;
   }
-  function _toPrimitive3(input, hint) {
-    if (_typeof4(input) !== "object" || input === null) return input;
+  function _toPropertyKey(arg) {
+    var key = _toPrimitive(arg, "string");
+    return _typeof(key) === "symbol" ? key : String(key);
+  }
+  function _toPrimitive(input, hint) {
+    if (_typeof(input) !== "object" || input === null) return input;
     var prim = input[Symbol.toPrimitive];
     if (prim !== void 0) {
       var res = prim.call(input, hint || "default");
-      if (_typeof4(res) !== "object") return res;
+      if (_typeof(res) !== "object") return res;
       throw new TypeError("@@toPrimitive must return a primitive value.");
     }
     return (hint === "string" ? String : Number)(input);
   }
-  function _classCallCheck3(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
+  function parseStyles(content, xml) {
+    if (!content) {
+      return {};
     }
+    var doc = xml.createDocument(content);
+    var baseStyles = getBaseStyles(doc).map(parseCellStyle);
+    var numberFormats = getNumberFormats(doc).map(parseNumberFormatStyle).reduce(function(formats, format) {
+      formats[format.id] = format;
+      return formats;
+    }, []);
+    var getCellStyle = function getCellStyle2(xf) {
+      if (xf.hasAttribute("xfId")) {
+        return _objectSpread(_objectSpread({}, baseStyles[xf.xfId]), parseCellStyle(xf, numberFormats));
+      }
+      return parseCellStyle(xf, numberFormats);
+    };
+    return getCellStyles(doc).map(getCellStyle);
   }
-  function _inherits3(subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-    subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } });
-    Object.defineProperty(subClass, "prototype", { writable: false });
-    if (superClass) _setPrototypeOf3(subClass, superClass);
+  function parseNumberFormatStyle(numFmt) {
+    return {
+      id: numFmt.getAttribute("numFmtId"),
+      template: numFmt.getAttribute("formatCode")
+    };
   }
-  function _createSuper3(Derived) {
-    var hasNativeReflectConstruct = _isNativeReflectConstruct3();
-    return function _createSuperInternal() {
-      var Super = _getPrototypeOf3(Derived), result;
-      if (hasNativeReflectConstruct) {
-        var NewTarget = _getPrototypeOf3(this).constructor;
-        result = Reflect.construct(Super, arguments, NewTarget);
+  function parseCellStyle(xf, numFmts) {
+    var style = {};
+    if (xf.hasAttribute("numFmtId")) {
+      var numberFormatId = xf.getAttribute("numFmtId");
+      if (numFmts[numberFormatId]) {
+        style.numberFormat = numFmts[numberFormatId];
       } else {
-        result = Super.apply(this, arguments);
+        style.numberFormat = {
+          id: numberFormatId
+        };
       }
-      return _possibleConstructorReturn3(this, result);
-    };
-  }
-  function _possibleConstructorReturn3(self, call) {
-    if (call && (_typeof4(call) === "object" || typeof call === "function")) {
-      return call;
-    } else if (call !== void 0) {
-      throw new TypeError("Derived constructors may only return object or undefined");
     }
-    return _assertThisInitialized3(self);
-  }
-  function _assertThisInitialized3(self) {
-    if (self === void 0) {
-      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-    }
-    return self;
-  }
-  function _wrapNativeSuper3(Class) {
-    var _cache = typeof Map === "function" ? /* @__PURE__ */ new Map() : void 0;
-    _wrapNativeSuper3 = function _wrapNativeSuper5(Class2) {
-      if (Class2 === null || !_isNativeFunction3(Class2)) return Class2;
-      if (typeof Class2 !== "function") {
-        throw new TypeError("Super expression must either be null or a function");
-      }
-      if (typeof _cache !== "undefined") {
-        if (_cache.has(Class2)) return _cache.get(Class2);
-        _cache.set(Class2, Wrapper);
-      }
-      function Wrapper() {
-        return _construct3(Class2, arguments, _getPrototypeOf3(this).constructor);
-      }
-      Wrapper.prototype = Object.create(Class2.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } });
-      return _setPrototypeOf3(Wrapper, Class2);
-    };
-    return _wrapNativeSuper3(Class);
-  }
-  function _construct3(Parent, args, Class) {
-    if (_isNativeReflectConstruct3()) {
-      _construct3 = Reflect.construct.bind();
-    } else {
-      _construct3 = function _construct5(Parent2, args2, Class2) {
-        var a = [null];
-        a.push.apply(a, args2);
-        var Constructor = Function.bind.apply(Parent2, a);
-        var instance = new Constructor();
-        if (Class2) _setPrototypeOf3(instance, Class2.prototype);
-        return instance;
-      };
-    }
-    return _construct3.apply(null, arguments);
-  }
-  function _isNativeReflectConstruct3() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-    try {
-      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function() {
-      }));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  function _isNativeFunction3(fn) {
-    return Function.toString.call(fn).indexOf("[native code]") !== -1;
-  }
-  function _setPrototypeOf3(o, p) {
-    _setPrototypeOf3 = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf5(o2, p2) {
-      o2.__proto__ = p2;
-      return o2;
-    };
-    return _setPrototypeOf3(o, p);
-  }
-  function _getPrototypeOf3(o) {
-    _getPrototypeOf3 = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf5(o2) {
-      return o2.__proto__ || Object.getPrototypeOf(o2);
-    };
-    return _getPrototypeOf3(o);
-  }
-  var MESSAGES = {
-    XLS_FILE_NOT_SUPPORTED: "You passed a legacy `.xls` file. Only `.xlsx` files are supported",
-    FILE_NOT_SUPPORTED: "Doesn't look like an `.xlsx` file",
-    INVALID_ZIP: "Couldn't unzip `.xlsx` file contents",
-    NO_DATA: "No data"
-  };
-  var InvalidInputError = /* @__PURE__ */ function(_Error) {
-    _inherits3(InvalidInputError2, _Error);
-    var _super = _createSuper3(InvalidInputError2);
-    function InvalidInputError2(code, cause) {
-      var _this;
-      _classCallCheck3(this, InvalidInputError2);
-      _this = _super.call(this, MESSAGES[code] || code);
-      _this.code = code;
-      _this.name = "InvalidInputError";
-      _this.cause = cause;
-      return _this;
-    }
-    return _createClass3(InvalidInputError2);
-  }(/* @__PURE__ */ _wrapNativeSuper3(Error));
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/export/filterZipArchiveEntry.js
-  function filterZipArchiveEntry(_ref) {
-    var path = _ref.path;
-    return path.endsWith(".xml") || path.endsWith(".xml.rels");
+    return style;
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/file/createFileTypeDetector.js
-  var ZIP_FILE_SIGNATURE = [80, 75];
-  var XLS_FILE_SIGNATURE = [208, 207, 17, 224];
-  var FILE_TYPE_SIGNATURES = [ZIP_FILE_SIGNATURE, XLS_FILE_SIGNATURE];
-  var XLSX_FILE_TYPE = FILE_TYPE_SIGNATURES.indexOf(ZIP_FILE_SIGNATURE);
-  var XLS_FILE_TYPE = FILE_TYPE_SIGNATURES.indexOf(XLS_FILE_SIGNATURE);
-  function createFileTypeDetector() {
-    var type;
-    var possibleTypes = indexesOf(FILE_TYPE_SIGNATURES);
-    var i = 0;
-    return function(_byte) {
-      if (isNaN(type)) {
-        var t;
-        possibleTypes = possibleTypes.filter(function(typeIndex) {
-          if (_byte === FILE_TYPE_SIGNATURES[typeIndex][i]) {
-            if (FILE_TYPE_SIGNATURES[typeIndex].length === i + 1) {
-              t = typeIndex;
-            }
-            return true;
-          }
-        });
-        if (possibleTypes.length === 1) {
-          type = t;
-        } else if (possibleTypes.length === 0) {
-          type = -1;
-        }
-      }
-      i++;
-      return type;
-    };
-  }
-  function indexesOf(array) {
-    var indexes = [];
-    var i = 0;
-    while (i < array.length) {
-      indexes.push(i);
-      i++;
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseSharedStrings.js
+  function parseSharedStrings(content, xml) {
+    if (!content) {
+      return [];
     }
-    return indexes;
+    return getSharedStrings(xml.createDocument(content));
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/file/validateLeadingBytes.js
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseDate.js
+  function parseExcelDate(excelSerialDate, options) {
+    if (options && options.epoch1904) {
+      excelSerialDate += 1462;
+    }
+    var daysBeforeUnixEpoch = 70 * 365 + 19;
+    var hour = 60 * 60 * 1e3;
+    return new Date(Math.round((excelSerialDate - daysBeforeUnixEpoch) * 24 * hour));
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/isDateTimestamp.js
   function _createForOfIteratorHelperLoose(o, allowArrayLike) {
     var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
     if (it) return (it = it.call(o)).next.bind(it);
@@ -2045,418 +844,42 @@
     for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
     return arr2;
   }
-  function validateLeadingBytes(bytes) {
-    var fileTypeDetector = createFileTypeDetector();
-    for (var _iterator = _createForOfIteratorHelperLoose(bytes), _step; !(_step = _iterator()).done; ) {
-      var _byte = _step.value;
-      if (validateByte(_byte, fileTypeDetector)) {
-        return;
+  function isDateTimestamp(styleId, styles, options) {
+    if (styleId) {
+      var style = styles[styleId];
+      if (!style) {
+        throw new Error("Cell style not found: ".concat(styleId));
       }
-    }
-    noFileTypeCouldBeDetermined(bytes.length);
-  }
-  function validateByte(_byte2, fileTypeDetector) {
-    var fileType = fileTypeDetector(_byte2);
-    if (fileType !== void 0) {
-      if (fileType === XLS_FILE_TYPE) {
-        throw new InvalidInputError("XLS_FILE_NOT_SUPPORTED");
+      if (!style.numberFormat) {
+        return false;
       }
-      if (fileType < 0) {
-        throw new InvalidInputError("FILE_NOT_SUPPORTED");
-      }
-      return true;
-    }
-  }
-  function noFileTypeCouldBeDetermined(byteCount) {
-    throw new InvalidInputError(byteCount === 0 ? "NO_DATA" : "FILE_NOT_SUPPORTED");
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/utility/checkpoint.js
-  var latestCheckpointTimestamp;
-  function checkpoint(name) {
-    var now = Date.now();
-    var shouldOutputLog = typeof global !== "undefined" ? Boolean(global.READ_EXCEL_FILE_CHECKPOINTS) : typeof window !== "undefined" ? Boolean(window.READ_EXCEL_FILE_CHECKPOINTS) : false;
-    if (shouldOutputLog) {
-      if (latestCheckpointTimestamp) {
-        console.log("  -", now - latestCheckpointTimestamp, "ms");
-      }
-      console.log("*", name);
-    }
-    latestCheckpointTimestamp = now;
-  }
-  function resetCheckpoint() {
-    latestCheckpointTimestamp = void 0;
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/export/unpackXlsxFileUniversal.js
-  function unpackXlsxFile(input) {
-    resetCheckpoint();
-    checkpoint("unpack files");
-    return getArrayBuffer(input).then(function(arrayBuffer) {
-      validateLeadingBytes(new Uint8Array(arrayBuffer));
-      return unzipFromArrayBuffer(arrayBuffer, {
-        filter: filterZipArchiveEntry
-      }).then(function(result) {
-        return result;
-      }, function(error) {
-        if (error instanceof UnzipError) {
-          throw new InvalidInputError("INVALID_ZIP", error.cause);
-        } else {
-          throw error;
-        }
-      });
-    });
-  }
-  function getArrayBuffer(input) {
-    if (input instanceof Blob) {
-      return input.arrayBuffer();
-    }
-    if (input instanceof ArrayBuffer) {
-      return Promise.resolve(input);
-    }
-    throw new TypeError("Unuspported input. Expected a `Blob` or an `ArrayBuffer`");
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseSpreadsheetInfo.js
-  function parseSpreadsheetInfo(content, parseXml2) {
-    var state2 = createInitialState();
-    return parseXml2(content, state2, onOpenTag, null, null).then(function() {
-      return getResultFromState(state2);
-    });
-    function createInitialState() {
-      return {
-        workbookPr: void 0,
-        sheets: []
-      };
-    }
-    function getResultFromState(state3) {
-      return {
-        epoch1904: state3.workbookPr ? state3.workbookPr.epoch1904 : false,
-        sheets: state3.sheets
-      };
-    }
-    function onOpenTag(tagName, attributes, state3) {
-      if (tagName === "workbookPr") {
-        if (!state3.workbookPr) {
-          state3.workbookPr = {
-            epoch1904: attributes.date1904 === "1"
-          };
-        }
-      } else if (tagName === "sheet") {
-        if (attributes.name) {
-          state3.sheets.push({
-            // `sheetId` attribute value is an arbitrary, `1`-based unique positive integer
-            // assigned to a worksheet, typically starting at `1` for the first sheet.
-            //  Deleting and adding new sheets might cause the sheetId values to become non-sequential.
-            // For example, `sheetId`s could be `1`, `2`, `4`, if sheet `3` was deleted.
-            id: Number(attributes.sheetId),
-            name: attributes.name,
-            relationId: attributes["r:id"]
-          });
-        }
+      if (
+        // Whether it's a "number format" that's conventionally used for storing date timestamps.
+        BUILT_IN_DATE_NUMBER_FORMAT_IDS.indexOf(Number(style.numberFormat.id)) >= 0 || // Whether it's a "number format" that uses a "formatting template"
+        // that the developer is certain is a date formatting template.
+        options.dateFormat && style.numberFormat.template === options.dateFormat || // Whether the "smart formatting template" feature is not disabled
+        // and it has detected that it's a date formatting template by looking at it.
+        options.smartDateParser !== false && style.numberFormat.template && isDateTemplate(style.numberFormat.template)
+      ) {
+        return true;
       }
     }
   }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseFilePaths.js
-  function parseFilePaths(content, parseXml2) {
-    var state2 = createInitialState();
-    return parseXml2(content, state2, onOpenTag, null, null).then(function() {
-      return getResultFromState(state2);
-    });
-    function createInitialState() {
-      return {
-        sheets: {},
-        sharedStrings: void 0,
-        styles: void 0
-      };
-    }
-    function getResultFromState(state3) {
-      return state3;
-    }
-    function onOpenTag(tagName, attributes, state3) {
-      if (tagName === "Relationship") {
-        addFilePathForRelation(state3, attributes.Id, attributes.Type, attributes.Target);
-      }
-    }
-    function addFilePathForRelation(state3, id, type, target) {
-      switch (type) {
-        case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles":
-          state3.styles = getFilePathFromRelationTarget(target);
-          break;
-        case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings":
-          state3.sharedStrings = getFilePathFromRelationTarget(target);
-          break;
-        case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet":
-          state3.sheets[id] = getFilePathFromRelationTarget(target);
-          break;
-      }
-    }
-    function getFilePathFromRelationTarget(path) {
-      if (path[0] === "/") {
-        return path.slice("/".length);
-      }
-      return "xl/" + path;
-    }
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseStyles.js
-  function _typeof5(o) {
-    "@babel/helpers - typeof";
-    return _typeof5 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof5(o);
-  }
-  var _excluded = ["xfId"];
-  function ownKeys(e, r) {
-    var t = Object.keys(e);
-    if (Object.getOwnPropertySymbols) {
-      var o = Object.getOwnPropertySymbols(e);
-      r && (o = o.filter(function(r2) {
-        return Object.getOwnPropertyDescriptor(e, r2).enumerable;
-      })), t.push.apply(t, o);
-    }
-    return t;
-  }
-  function _objectSpread(e) {
-    for (var r = 1; r < arguments.length; r++) {
-      var t = null != arguments[r] ? arguments[r] : {};
-      r % 2 ? ownKeys(Object(t), true).forEach(function(r2) {
-        _defineProperty(e, r2, t[r2]);
-      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r2) {
-        Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
-      });
-    }
-    return e;
-  }
-  function _defineProperty(obj, key, value) {
-    key = _toPropertyKey4(key);
-    if (key in obj) {
-      Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
-    } else {
-      obj[key] = value;
-    }
-    return obj;
-  }
-  function _toPropertyKey4(arg) {
-    var key = _toPrimitive4(arg, "string");
-    return _typeof5(key) === "symbol" ? key : String(key);
-  }
-  function _toPrimitive4(input, hint) {
-    if (_typeof5(input) !== "object" || input === null) return input;
-    var prim = input[Symbol.toPrimitive];
-    if (prim !== void 0) {
-      var res = prim.call(input, hint || "default");
-      if (_typeof5(res) !== "object") return res;
-      throw new TypeError("@@toPrimitive must return a primitive value.");
-    }
-    return (hint === "string" ? String : Number)(input);
-  }
-  function _objectWithoutProperties(source, excluded) {
-    if (source == null) return {};
-    var target = _objectWithoutPropertiesLoose(source, excluded);
-    var key, i;
-    if (Object.getOwnPropertySymbols) {
-      var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
-      for (i = 0; i < sourceSymbolKeys.length; i++) {
-        key = sourceSymbolKeys[i];
-        if (excluded.indexOf(key) >= 0) continue;
-        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
-        target[key] = source[key];
-      }
-    }
-    return target;
-  }
-  function _objectWithoutPropertiesLoose(source, excluded) {
-    if (source == null) return {};
-    var target = {};
-    var sourceKeys = Object.keys(source);
-    var key, i;
-    for (i = 0; i < sourceKeys.length; i++) {
-      key = sourceKeys[i];
-      if (excluded.indexOf(key) >= 0) continue;
-      target[key] = source[key];
-    }
-    return target;
-  }
-  function parseStyles(content, parseXml2) {
-    var state2 = createInitialState();
-    return parseXml2(content, state2, onOpenTag, onCloseTag, null).then(function() {
-      return getResultFromState(state2);
-    });
-    function createInitialState() {
-      return {
-        numberFormats: {},
-        baseStyles: [],
-        // The first `164` elements of the `styles` array are going to be `undefined`
-        // because those represent the built-in "default" styles in `.xlsx` specification.
-        // These "default" styles have IDs from `0` to `163`, i.e. according to their index.
-        styles: [],
-        cellStyleXfs: false,
-        cellXfs: false
-      };
-    }
-    function getResultFromState(state3) {
-      return state3.styles.map(function(style) {
-        if (style.xfId) {
-          var xfId = style.xfId, styleProperties = _objectWithoutProperties(style, _excluded);
-          return _objectSpread(_objectSpread({}, state3.baseStyles[xfId]), styleProperties);
-        } else {
-          return style;
-        }
-      });
-    }
-    function onOpenTag(tagName, attributes, state3) {
-      if (tagName === "numFmt") {
-        state3.numberFormats[attributes.numFmtId] = {
-          id: Number(attributes.numFmtId),
-          template: attributes.formatCode
-        };
-      } else if (tagName === "cellStyleXfs") {
-        state3.cellStyleXfs = true;
-      } else if (tagName === "cellXfs") {
-        state3.cellXfs = true;
-      } else if (tagName === "xf") {
-        if (state3.cellStyleXfs) {
-          state3.baseStyles.push(parseCellStyle(attributes));
-        } else if (state3.cellXfs) {
-          var style = parseCellStyle(attributes, state3.numberFormats);
-          if (attributes.xfId) {
-            style.xfId = Number(attributes.xfId);
-          }
-          state3.styles.push(style);
-        }
-      }
-    }
-    function onCloseTag(tagName, state3) {
-      if (tagName === "cellStyleXfs") {
-        state3.cellStyleXfs = false;
-      } else if (tagName === "cellXfs") {
-        state3.cellXfs = false;
-      }
-    }
-    function parseCellStyle(attributes, numberFormats) {
-      var style = {};
-      var numFmtId = attributes.numFmtId;
-      if (numFmtId) {
-        if (numberFormats && numberFormats[numFmtId]) {
-          style.numberFormat = numberFormats[numFmtId];
-        } else {
-          style.numberFormat = {
-            id: Number(numFmtId)
-          };
-        }
-      }
-      return style;
-    }
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseSharedStrings.js
-  function parseSharedStrings(content, parseXml2) {
-    var state2 = createInitialState();
-    return parseXml2(content, state2, onOpenTag, onCloseTag, onText).then(function() {
-      return getResultFromState(state2);
-    });
-    function createInitialState() {
-      return {
-        si: void 0,
-        strings: []
-      };
-    }
-    function getResultFromState(state3) {
-      return state3.strings;
-    }
-    function onOpenTag(tagName, attributes, state3) {
-      if (tagName === "si") {
-        state3.si = createInitialStateInSharedString();
-      } else if (state3.si) {
-        onOpenTagInSharedString(tagName, attributes, state3.si);
-      }
-    }
-    function onCloseTag(tagName, state3) {
-      if (tagName === "si") {
-        state3.strings.push(state3.si.string);
-        state3.si = void 0;
-      } else if (state3.si) {
-        onCloseTagInSharedString(tagName, state3.si);
-      }
-    }
-    function onText(text, state3) {
-      if (state3.si) {
-        onTextInSharedString(text, state3.si);
-      }
-    }
-    function createInitialStateInSharedString() {
-      return {
-        t: false,
-        r: false,
-        rPh: false,
-        string: ""
-      };
-    }
-    function onOpenTagInSharedString(tagName, attributes, state3) {
-      if (tagName === "t") {
-        state3.t = true;
-      } else if (tagName === "r") {
-        state3.r = true;
-      } else if (tagName === "rPh") {
-        state3.rPh = true;
-      }
-    }
-    function onCloseTagInSharedString(tagName, state3) {
-      if (tagName === "t") {
-        state3.t = false;
-      } else if (tagName === "r") {
-        state3.r = false;
-      } else if (tagName === "rPh") {
-        state3.rPh = false;
-      }
-    }
-    function onTextInSharedString(text, state3) {
-      if (state3.rPh) {
-      } else if (state3.t) {
-        if (state3.r) {
-          state3.string += text;
-        } else {
-          state3.string = text;
-        }
-      }
-    }
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseExcelTimestamp.js
-  function parseExcelTimestamp(excelSerialDate, epoch1904) {
-    var NUMBER_OF_LEAP_YEARS_BETWEEN_1900_AND_1970 = 17;
-    var JANUARY_0TH_1900_DAY = 1;
-    var ERRONEOUS_FEBRUARY_29_1990_DAY = 1;
-    var DAY = 24 * 60 * 60 * 1e3;
-    var DAYS_IN_YEAR = 365;
-    if (epoch1904) {
-      excelSerialDate += (1904 - 1900) * DAYS_IN_YEAR + JANUARY_0TH_1900_DAY + ERRONEOUS_FEBRUARY_29_1990_DAY;
-    }
-    var daysBeforeUnixEpoch = JANUARY_0TH_1900_DAY + ERRONEOUS_FEBRUARY_29_1990_DAY + (1970 - 1900) * DAYS_IN_YEAR + NUMBER_OF_LEAP_YEARS_BETWEEN_1900_AND_1970;
-    return Math.floor((excelSerialDate - daysBeforeUnixEpoch) * DAY);
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/isDateFormat.js
-  var DATE_FORMAT_SPECIFIC_LOCALE_PREFIX = /^\[\$-[^\]]+\]/;
-  var DATE_FORMAT_ALLOW_ANY_OTHER_TEXT_SUFFIX = /;@$/;
-  var IS_DATE_FORMAT_CACHE = {};
-  function isDateFormatCached(template) {
-    if (template in IS_DATE_FORMAT_CACHE) {
-      return IS_DATE_FORMAT_CACHE[template];
-    }
+  var BUILT_IN_DATE_NUMBER_FORMAT_IDS = [14, 15, 16, 17, 18, 19, 20, 21, 22, 27, 30, 36, 45, 46, 47, 50, 57];
+  var DATE_FORMAT_WEIRD_PREFIX = /^\[\$-414\]/;
+  var DATE_FORMAT_WEIRD_POSTFIX = /;@$/;
+  function isDateTemplate(template) {
     template = template.toLowerCase();
-    template = template.replace(DATE_FORMAT_SPECIFIC_LOCALE_PREFIX, "");
-    template = template.replace(DATE_FORMAT_ALLOW_ANY_OTHER_TEXT_SUFFIX, "");
+    template = template.replace(DATE_FORMAT_WEIRD_PREFIX, "");
+    template = template.replace(DATE_FORMAT_WEIRD_POSTFIX, "");
     var tokens = template.split(/\W+/);
-    var result = tokens.length === 0 ? false : tokens.every(function(token) {
-      return DATE_TEMPLATE_TOKENS.indexOf(token) >= 0;
-    });
-    IS_DATE_FORMAT_CACHE[template] = result;
-    return result;
+    for (var _iterator = _createForOfIteratorHelperLoose(tokens), _step; !(_step = _iterator()).done; ) {
+      var token = _step.value;
+      if (DATE_TEMPLATE_TOKENS.indexOf(token) < 0) {
+        return false;
+      }
+    }
+    return true;
   }
   var DATE_TEMPLATE_TOKENS = [
     // Seconds (min two digits). Example: "05".
@@ -2496,171 +919,230 @@
     "e"
   ];
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/isDateFormatStyle.js
-  function isDateFormatStyle(style, defaultDateFormat, shouldGuessDateFormatFromNumberFormatTemplate) {
-    if (!style.numberFormat) {
-      return false;
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseCellValue.js
+  function parseCellValue(value, type, _ref) {
+    var getInlineStringValue = _ref.getInlineStringValue, getInlineStringXml = _ref.getInlineStringXml, getStyleId = _ref.getStyleId, styles = _ref.styles, values = _ref.values, properties = _ref.properties, options = _ref.options;
+    if (!type) {
+      type = "n";
     }
-    if (
-      // Whether it's a "number format" that's conventionally used for storing date timestamps.
-      BUILT_IN_DATE_FORMAT_IDS.indexOf(style.numberFormat.id) >= 0 || // Whether it's a "number format" that uses a "formatting template"
-      // that the developer is certain is a date formatting template.
-      defaultDateFormat && style.numberFormat.template === defaultDateFormat || // Whether the "smart formatting template" feature is not disabled
-      // and it has detected that it's a date formatting template by looking at it.
-      shouldGuessDateFormatFromNumberFormatTemplate && style.numberFormat.template && isDateFormatCached(style.numberFormat.template)
-    ) {
-      return true;
+    switch (type) {
+      // XLSX tends to store all strings as "shared" (indexed) ones
+      // using "s" cell type (for saving on strage space).
+      // "str" cell type is then generally only used for storing
+      // formula-pre-calculated cell values.
+      case "str":
+        value = parseString(value, options);
+        break;
+      // Sometimes, XLSX stores strings as "inline" strings rather than "shared" (indexed) ones.
+      // Perhaps the specification doesn't force it to use one or another.
+      // Example: `<sheetData><row r="1"><c r="A1" s="1" t="inlineStr"><is><t>Test 123</t></is></c></row></sheetData>`.
+      case "inlineStr":
+        value = getInlineStringValue();
+        if (value === void 0) {
+          throw new Error('Unsupported "inline string" cell value structure: '.concat(getInlineStringXml()));
+        }
+        value = parseString(value, options);
+        break;
+      // XLSX tends to store string values as "shared" (indexed) ones.
+      // "Shared" strings is a way for an Excel editor to reduce
+      // the file size by storing "commonly used" strings in a dictionary
+      // and then referring to such strings by their index in that dictionary.
+      // Example: `<sheetData><row r="1"><c r="A1" s="1" t="s"><v>0</v></c></row></sheetData>`.
+      case "s":
+        var sharedStringIndex = Number(value);
+        if (isNaN(sharedStringIndex)) {
+          throw new Error('Invalid "shared" string index: '.concat(value));
+        }
+        if (sharedStringIndex >= values.length) {
+          throw new Error('An out-of-bounds "shared" string index: '.concat(value));
+        }
+        value = values[sharedStringIndex];
+        value = parseString(value, options);
+        break;
+      // Boolean (TRUE/FALSE) values are stored as either "1" or "0"
+      // in cells of type "b".
+      case "b":
+        if (value === "1") {
+          value = true;
+        } else if (value === "0") {
+          value = false;
+        } else {
+          throw new Error('Unsupported "boolean" cell value: '.concat(value));
+        }
+        break;
+      // XLSX specification seems to support cells of type "z":
+      // blank "stub" cells that should be ignored by data processing utilities.
+      case "z":
+        value = void 0;
+        break;
+      // XLSX specification also defines cells of type "e" containing a numeric "error" code.
+      // It's not clear what that means though.
+      // They also wrote: "and `w` property stores its common name".
+      // It's unclear what they meant by that.
+      case "e":
+        value = decodeError(value);
+        break;
+      // XLSX supports date cells of type "d", though seems like it (almost?) never
+      // uses it for storing dates, preferring "n" numeric timestamp cells instead.
+      // The value of a "d" cell is supposedly a string in "ISO 8601" format.
+      // I haven't seen an XLSX file having such cells.
+      // Example: `<sheetData><row r="1"><c r="A1" s="1" t="d"><v>2021-06-10T00:47:45.700Z</v></c></row></sheetData>`.
+      case "d":
+        if (value === void 0) {
+          break;
+        }
+        var parsedDate = new Date(value);
+        if (isNaN(parsedDate.valueOf())) {
+          throw new Error('Unsupported "date" cell value: '.concat(value));
+        }
+        value = parsedDate;
+        break;
+      // Numeric cells have type "n".
+      case "n":
+        if (value === void 0) {
+          break;
+        }
+        var isDateTimestampNumber = isDateTimestamp(getStyleId(), styles, options);
+        if (isDateTimestampNumber) {
+          value = parseNumberDefault(value);
+          value = parseExcelDate(value, properties);
+        } else {
+          value = (options.parseNumber || parseNumberDefault)(value);
+        }
+        break;
+      default:
+        throw new TypeError("Cell type not supported: ".concat(type));
     }
-    return false;
+    if (value === void 0) {
+      value = null;
+    }
+    return value;
   }
-  var LOCALE_INDEPENDENT_BUILT_IN_DATE_FORMAT_IDS = [
-    14,
-    // mm-dd-yy
-    15,
-    // d-mmm-yy
-    16,
-    // d-mmm
-    17,
-    // mmm-yy
-    18,
-    // h:mm AM/PM
-    19,
-    // h:mm:ss AM/PM
-    20,
-    // h:mm
-    21,
-    // h:mm:ss
-    22,
-    // m/d/yy h:mm
-    45,
-    // mm:ss
-    46,
-    // [h]:mm:ss
-    47
-    // mmss.0
-  ];
-  var MAINLAND_CHINESE_OR_TAIWANESE_LOCALE_BUILT_IN_DATE_FORMAT_IDS = [
-    27,
-    // [$-404]e/m/d OR yyyy"年"m"月"
-    28,
-    // [$-404]e"年"m"月"d"日" OR m"月"d"日"
-    29,
-    // [$-404]e"年"m"月"d"日" OR m"月"d"日"
-    30,
-    // m/d/yy OR m-d-yy
-    31,
-    // yyyy"年"m"月"d"日" OR yyyy"年"m"月"d"日"
-    32,
-    // hh"時"mm"分" OR h"时"mm"分"
-    33,
-    // hh"時"mm"分"ss"秒" OR h"时"mm"分"ss"秒"
-    34,
-    // 上午/下午hh"時"mm"分" OR 上午/下午h"时"mm"分"
-    35,
-    // 上午/下午hh"時"mm"分"ss"秒" OR 上午/下午h"时"mm"分"ss"秒"
-    36,
-    // [$-404]e/m/d OR yyyy"年"m"月"
-    50,
-    // [$-404]e/m/d OR yyyy"年"m"月"
-    51,
-    // [$-404]e"年"m"月"d"日" OR m"月"d"日"
-    52,
-    // 上午/下午hh"時"mm"分" OR yyyy"年"m"月"
-    53,
-    // 上午/下午hh"時"mm"分"ss"秒" OR m"月"d"日"
-    54,
-    // [$-404]e"年"m"月"d"日" OR m"月"d"日"
-    55,
-    // 上午/下午hh"時"mm"分" OR 上午/下午h"时"mm"分"
-    56,
-    // 上午/下午hh"時"mm"分"ss"秒" OR 上午/下午h"时"mm"分"ss"秒"
-    57,
-    // [$-404]e/m/d OR yyyy"年"m"月"
-    58
-    // [$-404]e"年"m"月"d"日" OR m"月"d"日"
-  ];
-  var JAPANESE_OR_KOREAN_LOCALE_BUILT_IN_DATE_FORMAT_IDS = [
-    27,
-    // [$-411]ge.m.d OR yyyy"年" mm"月" dd"日"
-    28,
-    // [$-411]ggge"年"m"月"d"日" OR mm-dd
-    29,
-    // [$-411]ggge"年"m"月"d"日" OR mm-dd
-    30,
-    // m/d/yy OR mm-dd-yy
-    31,
-    // yyyy"年"m"月"d"日" OR yyyy"년" mm"월" dd"일"
-    32,
-    // h"時"mm"分" OR h"시" mm"분"
-    33,
-    // h"時"mm"分"ss"秒" OR h"시" mm"분" ss"초"
-    34,
-    // yyyy"年"m"月" OR yyyy-mm-dd
-    35,
-    // m"月"d"日" OR yyyy-mm-dd
-    36,
-    // [$-411]ge.m.d OR yyyy"年" mm"月" dd"日"
-    50,
-    // [$-411]ge.m.d OR yyyy"年" mm"月" dd"日"
-    51,
-    // [$-411]ggge"年"m"月"d"日" OR mm-dd
-    52,
-    // yyyy"年"m"月" OR yyyy-mm-dd
-    53,
-    // m"月"d"日" OR yyyy-mm-dd
-    54,
-    // [$-411]ggge"年"m"月"d"日" OR mm-dd
-    55,
-    // yyyy"年"m"月" OR yyyy-mm-dd
-    56,
-    // m"月"d"日" OR yyyy-mm-dd
-    57,
-    // [$-411]ge.m.d OR yyyy"年" mm"月" dd"日"
-    58
-    // [$-411]ggge"年"m"月"d"日" OR mm-dd
-  ];
-  var THAI_LOCALE_BUILT_IN_DATE_FORMAT_IDS = [
-    71,
-    // ว/ด/ปปปป
-    72,
-    // ว-ดดด-ปป
-    73,
-    // ว-ดดด
-    74,
-    // ดดด-ปป
-    75,
-    // ช:นน
-    76,
-    // ช:นน:ทท
-    77,
-    // ว/ด/ปปปป ช:นน
-    78,
-    // นน:ทท
-    79,
-    // [ช]:นน:ทท
-    80,
-    // นน:ทท.0
-    81
-    // d/m/bb
-  ];
-  var BUILT_IN_DATE_FORMAT_IDS = LOCALE_INDEPENDENT_BUILT_IN_DATE_FORMAT_IDS.concat(
-    // Add Mainland Chinese or Taiwanese date format IDs that haven't already been added.
-    MAINLAND_CHINESE_OR_TAIWANESE_LOCALE_BUILT_IN_DATE_FORMAT_IDS
-  ).concat(
-    // Add Japanese or Korean date format IDs that haven't already been added.
-    JAPANESE_OR_KOREAN_LOCALE_BUILT_IN_DATE_FORMAT_IDS.filter(function(numberFormatId) {
-      return MAINLAND_CHINESE_OR_TAIWANESE_LOCALE_BUILT_IN_DATE_FORMAT_IDS.indexOf(numberFormatId) < 0;
-    })
-  ).concat(
-    // Add Thai date format IDs that haven't already been added.
-    THAI_LOCALE_BUILT_IN_DATE_FORMAT_IDS.filter(function(numberFormatId) {
-      return MAINLAND_CHINESE_OR_TAIWANESE_LOCALE_BUILT_IN_DATE_FORMAT_IDS.indexOf(numberFormatId) < 0;
-    }).filter(function(numberFormatId) {
-      return JAPANESE_OR_KOREAN_LOCALE_BUILT_IN_DATE_FORMAT_IDS.indexOf(numberFormatId) < 0;
-    })
-  );
+  function decodeError(errorCode) {
+    switch (errorCode) {
+      case 0:
+        return "#NULL!";
+      case 7:
+        return "#DIV/0!";
+      case 15:
+        return "#VALUE!";
+      case 23:
+        return "#REF!";
+      case 29:
+        return "#NAME?";
+      case 36:
+        return "#NUM!";
+      case 42:
+        return "#N/A";
+      case 43:
+        return "#GETTING_DATA";
+      default:
+        return "#ERROR_".concat(errorCode);
+    }
+  }
+  function parseString(value, options) {
+    if (options.trim !== false) {
+      value = value.trim();
+    }
+    if (value === "") {
+      value = void 0;
+    }
+    return value;
+  }
+  function parseNumberDefault(stringifiedNumber) {
+    var parsedNumber = Number(stringifiedNumber);
+    if (isNaN(parsedNumber)) {
+      throw new Error('Invalid "numeric" cell value: '.concat(stringifiedNumber));
+    }
+    return parsedNumber;
+  }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseCell.js
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/coordinates.js
+  var LETTERS = ["", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+  function calculateDimensions(cells) {
+    var comparator = function comparator2(a, b) {
+      return a - b;
+    };
+    var allRows = cells.map(function(cell) {
+      return cell.row;
+    }).sort(comparator);
+    var allCols = cells.map(function(cell) {
+      return cell.column;
+    }).sort(comparator);
+    var minRow = allRows[0];
+    var maxRow = allRows[allRows.length - 1];
+    var minCol = allCols[0];
+    var maxCol = allCols[allCols.length - 1];
+    return [{
+      row: minRow,
+      column: minCol
+    }, {
+      row: maxRow,
+      column: maxCol
+    }];
+  }
+  function columnLettersToNumber(columnLetters) {
+    var n = 0;
+    var i = 0;
+    while (i < columnLetters.length) {
+      n *= 26;
+      n += LETTERS.indexOf(columnLetters[i]);
+      i++;
+    }
+    return n;
+  }
+  function parseCellCoordinates(coords) {
+    coords = coords.split(/(\d+)/);
+    return [
+      // Row.
+      parseInt(coords[1]),
+      // Column.
+      columnLettersToNumber(coords[0].trim())
+    ];
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseCell.js
+  function parseCell(node, sheet, xml, values, styles, properties, options) {
+    var coords = parseCellCoordinates(node.getAttribute("r"));
+    var valueElement = getCellValue(sheet, node);
+    var value = valueElement && valueElement.textContent;
+    var type;
+    if (node.hasAttribute("t")) {
+      type = node.getAttribute("t");
+    }
+    return {
+      row: coords[0],
+      column: coords[1],
+      value: parseCellValue(value, type, {
+        getInlineStringValue: function getInlineStringValue() {
+          return getCellInlineStringValue(sheet, node);
+        },
+        getInlineStringXml: function getInlineStringXml() {
+          return getOuterXml(node);
+        },
+        getStyleId: function getStyleId() {
+          return node.getAttribute("s");
+        },
+        styles,
+        values,
+        properties,
+        options
+      })
+    };
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseCells.js
+  function parseCells(sheet, xml, values, styles, properties, options) {
+    var cells = getCells(sheet);
+    if (cells.length === 0) {
+      return [];
+    }
+    return cells.map(function(node) {
+      return parseCell(node, sheet, xml, values, styles, properties, options);
+    });
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseDimensions.js
   function _slicedToArray(arr, i) {
     return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray2(arr, i) || _nonIterableRest();
   }
@@ -2704,184 +1186,47 @@
   function _arrayWithHoles(arr) {
     if (Array.isArray(arr)) return arr;
   }
-  var EMPTY_CELL_VALUE = null;
-  var EMPTY_CELL = [null, EMPTY_CELL_VALUE];
-  function parseCell(t, s, v, inlineString, _ref) {
-    var _ref2 = _slicedToArray(_ref, 6), sharedStrings = _ref2[0], styles = _ref2[1], epoch1904 = _ref2[2], defaultDateFormat = _ref2[3], dateTemplateParser = _ref2[4], parseNumberCustom = _ref2[5];
-    switch (t || "n") {
-      // `t="str"` means that the cell value is calculated using a formula.
-      // The formula is defined as the text of a child `<f/>` element.
-      //
-      // It could optionally include a `<v/>` element whose text is the cached result
-      // of the calculation from the last time the file was saved in a spreadsheet editor application.
-      //
-      // An optional `<v/>` element holds a pre-computed result of the formula defined by `<f/>`.
-      //
-      // Example:
-      //
-      // <c r="B3" t="str">
-      // 	<f>CONCATENATE(C1,D1)</f>
-      // 	<v>C1ValueD1Value</v>
-      // </c>
-      //
-      // Here's a guide on formulas in XLSX files:
-      // https://github.com/MiniMax-AI/skills/blob/main/skills/minimax-xlsx/references/validate.md
-      //
-      case "str":
-        if (v === void 0) {
-          return "VALUE_MISSING";
-        }
-        if (!v) {
-          return EMPTY_CELL;
-        }
-        return ["s", v];
-      // `t="inlineStr"` means that `<is/>` holds the string value.
-      //
-      // Inside a `<c t="inlineStr"/>`, the specification requires there to exist an `<is/>` element,
-      // and within that `<is/>` element it requires to exist a `<t/>` element.
-      //
-      // Example:
-      //
-      // <c r="A1" s="1" t="inlineStr">
-      //   <is>
-      //     <t>
-      //       Test 123
-      //     </t>
-      //   </is>
-      // </c>
-      //
-      case "inlineStr":
-        if (inlineString === void 0) {
-          return "VALUE_MISSING";
-        }
-        return ["s", inlineString];
-      // `type="s"` means that the string value is stored in the Shared Strings Table.
-      // This way it attempts to compress the `.xlsx` file by reusing all string values
-      // in case they repeat throughout the spreadsheet.
-      //
-      // This optimization can't be used when writing an `.xlsx` file in a "streaming"
-      // fashion, i.e. when the entire spreadsheet data is not known in adavance
-      // at the start of writing the file.
-      // But it can be used in all other situations. And hence, it is used.
-      // So this is the most common cell type, actually.
-      //
-      // Example:
-      //
-      // <c r="A3" t="s">
-      //   <v>3</v>
-      // </c>
-      //
-      case "s":
-        if (!v) {
-          return "VALUE_MISSING";
-        }
-        var sharedStringIndex = Number(v);
-        if (isNaN(sharedStringIndex) || sharedStrings[sharedStringIndex] === void 0) {
-          return "VALUE_INVALID";
-        }
-        return ["s", sharedStrings[sharedStringIndex]];
-      // Boolean (TRUE/FALSE) values are stored as either "1" or "0" in cells of type "b".
-      //
-      // Example:
-      //
-      // <c r="A1" t="b">
-      //   <v>1</v>
-      // </c>
-      //
-      case "b":
-        if (!v) {
-          return "VALUE_MISSING";
-        }
-        if (v === "1") {
-          return ["b", true];
-        }
-        if (v === "0") {
-          return ["b", false];
-        }
-        return "VALUE_INVALID";
-      // If cell type is "e", the `<v/>` element's text is an error code string (required).
-      //
-      // Example:
-      //
-      // <c r="A1" t="e">
-      //   <f>1/0</f>
-      //   <v>#DIV/0!</v>
-      // </c>
-      //
-      case "e":
-        if (!v) {
-          return "VALUE_MISSING";
-        }
-        return ["e", v];
-      // XLSX supports date cells of type "d", though it seems like it (almost?) never
-      // uses type "d" for storing dates, preferring type "n" and numeric timestamp instead.
-      // The value of a "d" cell is supposedly a string in "ISO 8601" format.
-      // I haven't seen an `.xlsx` file having such cells.
-      //
-      // Example:
-      //
-      // <c r="A1" s="1" t="d">
-      //   <v>
-      //     2021-06-10T00:47:45.700Z
-      //   </v>
-      // </c>
-      //
-      case "d":
-        if (!v) {
-          return EMPTY_CELL;
-        }
-        var parsedDate = new Date(v);
-        if (isNaN(parsedDate.valueOf())) {
-          return "VALUE_INVALID";
-        }
-        return ["d", parsedDate.getTime()];
-      // type "n" is used for numeric cells.
-      //
-      // An optional `s` attribute defines how this number should be formatted — 
-      // it should be a zero-based index of the style (XF record) in `styles.xml`.
-      //
-      // Example:
-      //
-      // <c r="A1" s="1" t="n">
-      //   <v>123.45</v>
-      // </c>
-      //
-      case "n":
-        if (!v) {
-          return EMPTY_CELL;
-        }
-        if (s) {
-          var styleId = Number(s);
-          if (isNaN(styleId) || styles[styleId] === void 0) {
-            return "FORMAT_INVALID";
-          }
-          if (isDateFormatStyle(styles[styleId], defaultDateFormat, dateTemplateParser)) {
-            var timestamp = Number(v);
-            if (isNaN(timestamp)) {
-              return "VALUE_INVALID";
-            }
-            return ["d", parseExcelTimestamp(timestamp, epoch1904)];
-          }
-        }
-        if (parseNumberCustom) {
-          return ["n", v];
-        }
-        var number = Number(v);
-        if (isNaN(number)) {
-          return "VALUE_INVALID";
-        }
-        return ["n", number];
-      default:
-        return "TYPE_INVALID";
+  function parseDimensions(sheet) {
+    var dimensions = getDimensions(sheet);
+    if (dimensions) {
+      dimensions = dimensions.split(":").map(parseCellCoordinates).map(function(_ref) {
+        var _ref2 = _slicedToArray(_ref, 2), row = _ref2[0], column = _ref2[1];
+        return {
+          row,
+          column
+        };
+      });
+      if (dimensions.length === 1) {
+        dimensions = [dimensions[0], dimensions[0]];
+      }
+      return dimensions;
     }
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseCellAddress.js
-  function _slicedToArray2(arr, i) {
-    return _arrayWithHoles2(arr) || _iterableToArrayLimit2(arr, i) || _unsupportedIterableToArray3(arr, i) || _nonIterableRest2();
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseSheet.js
+  function parseSheet(content, xml, values, styles, properties, options) {
+    var sheet = xml.createDocument(content);
+    var cells = parseCells(sheet, xml, values, styles, properties, options);
+    var dimensions = parseDimensions(sheet) || calculateDimensions(cells);
+    return {
+      cells,
+      dimensions
+    };
   }
-  function _nonIterableRest2() {
-    throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/dropEmptyRows.js
+  function _createForOfIteratorHelperLoose2(o, allowArrayLike) {
+    var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
+    if (it) return (it = it.call(o)).next.bind(it);
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray3(o)) || allowArrayLike && o && typeof o.length === "number") {
+      if (it) o = it;
+      var i = 0;
+      return function() {
+        if (i >= o.length) return { done: true };
+        return { done: false, value: o[i++] };
+      };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
   function _unsupportedIterableToArray3(o, minLen) {
     if (!o) return;
@@ -2892,6 +1237,121 @@
     if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray3(o, minLen);
   }
   function _arrayLikeToArray3(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    return arr2;
+  }
+  function dropEmptyRows(data) {
+    var _ref = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, rowIndexSourceMap = _ref.rowIndexSourceMap, _ref$accessor = _ref.accessor, accessor = _ref$accessor === void 0 ? function(_) {
+      return _;
+    } : _ref$accessor, onlyTrimAtTheEnd = _ref.onlyTrimAtTheEnd;
+    var i = data.length - 1;
+    while (i >= 0) {
+      var empty = true;
+      for (var _iterator = _createForOfIteratorHelperLoose2(data[i]), _step; !(_step = _iterator()).done; ) {
+        var cell = _step.value;
+        if (accessor(cell) !== null) {
+          empty = false;
+          break;
+        }
+      }
+      if (empty) {
+        data.splice(i, 1);
+        if (rowIndexSourceMap) {
+          rowIndexSourceMap.splice(i, 1);
+        }
+      } else if (onlyTrimAtTheEnd) {
+        break;
+      }
+      i--;
+    }
+    return data;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/dropEmptyColumns.js
+  function _createForOfIteratorHelperLoose3(o, allowArrayLike) {
+    var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
+    if (it) return (it = it.call(o)).next.bind(it);
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray4(o)) || allowArrayLike && o && typeof o.length === "number") {
+      if (it) o = it;
+      var i = 0;
+      return function() {
+        if (i >= o.length) return { done: true };
+        return { done: false, value: o[i++] };
+      };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  function _unsupportedIterableToArray4(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray4(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(o);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray4(o, minLen);
+  }
+  function _arrayLikeToArray4(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    return arr2;
+  }
+  function dropEmptyColumns(data) {
+    var _ref = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, _ref$accessor = _ref.accessor, accessor = _ref$accessor === void 0 ? function(_) {
+      return _;
+    } : _ref$accessor, onlyTrimAtTheEnd = _ref.onlyTrimAtTheEnd;
+    var i = data[0].length - 1;
+    while (i >= 0) {
+      var empty = true;
+      for (var _iterator = _createForOfIteratorHelperLoose3(data), _step; !(_step = _iterator()).done; ) {
+        var row = _step.value;
+        if (accessor(row[i]) !== null) {
+          empty = false;
+          break;
+        }
+      }
+      if (empty) {
+        var j = 0;
+        while (j < data.length) {
+          data[j].splice(i, 1);
+          j++;
+        }
+      } else if (onlyTrimAtTheEnd) {
+        break;
+      }
+      i--;
+    }
+    return data;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/getData.js
+  function _createForOfIteratorHelperLoose4(o, allowArrayLike) {
+    var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
+    if (it) return (it = it.call(o)).next.bind(it);
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray5(o)) || allowArrayLike && o && typeof o.length === "number") {
+      if (it) o = it;
+      var i = 0;
+      return function() {
+        if (i >= o.length) return { done: true };
+        return { done: false, value: o[i++] };
+      };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  function _slicedToArray2(arr, i) {
+    return _arrayWithHoles2(arr) || _iterableToArrayLimit2(arr, i) || _unsupportedIterableToArray5(arr, i) || _nonIterableRest2();
+  }
+  function _nonIterableRest2() {
+    throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  function _unsupportedIterableToArray5(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray5(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(o);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray5(o, minLen);
+  }
+  function _arrayLikeToArray5(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
     for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
     return arr2;
@@ -2920,28 +1380,431 @@
   function _arrayWithHoles2(arr) {
     if (Array.isArray(arr)) return arr;
   }
-  function parseCellAddress(coordinatesString) {
-    var _coordinatesString$sp = coordinatesString.split(/(\d+)/), _coordinatesString$sp2 = _slicedToArray2(_coordinatesString$sp, 2), columnLetters = _coordinatesString$sp2[0], rowNumberString = _coordinatesString$sp2[1];
-    var n = 0;
+  function getData(sheet, options) {
+    var dimensions = sheet.dimensions, cells = sheet.cells;
+    if (cells.length === 0) {
+      return [];
+    }
+    var _dimensions = _slicedToArray2(dimensions, 2), leftTop = _dimensions[0], rightBottom = _dimensions[1];
+    var colsCount = rightBottom.column;
+    var rowsCount = rightBottom.row;
+    var data = new Array(rowsCount);
     var i = 0;
-    while (i < columnLetters.length) {
-      n *= 26;
-      n += LETTERS.indexOf(columnLetters[i]);
+    while (i < rowsCount) {
+      data[i] = new Array(colsCount);
+      var j = 0;
+      while (j < colsCount) {
+        data[i][j] = null;
+        j++;
+      }
       i++;
     }
-    var columnNumberFromColumnLetters = n;
-    return [
-      // Row number (starting at `1`).
-      Number(rowNumberString),
-      // Column number (starting at `1`).
-      columnNumberFromColumnLetters
-    ];
+    for (var _iterator = _createForOfIteratorHelperLoose4(cells), _step; !(_step = _iterator()).done; ) {
+      var cell = _step.value;
+      var rowIndex = cell.row - 1;
+      var columnIndex = cell.column - 1;
+      if (columnIndex < colsCount && rowIndex < rowsCount) {
+        data[rowIndex][columnIndex] = cell.value;
+      }
+    }
+    var rowIndexSourceMap = options.rowIndexSourceMap;
+    if (rowIndexSourceMap) {
+      var _i = 0;
+      while (_i < data.length) {
+        rowIndexSourceMap[_i] = _i;
+        _i++;
+      }
+    }
+    data = dropEmptyRows(dropEmptyColumns(data, {
+      onlyTrimAtTheEnd: true
+    }), {
+      onlyTrimAtTheEnd: true,
+      rowIndexSourceMap
+    });
+    if (options.transformData) {
+      data = options.transformData(data);
+    }
+    return data;
   }
-  var LETTERS = ["", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseSheet.js
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/readXlsx.js
+  function _typeof2(o) {
+    "@babel/helpers - typeof";
+    return _typeof2 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof2(o);
+  }
+  function _createForOfIteratorHelperLoose5(o, allowArrayLike) {
+    var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
+    if (it) return (it = it.call(o)).next.bind(it);
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray6(o)) || allowArrayLike && o && typeof o.length === "number") {
+      if (it) o = it;
+      var i = 0;
+      return function() {
+        if (i >= o.length) return { done: true };
+        return { done: false, value: o[i++] };
+      };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  function _unsupportedIterableToArray6(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray6(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(o);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray6(o, minLen);
+  }
+  function _arrayLikeToArray6(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    return arr2;
+  }
+  function ownKeys2(e, r) {
+    var t = Object.keys(e);
+    if (Object.getOwnPropertySymbols) {
+      var o = Object.getOwnPropertySymbols(e);
+      r && (o = o.filter(function(r2) {
+        return Object.getOwnPropertyDescriptor(e, r2).enumerable;
+      })), t.push.apply(t, o);
+    }
+    return t;
+  }
+  function _objectSpread2(e) {
+    for (var r = 1; r < arguments.length; r++) {
+      var t = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys2(Object(t), true).forEach(function(r2) {
+        _defineProperty2(e, r2, t[r2]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys2(Object(t)).forEach(function(r2) {
+        Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
+      });
+    }
+    return e;
+  }
+  function _defineProperty2(obj, key, value) {
+    key = _toPropertyKey2(key);
+    if (key in obj) {
+      Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
+    } else {
+      obj[key] = value;
+    }
+    return obj;
+  }
+  function _toPropertyKey2(arg) {
+    var key = _toPrimitive2(arg, "string");
+    return _typeof2(key) === "symbol" ? key : String(key);
+  }
+  function _toPrimitive2(input, hint) {
+    if (_typeof2(input) !== "object" || input === null) return input;
+    var prim = input[Symbol.toPrimitive];
+    if (prim !== void 0) {
+      var res = prim.call(input, hint || "default");
+      if (_typeof2(res) !== "object") return res;
+      throw new TypeError("@@toPrimitive must return a primitive value.");
+    }
+    return (hint === "string" ? String : Number)(input);
+  }
+  function readXlsx(contents, xml) {
+    var options = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : {};
+    if (!options.sheet) {
+      options = _objectSpread2({
+        sheet: 1
+      }, options);
+    }
+    var getXmlFileContent = function getXmlFileContent2(filePath) {
+      if (!contents[filePath]) {
+        throw new Error('"'.concat(filePath, '" file not found inside the *.xlsx file zip archive'));
+      }
+      return contents[filePath];
+    };
+    var filePaths = parseFilePaths(getXmlFileContent("xl/_rels/workbook.xml.rels"), xml);
+    var values = filePaths.sharedStrings ? parseSharedStrings(getXmlFileContent(filePaths.sharedStrings), xml) : [];
+    var styles = filePaths.styles ? parseStyles(getXmlFileContent(filePaths.styles), xml) : {};
+    var properties = parseProperties(getXmlFileContent("xl/workbook.xml"), xml);
+    if (options.getSheets) {
+      return properties.sheets.map(function(_ref) {
+        var name = _ref.name;
+        return {
+          name
+        };
+      });
+    }
+    var sheetId = getSheetId(options.sheet, properties.sheets);
+    if (!sheetId || !filePaths.sheets[sheetId]) {
+      throw createSheetNotFoundError(options.sheet, properties.sheets);
+    }
+    var sheet = parseSheet(getXmlFileContent(filePaths.sheets[sheetId]), xml, values, styles, properties, options);
+    options = _objectSpread2({
+      // Create a `rowIndexSourceMap` for the original dataset, if not passed,
+      // because "empty" rows will be dropped from the input data.
+      rowIndexSourceMap: []
+    }, options);
+    var data = getData(sheet, options);
+    if (options.properties) {
+      return {
+        data,
+        properties
+      };
+    }
+    return data;
+  }
+  function getSheetId(sheet, sheets) {
+    if (typeof sheet === "number") {
+      var _sheet = sheets[sheet - 1];
+      return _sheet && _sheet.relationId;
+    }
+    for (var _iterator = _createForOfIteratorHelperLoose5(sheets), _step; !(_step = _iterator()).done; ) {
+      var _sheet2 = _step.value;
+      if (_sheet2.name === sheet) {
+        return _sheet2.relationId;
+      }
+    }
+  }
+  function createSheetNotFoundError(sheet, sheets) {
+    var sheetsList = sheets && sheets.map(function(sheet2, i) {
+      return '"'.concat(sheet2.name, '" (#').concat(i + 1, ")");
+    }).join(", ");
+    return new Error("Sheet ".concat(typeof sheet === "number" ? "#" + sheet : '"' + sheet + '"', " not found in the *.xlsx file.").concat(sheets ? " Available sheets: " + sheetsList + "." : ""));
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/types/InvalidError.js
+  function _typeof3(o) {
+    "@babel/helpers - typeof";
+    return _typeof3 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof3(o);
+  }
+  function _defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, _toPropertyKey3(descriptor.key), descriptor);
+    }
+  }
+  function _createClass(Constructor, protoProps, staticProps) {
+    if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) _defineProperties(Constructor, staticProps);
+    Object.defineProperty(Constructor, "prototype", { writable: false });
+    return Constructor;
+  }
+  function _toPropertyKey3(arg) {
+    var key = _toPrimitive3(arg, "string");
+    return _typeof3(key) === "symbol" ? key : String(key);
+  }
+  function _toPrimitive3(input, hint) {
+    if (_typeof3(input) !== "object" || input === null) return input;
+    var prim = input[Symbol.toPrimitive];
+    if (prim !== void 0) {
+      var res = prim.call(input, hint || "default");
+      if (_typeof3(res) !== "object") return res;
+      throw new TypeError("@@toPrimitive must return a primitive value.");
+    }
+    return (hint === "string" ? String : Number)(input);
+  }
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+  function _inherits(subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+    subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } });
+    Object.defineProperty(subClass, "prototype", { writable: false });
+    if (superClass) _setPrototypeOf(subClass, superClass);
+  }
+  function _createSuper(Derived) {
+    var hasNativeReflectConstruct = _isNativeReflectConstruct();
+    return function _createSuperInternal() {
+      var Super = _getPrototypeOf(Derived), result;
+      if (hasNativeReflectConstruct) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+      return _possibleConstructorReturn(this, result);
+    };
+  }
+  function _possibleConstructorReturn(self, call) {
+    if (call && (_typeof3(call) === "object" || typeof call === "function")) {
+      return call;
+    } else if (call !== void 0) {
+      throw new TypeError("Derived constructors may only return object or undefined");
+    }
+    return _assertThisInitialized(self);
+  }
+  function _assertThisInitialized(self) {
+    if (self === void 0) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+    return self;
+  }
+  function _wrapNativeSuper(Class) {
+    var _cache = typeof Map === "function" ? /* @__PURE__ */ new Map() : void 0;
+    _wrapNativeSuper = function _wrapNativeSuper2(Class2) {
+      if (Class2 === null || !_isNativeFunction(Class2)) return Class2;
+      if (typeof Class2 !== "function") {
+        throw new TypeError("Super expression must either be null or a function");
+      }
+      if (typeof _cache !== "undefined") {
+        if (_cache.has(Class2)) return _cache.get(Class2);
+        _cache.set(Class2, Wrapper);
+      }
+      function Wrapper() {
+        return _construct(Class2, arguments, _getPrototypeOf(this).constructor);
+      }
+      Wrapper.prototype = Object.create(Class2.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } });
+      return _setPrototypeOf(Wrapper, Class2);
+    };
+    return _wrapNativeSuper(Class);
+  }
+  function _construct(Parent, args, Class) {
+    if (_isNativeReflectConstruct()) {
+      _construct = Reflect.construct.bind();
+    } else {
+      _construct = function _construct2(Parent2, args2, Class2) {
+        var a = [null];
+        a.push.apply(a, args2);
+        var Constructor = Function.bind.apply(Parent2, a);
+        var instance = new Constructor();
+        if (Class2) _setPrototypeOf(instance, Class2.prototype);
+        return instance;
+      };
+    }
+    return _construct.apply(null, arguments);
+  }
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+    try {
+      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function() {
+      }));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function _isNativeFunction(fn) {
+    return Function.toString.call(fn).indexOf("[native code]") !== -1;
+  }
+  function _setPrototypeOf(o, p) {
+    _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf2(o2, p2) {
+      o2.__proto__ = p2;
+      return o2;
+    };
+    return _setPrototypeOf(o, p);
+  }
+  function _getPrototypeOf(o) {
+    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf2(o2) {
+      return o2.__proto__ || Object.getPrototypeOf(o2);
+    };
+    return _getPrototypeOf(o);
+  }
+  var InvalidError = /* @__PURE__ */ (function(_Error) {
+    _inherits(InvalidError2, _Error);
+    var _super = _createSuper(InvalidError2);
+    function InvalidError2(reason) {
+      var _this;
+      _classCallCheck(this, InvalidError2);
+      _this = _super.call(this, "invalid");
+      _this.reason = reason;
+      return _this;
+    }
+    return _createClass(InvalidError2);
+  })(/* @__PURE__ */ _wrapNativeSuper(Error));
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/types/Number.js
+  function NumberType(value) {
+    if (typeof value === "string") {
+      var stringifiedValue = value;
+      value = Number(value);
+      if (String(value) !== stringifiedValue) {
+        throw new InvalidError("not_a_number");
+      }
+    }
+    if (typeof value !== "number") {
+      throw new InvalidError("not_a_number");
+    }
+    if (isNaN(value)) {
+      throw new InvalidError("invalid_number");
+    }
+    if (!isFinite(value)) {
+      throw new InvalidError("out_of_bounds");
+    }
+    return value;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/types/String.js
+  function StringType(value) {
+    if (typeof value === "string") {
+      return value;
+    }
+    if (typeof value === "number") {
+      if (isNaN(value)) {
+        throw new InvalidError("invalid_number");
+      }
+      if (!isFinite(value)) {
+        throw new InvalidError("out_of_bounds");
+      }
+      return String(value);
+    }
+    throw new InvalidError("not_a_string");
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/types/Boolean.js
+  function BooleanType(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+    throw new InvalidError("not_a_boolean");
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/types/Date.js
+  function DateType(value, _ref) {
+    var properties = _ref.properties;
+    if (value instanceof Date) {
+      if (isNaN(value.valueOf())) {
+        throw new InvalidError("out_of_bounds");
+      }
+      return value;
+    }
+    if (typeof value === "number") {
+      if (isNaN(value)) {
+        throw new InvalidError("invalid_number");
+      }
+      if (!isFinite(value)) {
+        throw new InvalidError("out_of_bounds");
+      }
+      var date = parseExcelDate(value, properties);
+      if (isNaN(date.valueOf())) {
+        throw new InvalidError("out_of_bounds");
+      }
+      return date;
+    }
+    throw new InvalidError("not_a_date");
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/schema/mapToObjects.js
+  var _excluded = ["isColumnOriented", "ignoreEmptyRows", "rowIndexSourceMap"];
+  function _typeof4(o) {
+    "@babel/helpers - typeof";
+    return _typeof4 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof4(o);
+  }
   function _slicedToArray3(arr, i) {
-    return _arrayWithHoles3(arr) || _iterableToArrayLimit3(arr, i) || _unsupportedIterableToArray4(arr, i) || _nonIterableRest3();
+    return _arrayWithHoles3(arr) || _iterableToArrayLimit3(arr, i) || _unsupportedIterableToArray7(arr, i) || _nonIterableRest3();
   }
   function _nonIterableRest3() {
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -2970,10 +1833,10 @@
   function _arrayWithHoles3(arr) {
     if (Array.isArray(arr)) return arr;
   }
-  function _createForOfIteratorHelperLoose2(o, allowArrayLike) {
+  function _createForOfIteratorHelperLoose6(o, allowArrayLike) {
     var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
     if (it) return (it = it.call(o)).next.bind(it);
-    if (Array.isArray(o) || (it = _unsupportedIterableToArray4(o)) || allowArrayLike && o && typeof o.length === "number") {
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray7(o)) || allowArrayLike && o && typeof o.length === "number") {
       if (it) o = it;
       var i = 0;
       return function() {
@@ -2983,586 +1846,47 @@
     }
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
-  function _unsupportedIterableToArray4(o, minLen) {
+  function _unsupportedIterableToArray7(o, minLen) {
     if (!o) return;
-    if (typeof o === "string") return _arrayLikeToArray4(o, minLen);
+    if (typeof o === "string") return _arrayLikeToArray7(o, minLen);
     var n = Object.prototype.toString.call(o).slice(8, -1);
     if (n === "Object" && o.constructor) n = o.constructor.name;
     if (n === "Map" || n === "Set") return Array.from(o);
-    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray4(o, minLen);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray7(o, minLen);
   }
-  function _arrayLikeToArray4(arr, len) {
+  function _arrayLikeToArray7(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
     for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
     return arr2;
   }
-  var EMPTY_CELL_VALUE2 = null;
-  function parseSheet(content, parseXml2, _ref) {
-    var sharedStrings = _ref.sharedStrings, styles = _ref.styles, epoch1904 = _ref.epoch1904, options = _ref.options;
-    var parseCellParameters = [
-      sharedStrings,
-      styles,
-      epoch1904,
-      options.dateFormat,
-      // defaultDateFormat
-      options.smartDateParser !== false,
-      // dateTemplateParser
-      options.parseNumber
-      // parseNumberCustom
-    ];
-    var rows = [];
-    var errors = [];
-    var state2 = createInitialState();
-    return parseXml2(content, state2, onOpenTag, onCloseTag, onText, onProgress).then(function() {
-      var _state$sheetData = state2.sheetData, rowCount = _state$sheetData.rowCount, columnCount = _state$sheetData.columnCount, dataRowCount = _state$sheetData.dataRowCount, dataColumnCount = _state$sheetData.dataColumnCount;
-      if (dataRowCount < rowCount) {
-        rows = rows.slice(0, dataRowCount);
-      }
-      if (dataColumnCount < columnCount) {
-        var i = 0;
-        while (i < rows.length) {
-          if (rows[i].length > dataColumnCount) {
-            rows[i] = rows[i].slice(0, dataColumnCount);
-          }
-          i++;
-        }
-      }
-      var startedAt = Date.now();
-      for (var _iterator = _createForOfIteratorHelperLoose2(rows), _step; !(_step = _iterator()).done; ) {
-        var row = _step.value;
-        while (row.length < dataColumnCount) {
-          row.push(EMPTY_CELL_VALUE2);
-        }
-      }
-      return rows;
-    });
-    function createInitialState() {
-      return {
-        dimension: void 0,
-        sheetData: void 0
-      };
-    }
-    function getRowsFromState(state3) {
-      return state3.sheetData.rows;
-    }
-    function setRowsInState(state3, rows2) {
-      state3.sheetData.rowIndexShift += state3.sheetData.rows.length - rows2.length;
-      state3.sheetData.rows = rows2;
-    }
-    function getErrorsFromState(state3) {
-      return state3.sheetData.errors;
-    }
-    function setErrorsInState(state3, errors2) {
-      state3.sheetData.errors = errors2;
-    }
-    var THROW_ON_FIRST_CELL_ERROR = true;
-    function throwInvalidCellError(_ref2) {
-      var row = _ref2.row, column = _ref2.column, error = _ref2.error;
-      throw new InvalidSpreadsheetError("<c/> at row ".concat(row, ", col ").concat(column, ": ").concat(error));
-    }
-    function onProgress(end) {
-      var rowsRead = getRowsFromState(state2);
-      var errorsEncountered = getErrorsFromState(state2);
-      if (end) {
-        rows = rows.concat(rowsRead);
-        errors = errors.concat(errorsEncountered);
-        if (errors.length > 0) {
-          throwInvalidCellError(errors[0]);
-        }
-      } else {
-        if (rowsRead.length > 1) {
-          var finalizedRows = rowsRead.slice(0, -1);
-          rows = rows.concat(finalizedRows);
-          errors = errors.concat(errorsEncountered);
-          setRowsInState(state2, rowsRead.slice(-1));
-          setErrorsInState(state2, []);
-        }
+  function _objectWithoutProperties(source, excluded) {
+    if (source == null) return {};
+    var target = _objectWithoutPropertiesLoose(source, excluded);
+    var key, i;
+    if (Object.getOwnPropertySymbols) {
+      var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
+      for (i = 0; i < sourceSymbolKeys.length; i++) {
+        key = sourceSymbolKeys[i];
+        if (excluded.indexOf(key) >= 0) continue;
+        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+        target[key] = source[key];
       }
     }
-    function onOpenTag(tagName, attributes, state3) {
-      if (tagName === "dimension") {
-        state3.dimension = parseSheetDimensionRef(attributes.ref);
-      } else if (tagName === "sheetData") {
-        state3.sheetData = createInitialStateInSheetData();
-      } else if (state3.sheetData) {
-        onOpenTagInSheetData(tagName, attributes, state3.sheetData);
-      }
-    }
-    function onCloseTag(tagName, state3) {
-      if (state3.sheetData) {
-        onCloseTagInSheetData(tagName, state3.sheetData);
-      }
-    }
-    function onText(text, state3) {
-      if (state3.sheetData) {
-        onTextInSheetData(text, state3.sheetData);
-      }
-    }
-    function parseSheetDimensionRef(ref) {
-      var dimensions = ref.split(":").map(parseCellAddress);
-      if (dimensions.length === 1) {
-        dimensions = [dimensions[0], dimensions[0]];
-      }
-      return dimensions;
-    }
-    function createInitialStateInSheetData() {
-      return {
-        c: void 0,
-        rows: [],
-        row: void 0,
-        rowNumber: void 0,
-        // How many rows have been removed from the start of `state.rows`
-        // as part of `onProgress()` handler calls.
-        rowIndexShift: 0,
-        // Current position in the sheet.
-        cursor: [0, 0],
-        // Total row count.
-        rowCount: 0,
-        // Total column count.
-        columnCount: 0,
-        // Non-empty row count.
-        dataRowCount: 0,
-        // Non-empty column count.
-        dataColumnCount: 0,
-        // Cell with errors.
-        errors: []
-      };
-    }
-    function onOpenTagInSheetData(tagName, attributes, state3) {
-      if (tagName === "row") {
-        if (attributes.r) {
-          state3.rowNumber = Number(attributes.r);
-        }
-        state3.row = [];
-      } else if (tagName === "c") {
-        state3.c = createInitialStateInCell();
-        state3.c.attributes = attributes;
-      } else if (state3.c) {
-        onOpenTagInCell(tagName, attributes, state3.c);
-      }
-    }
-    function onCloseTagInSheetData(tagName, state3) {
-      if (tagName === "row") {
-        if (state3.rowNumber) {
-          var previousRowNumber = state3.rowIndexShift + state3.rows.length;
-          if (state3.rowNumber <= previousRowNumber) {
-            throw new InvalidSpreadsheetError("Out-of-place <row/> number ".concat(state3.rowNumber, " follows <row/> number ").concat(previousRowNumber));
-          }
-          while (state3.rowNumber > state3.rowIndexShift + state3.rows.length + 1) {
-            state3.rows.push([]);
-          }
-        }
-        state3.rows.push(state3.row);
-        if (state3.row.length > 0) {
-          state3.dataRowCount = state3.rowNumber;
-        }
-        if (state3.rowNumber > state3.rowCount) {
-          state3.rowCount = state3.rowNumber;
-        }
-        state3.row = void 0;
-        state3.rowNumber = void 0;
-      } else if (tagName === "c") {
-        var cell = parseCellFromXmlData(state3.c);
-        if (cell.row < state3.cursor[0] || cell.row === state3.cursor[0] && cell.column <= state3.cursor[1]) {
-          throw new InvalidSpreadsheetError("Out-of-place <c/> at row ".concat(cell.row, " col ").concat(cell.column, " follows <c/> at row ").concat(state3.cursor[0], " col ").concat(state3.cursor[1]));
-        }
-        state3.cursor[0] = cell.row;
-        state3.cursor[1] = cell.column;
-        if (!state3.rowNumber) {
-          state3.rowNumber = cell.row;
-        }
-        if (cell.error) {
-          if (THROW_ON_FIRST_CELL_ERROR) {
-            throwInvalidCellError(cell);
-          }
-          state3.errors.push(cell);
-        } else if (cell.value !== EMPTY_CELL_VALUE2) {
-          while (cell.column > state3.row.length + 1) {
-            state3.row.push(EMPTY_CELL_VALUE2);
-          }
-          state3.row.push(cell.value);
-          if (cell.column > state3.dataColumnCount) {
-            state3.dataColumnCount = cell.column;
-          }
-        }
-        if (cell.column > state3.columnCount) {
-          state3.columnCount = cell.column;
-        }
-        state3.c = void 0;
-      } else if (state3.c) {
-        onCloseTagInCell(tagName, state3.c);
-      }
-    }
-    function onTextInSheetData(text, state3) {
-      if (state3.c) {
-        onTextInCell(text, state3.c);
-      }
-    }
-    function parseCellFromXmlData(_ref3) {
-      var attributes = _ref3.attributes, inlineString = _ref3.inlineString, vText = _ref3.vText;
-      var _parseCellAddress = parseCellAddress(attributes.r), _parseCellAddress2 = _slicedToArray3(_parseCellAddress, 2), row = _parseCellAddress2[0], column = _parseCellAddress2[1];
-      var errorOrTypeAndValue = parseCellAndTrimValue(attributes.t, attributes.s, vText, inlineString, parseCellParameters, options.trim !== false);
-      if (typeof errorOrTypeAndValue === "string") {
-        return {
-          row,
-          column,
-          error: errorOrTypeAndValue
-          // // Report the "raw" unparsed value of the cell for potential debugging.
-          // // Also report the cell type and the format in case of a numeric value.
-          // //
-          // // For "inline string" cells, the value should actually be the `inlineString` argument
-          // // rather than `vText` argument, but the only case when it could throw an error
-          // // when parsing an "inline string" cell is `VALUE_MISSING` which means that
-          // // `inlineString` argument is `undefined`, same as `vText` argument in this case,
-          // // so the resulting `value` property is correct anyway.
-          // //
-          // value: vText,
-          // type: attributes.t,
-          // formatId: attributes.s
-        };
-      }
-      return {
-        row,
-        column,
-        value: parseCellValue(errorOrTypeAndValue[1], errorOrTypeAndValue[0])
-      };
-    }
-    function parseCellAndTrimValue(t, s, v, inlineString, parameters, trimStrings) {
-      var errorOrTypeAndValue = parseCellWithRepairAbility(t, s, v, inlineString, parameters);
-      if (Array.isArray(errorOrTypeAndValue) && errorOrTypeAndValue[0] === "s") {
-        if (trimStrings) {
-          errorOrTypeAndValue[1] = errorOrTypeAndValue[1].trim();
-        }
-        if (errorOrTypeAndValue[1] === "") {
-          return EMPTY_CELL;
-        }
-      }
-      return errorOrTypeAndValue;
-    }
-    function parseCellWithRepairAbility(t, s, v, inlineString, parameters) {
-      var errorOrTypeAndValue = parseCell(t, s, v, inlineString, parameters);
-      if (errorOrTypeAndValue === "VALUE_MISSING") {
-        switch (t || "n") {
-          // * If the cell is defined by a formula.
-          // * Or contains an inline string.
-          // * Or contains a shared string.
-          // * Or contains a boolean value.
-          case "str":
-          case "inlineStr":
-          case "s":
-          case "b":
-            return EMPTY_CELL;
-        }
-      }
-      if (t === "e") {
-        return EMPTY_CELL;
-      }
-      return errorOrTypeAndValue;
-    }
-    function parseCellValue(value, type) {
-      if (type === "n") {
-        if (options.parseNumber) {
-          return options.parseNumber(value);
-        }
-        return value;
-      } else if (type === "d") {
-        return new Date(value);
-      } else {
-        return value;
-      }
-    }
-    function createInitialStateInCell() {
-      return {
-        v: false,
-        is: false,
-        t: false,
-        r: false,
-        rPh: false,
-        vText: void 0,
-        inlineString: void 0,
-        attributes: void 0
-      };
-    }
-    function onOpenTagInCell(tagName, attributes, state3) {
-      if (tagName === "v") {
-        state3.v = true;
-      } else if (tagName === "is") {
-        state3.is = true;
-        state3.inlineString = "";
-      } else if (tagName === "t") {
-        state3.t = true;
-      } else if (tagName === "r") {
-        state3.r = true;
-      } else if (tagName === "rPh") {
-        state3.rPh = true;
-      }
-    }
-    function onCloseTagInCell(tagName, state3) {
-      if (tagName === "v") {
-        state3.v = false;
-        state3.vText || (state3.vText = "");
-      } else if (tagName === "is") {
-        state3.is = false;
-      } else if (tagName === "t") {
-        state3.t = false;
-      } else if (tagName === "r") {
-        state3.r = false;
-      } else if (tagName === "rPh") {
-        state3.rPh = false;
-      }
-    }
-    function onTextInCell(text, state3) {
-      if (state3.v) {
-        state3.vText = text;
-      } else if (state3.is) {
-        if (state3.rPh) {
-        } else if (state3.t) {
-          if (state3.r) {
-            state3.inlineString += text;
-          } else {
-            state3.inlineString = text;
-          }
-        }
-      }
-    }
-    function getSheetDimensions(cells) {
-      var minRow = cells.length === 0 ? 0 : 1;
-      var minCol = cells.length === 0 ? 0 : 1;
-      var maxRow = 0;
-      var maxCol = 0;
-      for (var _iterator2 = _createForOfIteratorHelperLoose2(cells), _step2; !(_step2 = _iterator2()).done; ) {
-        var cell = _step2.value;
-        if (maxRow < cell.row) {
-          maxRow = cell.row;
-        }
-        if (maxCol < cell.column) {
-          maxCol = cell.column;
-        }
-      }
-      return [[minRow, minCol], [maxRow, maxCol]];
-    }
+    return target;
   }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/utility/convertValuesFromUint8ArraysToStrings.js
-  function convertValuesFromUint8ArraysToStrings(entries) {
-    checkpoint("convert files to strings");
-    var convertedEntries = {};
-    for (var _i = 0, _Object$keys = Object.keys(entries); _i < _Object$keys.length; _i++) {
-      var key = _Object$keys[_i];
-      convertedEntries[key] = strFromU82(entries[key]);
+  function _objectWithoutPropertiesLoose(source, excluded) {
+    if (source == null) return {};
+    var target = {};
+    var sourceKeys = Object.keys(source);
+    var key, i;
+    for (i = 0; i < sourceKeys.length; i++) {
+      key = sourceKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      target[key] = source[key];
     }
-    return convertedEntries;
+    return target;
   }
-  function strFromU82(data) {
-    if (typeof TextDecoder !== "undefined") {
-      return new TextDecoder().decode(data);
-    } else {
-      return strFromU8(data);
-    }
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/utility/isPromise.js
-  function _typeof6(o) {
-    "@babel/helpers - typeof";
-    return _typeof6 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof6(o);
-  }
-  function isPromise(anything) {
-    return _typeof6(anything) === "object" && typeof anything.then === "function";
-  }
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/SheetNotFoundError.js
-  function _typeof7(o) {
-    "@babel/helpers - typeof";
-    return _typeof7 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof7(o);
-  }
-  function _defineProperties4(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, _toPropertyKey5(descriptor.key), descriptor);
-    }
-  }
-  function _createClass4(Constructor, protoProps, staticProps) {
-    if (protoProps) _defineProperties4(Constructor.prototype, protoProps);
-    if (staticProps) _defineProperties4(Constructor, staticProps);
-    Object.defineProperty(Constructor, "prototype", { writable: false });
-    return Constructor;
-  }
-  function _toPropertyKey5(arg) {
-    var key = _toPrimitive5(arg, "string");
-    return _typeof7(key) === "symbol" ? key : String(key);
-  }
-  function _toPrimitive5(input, hint) {
-    if (_typeof7(input) !== "object" || input === null) return input;
-    var prim = input[Symbol.toPrimitive];
-    if (prim !== void 0) {
-      var res = prim.call(input, hint || "default");
-      if (_typeof7(res) !== "object") return res;
-      throw new TypeError("@@toPrimitive must return a primitive value.");
-    }
-    return (hint === "string" ? String : Number)(input);
-  }
-  function _classCallCheck4(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
-    }
-  }
-  function _inherits4(subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-    subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } });
-    Object.defineProperty(subClass, "prototype", { writable: false });
-    if (superClass) _setPrototypeOf4(subClass, superClass);
-  }
-  function _createSuper4(Derived) {
-    var hasNativeReflectConstruct = _isNativeReflectConstruct4();
-    return function _createSuperInternal() {
-      var Super = _getPrototypeOf4(Derived), result;
-      if (hasNativeReflectConstruct) {
-        var NewTarget = _getPrototypeOf4(this).constructor;
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-      return _possibleConstructorReturn4(this, result);
-    };
-  }
-  function _possibleConstructorReturn4(self, call) {
-    if (call && (_typeof7(call) === "object" || typeof call === "function")) {
-      return call;
-    } else if (call !== void 0) {
-      throw new TypeError("Derived constructors may only return object or undefined");
-    }
-    return _assertThisInitialized4(self);
-  }
-  function _assertThisInitialized4(self) {
-    if (self === void 0) {
-      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-    }
-    return self;
-  }
-  function _wrapNativeSuper4(Class) {
-    var _cache = typeof Map === "function" ? /* @__PURE__ */ new Map() : void 0;
-    _wrapNativeSuper4 = function _wrapNativeSuper5(Class2) {
-      if (Class2 === null || !_isNativeFunction4(Class2)) return Class2;
-      if (typeof Class2 !== "function") {
-        throw new TypeError("Super expression must either be null or a function");
-      }
-      if (typeof _cache !== "undefined") {
-        if (_cache.has(Class2)) return _cache.get(Class2);
-        _cache.set(Class2, Wrapper);
-      }
-      function Wrapper() {
-        return _construct4(Class2, arguments, _getPrototypeOf4(this).constructor);
-      }
-      Wrapper.prototype = Object.create(Class2.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } });
-      return _setPrototypeOf4(Wrapper, Class2);
-    };
-    return _wrapNativeSuper4(Class);
-  }
-  function _construct4(Parent, args, Class) {
-    if (_isNativeReflectConstruct4()) {
-      _construct4 = Reflect.construct.bind();
-    } else {
-      _construct4 = function _construct5(Parent2, args2, Class2) {
-        var a = [null];
-        a.push.apply(a, args2);
-        var Constructor = Function.bind.apply(Parent2, a);
-        var instance = new Constructor();
-        if (Class2) _setPrototypeOf4(instance, Class2.prototype);
-        return instance;
-      };
-    }
-    return _construct4.apply(null, arguments);
-  }
-  function _isNativeReflectConstruct4() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-    try {
-      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function() {
-      }));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-  function _isNativeFunction4(fn) {
-    return Function.toString.call(fn).indexOf("[native code]") !== -1;
-  }
-  function _setPrototypeOf4(o, p) {
-    _setPrototypeOf4 = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf5(o2, p2) {
-      o2.__proto__ = p2;
-      return o2;
-    };
-    return _setPrototypeOf4(o, p);
-  }
-  function _getPrototypeOf4(o) {
-    _getPrototypeOf4 = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf5(o2) {
-      return o2.__proto__ || Object.getPrototypeOf(o2);
-    };
-    return _getPrototypeOf4(o);
-  }
-  var SheetNotFoundError = /* @__PURE__ */ function(_Error) {
-    _inherits4(SheetNotFoundError2, _Error);
-    var _super = _createSuper4(SheetNotFoundError2);
-    function SheetNotFoundError2(message) {
-      var _this;
-      _classCallCheck4(this, SheetNotFoundError2);
-      _this = _super.call(this, message);
-      _this.name = "SheetNotFoundError";
-      return _this;
-    }
-    return _createClass4(SheetNotFoundError2);
-  }(/* @__PURE__ */ _wrapNativeSuper4(Error));
-
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xlsx/parseSpreadsheetContents.js
-  function _typeof8(o) {
-    "@babel/helpers - typeof";
-    return _typeof8 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof8(o);
-  }
-  function _createForOfIteratorHelperLoose3(o, allowArrayLike) {
-    var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
-    if (it) return (it = it.call(o)).next.bind(it);
-    if (Array.isArray(o) || (it = _unsupportedIterableToArray5(o)) || allowArrayLike && o && typeof o.length === "number") {
-      if (it) o = it;
-      var i = 0;
-      return function() {
-        if (i >= o.length) return { done: true };
-        return { done: false, value: o[i++] };
-      };
-    }
-    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-  }
-  function _unsupportedIterableToArray5(o, minLen) {
-    if (!o) return;
-    if (typeof o === "string") return _arrayLikeToArray5(o, minLen);
-    var n = Object.prototype.toString.call(o).slice(8, -1);
-    if (n === "Object" && o.constructor) n = o.constructor.name;
-    if (n === "Map" || n === "Set") return Array.from(o);
-    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray5(o, minLen);
-  }
-  function _arrayLikeToArray5(arr, len) {
-    if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
-    return arr2;
-  }
-  function ownKeys2(e, r) {
+  function ownKeys3(e, r) {
     var t = Object.keys(e);
     if (Object.getOwnPropertySymbols) {
       var o = Object.getOwnPropertySymbols(e);
@@ -3572,19 +1896,19 @@
     }
     return t;
   }
-  function _objectSpread2(e) {
+  function _objectSpread3(e) {
     for (var r = 1; r < arguments.length; r++) {
       var t = null != arguments[r] ? arguments[r] : {};
-      r % 2 ? ownKeys2(Object(t), true).forEach(function(r2) {
-        _defineProperty2(e, r2, t[r2]);
-      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys2(Object(t)).forEach(function(r2) {
+      r % 2 ? ownKeys3(Object(t), true).forEach(function(r2) {
+        _defineProperty3(e, r2, t[r2]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys3(Object(t)).forEach(function(r2) {
         Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
       });
     }
     return e;
   }
-  function _defineProperty2(obj, key, value) {
-    key = _toPropertyKey6(key);
+  function _defineProperty3(obj, key, value) {
+    key = _toPropertyKey4(key);
     if (key in obj) {
       Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
     } else {
@@ -3592,187 +1916,470 @@
     }
     return obj;
   }
-  function _toPropertyKey6(arg) {
-    var key = _toPrimitive6(arg, "string");
-    return _typeof8(key) === "symbol" ? key : String(key);
+  function _toPropertyKey4(arg) {
+    var key = _toPrimitive4(arg, "string");
+    return _typeof4(key) === "symbol" ? key : String(key);
   }
-  function _toPrimitive6(input, hint) {
-    if (_typeof8(input) !== "object" || input === null) return input;
+  function _toPrimitive4(input, hint) {
+    if (_typeof4(input) !== "object" || input === null) return input;
     var prim = input[Symbol.toPrimitive];
     if (prim !== void 0) {
       var res = prim.call(input, hint || "default");
-      if (_typeof8(res) !== "object") return res;
+      if (_typeof4(res) !== "object") return res;
       throw new TypeError("@@toPrimitive must return a primitive value.");
     }
     return (hint === "string" ? String : Number)(input);
   }
-  var CAN_USE_WORKER = false;
-  function parseSpreadsheetContents(parseXml2, contents_) {
-    var options = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : {};
-    var contents = convertValuesFromUint8ArraysToStrings(contents_);
-    checkpoint("parse spreadsheet info and file paths");
-    return readFiles(getXmlFilesAtFixedPaths(), contents, parseXml2).then(function(_ref) {
-      var spreadsheetInfo = _ref.spreadsheetInfo, filePaths = _ref.filePaths;
-      checkpoint('parse "shared strings" and "styles"');
-      return readFiles(getXmlFilesAtNonFixedPaths(filePaths), contents, parseXml2).then(function(_ref2) {
-        var sharedStrings = _ref2.sharedStrings, styles = _ref2.styles;
-        var sheetRelationIdsToRead = options.sheets ? options.sheets.map(function(sheet) {
-          return getSheetRelationId(sheet, spreadsheetInfo.sheets);
-        }) : spreadsheetInfo.sheets.map(function(_) {
-          return _.relationId;
-        });
-        checkpoint("parse sheet".concat(sheetRelationIdsToRead.length === 1 ? "" : "s", " data"));
-        return readFiles(getSheetDataXmlFiles(filePaths, sheetRelationIdsToRead, {
-          sharedStrings,
-          styles,
-          epoch1904: spreadsheetInfo.epoch1904,
-          options
-        }), contents, parseXml2).then(function(sheetsData) {
-          checkpoint("end");
-          return sheetRelationIdsToRead.map(function(sheetRelationId) {
-            return {
-              sheet: getSheetNameByRelationId(sheetRelationId, spreadsheetInfo.sheets),
-              data: sheetsData[sheetRelationId]
-            };
-          });
-        });
-      });
-    });
-  }
-  function parseSpreadsheetContentsInWorker(createWorkerFunction2, parseXml2, contents, options) {
-    if (!(options && options.parseNumber)) {
-      options = _objectSpread2(_objectSpread2({}, options), {}, {
-        parseNumber: null
-      });
-    }
-    if (!createWorkerFunction2 || !CAN_USE_WORKER) {
-      return parseSpreadsheetContents(parseXml2, contents, options);
-    }
-  }
-  function getSheetRelationId(sheet, sheets) {
-    if (typeof sheet === "string") {
-      for (var _iterator = _createForOfIteratorHelperLoose3(sheets), _step; !(_step = _iterator()).done; ) {
-        var _sheet = _step.value;
-        if (_sheet.name === sheet) {
-          return _sheet.relationId;
-        }
-      }
-      throw new SheetNotFoundError('Sheet "'.concat(sheet, '" not found. Available sheets: ').concat(sheets.map(function(_ref3) {
-        var name = _ref3.name;
-        return '"'.concat(name, '"');
-      }).join(", ")));
+  var DEFAULT_OPTIONS = {
+    schemaPropertyValueForMissingColumn: void 0,
+    schemaPropertyValueForMissingValue: null,
+    schemaPropertyShouldSkipRequiredValidationForMissingColumn: function schemaPropertyShouldSkipRequiredValidationForMissingColumn() {
+      return false;
+    },
+    // `getEmptyObjectValue(object, { path })` applies to both the top-level object
+    // and any of its sub-objects.
+    getEmptyObjectValue: function getEmptyObjectValue() {
+      return null;
+    },
+    getEmptyArrayValue: function getEmptyArrayValue() {
+      return null;
+    },
+    isColumnOriented: false,
+    ignoreEmptyRows: true,
+    arrayValueSeparator: ","
+  };
+  function mapToObjects(data, schema, options) {
+    if (options) {
+      options = _objectSpread3(_objectSpread3({}, DEFAULT_OPTIONS), options);
     } else {
-      if (sheet <= sheets.length) {
-        return sheets[sheet - 1].relationId;
-      }
-      throw new SheetNotFoundError("Sheet number out of bounds: ".concat(sheet, ". Available sheets count: ").concat(sheets.length));
+      options = DEFAULT_OPTIONS;
     }
-  }
-  function getSheetNameByRelationId(sheetRelationId, sheets) {
-    for (var _iterator2 = _createForOfIteratorHelperLoose3(sheets), _step2; !(_step2 = _iterator2()).done; ) {
-      var sheet = _step2.value;
-      if (sheet.relationId === sheetRelationId) {
-        return sheet.name;
-      }
+    var _options = options, isColumnOriented = _options.isColumnOriented, ignoreEmptyRows = _options.ignoreEmptyRows, rowIndexSourceMapOriginal = _options.rowIndexSourceMap, schemaTransformOptions = _objectWithoutProperties(_options, _excluded);
+    var rowIndexSourceMap = rowIndexSourceMapOriginal && rowIndexSourceMapOriginal.slice();
+    validateSchema(schema);
+    if (isColumnOriented) {
+      data = transpose(data);
     }
-    throw new Error("Sheet relation ID not found: ".concat(sheetRelationId));
-  }
-  function getXmlFilesAtFixedPaths() {
-    return {
-      // Read the paths to certain files inside the `.xlsx` file, which is itself just a `.zip` archive.
-      // These paths aren't standardized between different spreadsheet editors.
-      // https://github.com/tidyverse/readxl/issues/104
-      "xl/_rels/workbook.xml.rels": {
-        name: "filePaths",
-        parse: parseFilePaths
-      },
-      // General info on the spreadsheet.
-      "xl/workbook.xml": {
-        name: "spreadsheetInfo",
-        parse: parseSpreadsheetInfo
-      }
-    };
-  }
-  function getXmlFilesAtNonFixedPaths(filePaths) {
-    var _ref4;
-    return _ref4 = {}, _defineProperty2(_ref4, filePaths.sharedStrings || "xl/sharedStrings.xml", {
-      name: "sharedStrings",
-      // `parseSharedStrings()` returns a `Promise`.
-      parse: parseSharedStrings,
-      // It seems that "sharedStrings.xml" is not required to exist.
-      // For example, that could be the case when a spreadsheet doesn't contain any strings.
-      // https://github.com/catamphetamine/read-excel-file/issues/85
-      fallback: []
-    }), _defineProperty2(_ref4, filePaths.styles || "xl/styles.xml", {
-      name: "styles",
-      parse: parseStyles,
-      fallback: {}
-    }), _ref4;
-  }
-  function getSheetDataXmlFiles(filePaths, sheetRelationIdsToRead, sheetDataParserParameters) {
-    return Object.keys(filePaths.sheets).filter(function(sheetRelationId) {
-      return sheetRelationIdsToRead.includes(sheetRelationId);
-    }).reduce(function(filesInfo, sheetRelationId) {
-      return _objectSpread2(_objectSpread2({}, filesInfo), {}, _defineProperty2({}, filePaths.sheets[sheetRelationId], {
-        name: sheetRelationId,
-        // `parseSheet()` returns a `Promise`.
-        parse: function parse(content, parseXml2) {
-          return parseSheet(content, parseXml2, sheetDataParserParameters);
+    if (ignoreEmptyRows) {
+      data = data.filter(function(row, i2) {
+        var isEmptyRow = row.every(function(cell) {
+          return cell === null;
+        });
+        if (isEmptyRow) {
+          if (rowIndexSourceMap) {
+            rowIndexSourceMap.splice(i2, 1);
+          }
+          return false;
         }
-      }));
-    }, {});
-  }
-  function readFiles(filesInfo, contents, parseXml2) {
-    var results = {};
-    var _loop = function _loop3() {
-      var filePath = _Object$keys[_i];
-      var fileInfo = filesInfo[filePath];
-      results[fileInfo.name] = contents[filePath] === void 0 ? fileInfo.fallback === void 0 ? function() {
-        throw new InvalidSpreadsheetError('"'.concat(filePath, '" file not found inside the `.xlsx` file'));
-      }() : fileInfo.fallback : fileInfo.parse(contents[filePath], parseXml2);
+        return true;
+      });
+    }
+    var columns = data[0];
+    var results = [];
+    var errors = [];
+    for (var i = 1; i < data.length; i++) {
+      var result = read(schema, data[i], i, void 0, columns, errors, schemaTransformOptions);
+      results.push(result);
+    }
+    if (rowIndexSourceMap) {
+      for (var _iterator = _createForOfIteratorHelperLoose6(errors), _step; !(_step = _iterator()).done; ) {
+        var error = _step.value;
+        error.row = rowIndexSourceMap[error.row - 1] + 1;
+      }
+    }
+    return {
+      rows: results,
+      errors
     };
-    for (var _i = 0, _Object$keys = Object.keys(filesInfo); _i < _Object$keys.length; _i++) {
+  }
+  function read(schema, row, rowIndex, path, columns, errors, options) {
+    var object = {};
+    var isEmptyObject = true;
+    var createError = function createError2(_ref) {
+      var schemaEntry2 = _ref.schemaEntry, value2 = _ref.value, errorMessage = _ref.error, reason = _ref.reason;
+      var error = {
+        error: errorMessage,
+        row: rowIndex + 1,
+        column: schemaEntry2.column,
+        value: value2
+      };
+      if (reason) {
+        error.reason = reason;
+      }
+      if (schemaEntry2.type) {
+        error.type = schemaEntry2.type;
+      }
+      return error;
+    };
+    var pendingRequiredChecks = [];
+    var _loop = function _loop2() {
+      var key = _Object$keys[_i];
+      var schemaEntry2 = schema[key];
+      var propertyName = key;
+      var columnTitle = schemaEntry2.column;
+      var propertyPath = "".concat(path || "", ".").concat(propertyName);
+      var cellValue;
+      var columnIndex = columns.indexOf(columnTitle);
+      var isMissingColumn2 = columnIndex < 0;
+      if (!isMissingColumn2) {
+        cellValue = row[columnIndex];
+      }
+      var value2;
+      var error;
+      var reason;
+      if (schemaEntry2.schema) {
+        value2 = read(schemaEntry2.schema, row, rowIndex, propertyPath, columns, errors, options);
+      } else {
+        if (isMissingColumn2) {
+          if ("schemaPropertyValueForMissingColumn" in options) {
+            value2 = options.schemaPropertyValueForMissingColumn;
+          }
+        } else if (cellValue === void 0) {
+          if ("schemaPropertyValueForMissingValue" in options) {
+            value2 = options.schemaPropertyValueForMissingValue;
+          }
+        } else if (cellValue === null) {
+          if ("schemaPropertyValueForMissingValue" in options) {
+            value2 = options.schemaPropertyValueForMissingValue;
+          }
+        } else if (Array.isArray(schemaEntry2.type)) {
+          var array = parseArray(cellValue, options.arrayValueSeparator).map(function(_value) {
+            if (error) {
+              return;
+            }
+            var result2 = parseValue(_value, schemaEntry2, options);
+            if (result2.error) {
+              value2 = _value;
+              error = result2.error;
+              reason = result2.reason;
+            }
+            return result2.value;
+          });
+          if (!error) {
+            var isEmpty = array.every(isEmptyValue);
+            value2 = isEmpty ? options.getEmptyArrayValue(array, {
+              path: propertyPath
+            }) : array;
+          }
+        } else {
+          var result = parseValue(cellValue, schemaEntry2, options);
+          error = result.error;
+          reason = result.reason;
+          value2 = error ? cellValue : result.value;
+        }
+      }
+      if (!error && isEmptyValue(value2)) {
+        if (schemaEntry2.required) {
+          pendingRequiredChecks.push({
+            schemaEntry: schemaEntry2,
+            value: value2,
+            isMissingColumn: isMissingColumn2
+          });
+        }
+      }
+      if (error) {
+        errors.push(createError({
+          schemaEntry: schemaEntry2,
+          value: value2,
+          error,
+          reason
+        }));
+      } else {
+        if (isEmptyObject && !isEmptyValue(value2)) {
+          isEmptyObject = false;
+        }
+        if (value2 !== void 0) {
+          object[propertyName] = value2;
+        }
+      }
+    };
+    for (var _i = 0, _Object$keys = Object.keys(schema); _i < _Object$keys.length; _i++) {
       _loop();
     }
-    var promises = [];
-    var _loop2 = function _loop22() {
-      var name = _Object$keys2[_i2];
-      if (isPromise(results[name])) {
-        promises.push(results[name].then(function(result) {
-          results[name] = result;
-        }));
-      }
-    };
-    for (var _i2 = 0, _Object$keys2 = Object.keys(results); _i2 < _Object$keys2.length; _i2++) {
-      _loop2();
-    }
-    if (promises.length > 0) {
-      return Promise.all(promises).then(function() {
-        return results;
+    if (isEmptyObject) {
+      return options.getEmptyObjectValue(object, {
+        path
       });
     }
-    return results;
+    for (var _i2 = 0, _pendingRequiredCheck = pendingRequiredChecks; _i2 < _pendingRequiredCheck.length; _i2++) {
+      var _pendingRequiredCheck2 = _pendingRequiredCheck[_i2], schemaEntry = _pendingRequiredCheck2.schemaEntry, value = _pendingRequiredCheck2.value, isMissingColumn = _pendingRequiredCheck2.isMissingColumn;
+      var skipRequiredValidation = isMissingColumn && options.schemaPropertyShouldSkipRequiredValidationForMissingColumn(schemaEntry.column, {
+        object
+      });
+      if (!skipRequiredValidation) {
+        var required = schemaEntry.required;
+        var isRequired = typeof required === "boolean" ? required : required(object);
+        if (isRequired) {
+          errors.push(createError({
+            schemaEntry,
+            value,
+            error: "required"
+          }));
+        }
+      }
+    }
+    return object;
+  }
+  function parseValue(value, schemaEntry, options) {
+    if (value === null) {
+      return {
+        value: null
+      };
+    }
+    var result;
+    if (schemaEntry.parse) {
+      throw new Error("`schemaEntry.parse` property was renamed to `schemaEntry.type`");
+    } else if (schemaEntry.type) {
+      result = parseValueOfType(
+        value,
+        // Supports parsing array types.
+        // See `parseArray()` function for more details.
+        // Example `type`: String[]
+        // Input: 'Barack Obama, "String, with, colons", Donald Trump'
+        // Output: ['Barack Obama', 'String, with, colons', 'Donald Trump']
+        Array.isArray(schemaEntry.type) ? schemaEntry.type[0] : schemaEntry.type,
+        options
+      );
+    } else {
+      result = {
+        value
+      };
+    }
+    if (result.error) {
+      return result;
+    }
+    if (result.value !== null) {
+      if (schemaEntry.oneOf && schemaEntry.oneOf.indexOf(result.value) < 0) {
+        return {
+          error: "invalid",
+          reason: "unknown"
+        };
+      }
+      if (schemaEntry.validate) {
+        try {
+          schemaEntry.validate(result.value);
+        } catch (error) {
+          return {
+            error: error.message
+          };
+        }
+      }
+    }
+    return result;
+  }
+  function parseCustomValue(value, parse) {
+    try {
+      var parsedValue = parse(value);
+      if (parsedValue === void 0) {
+        return {
+          value: null
+        };
+      }
+      return {
+        value: parsedValue
+      };
+    } catch (error) {
+      var result = {
+        error: error.message
+      };
+      if (error.reason) {
+        result.reason = error.reason;
+      }
+      return result;
+    }
+  }
+  function parseValueOfType(value, type, options) {
+    switch (type) {
+      case String:
+        return parseCustomValue(value, StringType);
+      case Number:
+        return parseCustomValue(value, NumberType);
+      case Date:
+        return parseCustomValue(value, function(value2) {
+          return DateType(value2, {
+            properties: options.properties
+          });
+        });
+      case Boolean:
+        return parseCustomValue(value, BooleanType);
+      default:
+        if (typeof type === "function") {
+          return parseCustomValue(value, type);
+        }
+        throw new Error("Unsupported schema type: ".concat(type && type.name || type));
+    }
+  }
+  function getBlock(string, endCharacter, startIndex) {
+    var i = 0;
+    var substring = "";
+    var character;
+    while (startIndex + i < string.length) {
+      var _character = string[startIndex + i];
+      if (_character === endCharacter) {
+        return [substring, i];
+      } else if (_character === '"') {
+        var block = getBlock(string, '"', startIndex + i + 1);
+        substring += block[0];
+        i += '"'.length + block[1] + '"'.length;
+      } else {
+        substring += _character;
+        i++;
+      }
+    }
+    return [substring, i];
+  }
+  function parseArray(string, arrayValueSeparator) {
+    var blocks = [];
+    var index = 0;
+    while (index < string.length) {
+      var _getBlock = getBlock(string, arrayValueSeparator, index), _getBlock2 = _slicedToArray3(_getBlock, 2), substring = _getBlock2[0], length = _getBlock2[1];
+      index += length + arrayValueSeparator.length;
+      blocks.push(substring.trim());
+    }
+    return blocks;
+  }
+  var transpose = function transpose2(array) {
+    return array[0].map(function(_, i) {
+      return array.map(function(row) {
+        return row[i];
+      });
+    });
+  };
+  function validateSchema(schema) {
+    for (var _i3 = 0, _Object$keys2 = Object.keys(schema); _i3 < _Object$keys2.length; _i3++) {
+      var key = _Object$keys2[_i3];
+      var schemaEntry = schema[key];
+      if (_typeof4(schemaEntry.type) === "object" && !Array.isArray(schemaEntry.type)) {
+        throw new Error("When defining a nested schema, use a `schema` property instead of a `type` property");
+      }
+      if (!schemaEntry.schema) {
+        if (!schemaEntry.column) {
+          throw new Error('"column" not defined for schema entry "'.concat(key, '".'));
+        }
+      }
+    }
+  }
+  function isEmptyValue(value) {
+    return value === void 0 || value === null;
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/export/readXlsxFileUniversal.js
-  var createWorkerFunction = void 0;
-  function readXlsxFile(input, options) {
-    return unpackXlsxFile(input).then(function(contents) {
-      return parseSpreadsheetContentsInWorker(createWorkerFunction, parseXml, contents, options);
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/readXlsxFileContents.js
+  function _typeof5(o) {
+    "@babel/helpers - typeof";
+    return _typeof5 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof5(o);
+  }
+  var _excluded2 = ["schema"];
+  function ownKeys4(e, r) {
+    var t = Object.keys(e);
+    if (Object.getOwnPropertySymbols) {
+      var o = Object.getOwnPropertySymbols(e);
+      r && (o = o.filter(function(r2) {
+        return Object.getOwnPropertyDescriptor(e, r2).enumerable;
+      })), t.push.apply(t, o);
+    }
+    return t;
+  }
+  function _objectSpread4(e) {
+    for (var r = 1; r < arguments.length; r++) {
+      var t = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys4(Object(t), true).forEach(function(r2) {
+        _defineProperty4(e, r2, t[r2]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys4(Object(t)).forEach(function(r2) {
+        Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
+      });
+    }
+    return e;
+  }
+  function _defineProperty4(obj, key, value) {
+    key = _toPropertyKey5(key);
+    if (key in obj) {
+      Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
+    } else {
+      obj[key] = value;
+    }
+    return obj;
+  }
+  function _toPropertyKey5(arg) {
+    var key = _toPrimitive5(arg, "string");
+    return _typeof5(key) === "symbol" ? key : String(key);
+  }
+  function _toPrimitive5(input, hint) {
+    if (_typeof5(input) !== "object" || input === null) return input;
+    var prim = input[Symbol.toPrimitive];
+    if (prim !== void 0) {
+      var res = prim.call(input, hint || "default");
+      if (_typeof5(res) !== "object") return res;
+      throw new TypeError("@@toPrimitive must return a primitive value.");
+    }
+    return (hint === "string" ? String : Number)(input);
+  }
+  function _objectWithoutProperties2(source, excluded) {
+    if (source == null) return {};
+    var target = _objectWithoutPropertiesLoose2(source, excluded);
+    var key, i;
+    if (Object.getOwnPropertySymbols) {
+      var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
+      for (i = 0; i < sourceSymbolKeys.length; i++) {
+        key = sourceSymbolKeys[i];
+        if (excluded.indexOf(key) >= 0) continue;
+        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+        target[key] = source[key];
+      }
+    }
+    return target;
+  }
+  function _objectWithoutPropertiesLoose2(source, excluded) {
+    if (source == null) return {};
+    var target = {};
+    var sourceKeys = Object.keys(source);
+    var key, i;
+    for (i = 0; i < sourceKeys.length; i++) {
+      key = sourceKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      target[key] = source[key];
+    }
+    return target;
+  }
+  function readXlsxFileContents(entries, xml, _ref) {
+    var schema = _ref.schema, options = _objectWithoutProperties2(_ref, _excluded2);
+    if (options.map) {
+      throw new Error("`map` option was removed. Pass a `schema` option instead.");
+    }
+    var result = readXlsx(entries, xml, _objectSpread4(_objectSpread4({}, options), {}, {
+      properties: schema || options.properties
+    }));
+    if (schema) {
+      return mapToObjects(result.data, schema, _objectSpread4(_objectSpread4({}, options), {}, {
+        properties: result.properties
+      }));
+    }
+    return result;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/readXlsxFileBrowser.js
+  function readXlsxFile(file) {
+    var options = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
+    return unpackXlsxFile(file).then(function(entries) {
+      return readXlsxFileContents(entries, xmlBrowser_default, options);
     });
   }
 
   // app.source.js
   var API_URL = window.TINPLATE_API_URL || "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";
-  var APP_BUILD = "20260805-worker-url-fix-1";
+  var APP_BUILD = "20260805-manual-stock-1";
   var PIN_STORAGE_KEY = "movementAppPin";
-  var LOCATIONS = ["STORAGE", "PRINTING", "SLITTER", "PRODUCTION_LINE"];
+  var LOCATIONS = ["STORAGE", "SLITTER", "PRODUCTION_LINE", "PRINTING"];
   var LOCATION_LABELS = {
     STORAGE: "Storage",
     PRINTING: "Printing",
     SLITTER: "Slitter",
     PRODUCTION_LINE: "Production Line",
-    EXCEL_IMPORT: "Excel Import"
+    EXCEL_IMPORT: "Excel Import",
+    MANUAL_ENTRY: "Manual Entry"
   };
   var PURPOSE_LABELS = {
     CUSTOMER_BRAND: "Customer / Brand",
@@ -4066,7 +2673,7 @@
           lot.supplierName,
           lot.temper ? "Temper " + lot.temper : "",
           lot.tinCoating ? "Tin " + lot.tinCoating : "",
-          lot.dateReceived ? "Received " + lot.dateReceived : ""
+          lot.dateReceived ? "Received " + formatReceivedDate(lot.dateReceived) : ""
         ].filter(Boolean).join(" \xB7 ") || "\u2014";
         return '<tr><td class="select-column"><input class="lot-checkbox" type="checkbox" data-lot-id="' + escapeHtml(lot.lotId) + '"' + (state.selectedLotIds.has(lot.lotId) ? " checked" : "") + ' aria-label="Select ' + escapeHtml(lot.lotId) + '"></td><td><strong>' + escapeHtml(lot.lotId) + "</strong></td><td>" + escapeHtml(lot.batchNumber) + "</td><td>" + escapeHtml(lot.dimensions) + '</td><td class="quantity-cell"><strong>' + formatNumber(lot.quantity) + "</strong><span>" + unitLabel(lot.unit) + '</span></td><td class="description-cell">' + escapeHtml(supplierSpec) + '</td><td class="description-cell">' + escapeHtml(customerBrand) + '</td><td class="description-cell">' + escapeHtml(description) + "</td><td>" + formatDate(lot.updatedAt) + "</td></tr>";
       }).join("");
@@ -4101,6 +2708,180 @@
   $("#refreshInventory").addEventListener("click", loadInventory);
   $("#inventorySearch").addEventListener("input", renderInventory);
   $("#inventoryUnitFilter").addEventListener("change", renderInventory);
+  $("#addTinplate").addEventListener("click", openManualStockDialog);
+  $("#manualBatch").addEventListener("input", function(event) {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 12);
+    event.target.value = digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
+    updateManualBatchStatus();
+  });
+  [$("#manualThickness"), $("#manualWidth"), $("#manualLength")].forEach(function(input) {
+    input.addEventListener("input", function() {
+      if (input === $("#manualThickness")) input.value = input.value.replace(/\D/g, "").slice(0, 2);
+      updateManualDimensions();
+    });
+  });
+  [$("#manualWidth"), $("#manualLength"), $("#manualSheets"), $("#manualKg")].forEach(setupWholeNumberInput);
+  setupConditionalOther($("#manualSupplier"), $("#manualSupplierOtherLabel"), $("#manualSupplierOther"));
+  setupConditionalOther($("#manualTemper"), $("#manualTemperOtherLabel"), $("#manualTemperOther"));
+  setupConditionalOther($("#manualCoating"), $("#manualCoatingOtherLabel"), $("#manualCoatingOther"));
+  [$("#manualPrice"), $("#manualTotalAmount")].forEach(setupCurrencyInput);
+  $("#manualDateReceived").addEventListener("input", function(event) {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 8);
+    event.target.value = digits.length > 4 ? digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4) : digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
+  });
+  function openManualStockDialog() {
+    $("#manualStockForm").reset();
+    $("#manualStockDialog").dataset.location = state.currentLocation;
+    $("#manualLocation").value = locationLabel(state.currentLocation);
+    $("#manualPrice").value = "0.00";
+    $("#manualPrice").dataset.cents = "0";
+    $("#manualTotalAmount").value = "0.00";
+    $("#manualTotalAmount").dataset.cents = "0";
+    $("#manualDimensions").value = "";
+    $("#manualBatchStatus").textContent = "Enter a new batch number.";
+    $("#manualBatchStatus").className = "field-status wide";
+    $("#submitManualStock").disabled = false;
+    [
+      [$("#manualSupplier"), $("#manualSupplierOtherLabel"), $("#manualSupplierOther")],
+      [$("#manualTemper"), $("#manualTemperOtherLabel"), $("#manualTemperOther")],
+      [$("#manualCoating"), $("#manualCoatingOtherLabel"), $("#manualCoatingOther")]
+    ].forEach(function(entry) {
+      updateConditionalOther(entry[0], entry[1], entry[2]);
+    });
+    $("#manualSignature").clearSignature();
+    $("#manualStockDialog").showModal();
+    $("#manualSignature").prepareSignature();
+  }
+  function updateManualBatchStatus() {
+    const batch = $("#manualBatch").value;
+    const status = $("#manualBatchStatus");
+    if (!/^\d{2}\/\d+$/.test(batch)) {
+      status.textContent = batch ? "Complete the batch number after the automatically inserted slash." : "Enter a new batch number.";
+      status.className = "field-status wide";
+      $("#submitManualStock").disabled = false;
+      return;
+    }
+    if (state.knownBatchNumbers.has(batch)) {
+      status.textContent = "Duplicate blocked: batch " + batch + " already exists in current stock or record history.";
+      status.className = "field-status wide error";
+      $("#submitManualStock").disabled = true;
+      return;
+    }
+    status.textContent = "Batch " + batch + " is available to add.";
+    status.className = "field-status wide success";
+    $("#submitManualStock").disabled = false;
+  }
+  function updateManualDimensions() {
+    const thicknessCode = Number($("#manualThickness").value);
+    const width = Number($("#manualWidth").value);
+    const length = Number($("#manualLength").value);
+    $("#manualDimensions").value = Number.isSafeInteger(thicknessCode) && thicknessCode > 0 && Number.isSafeInteger(width) && width > 0 && Number.isSafeInteger(length) && length > 0 ? (thicknessCode / 100).toFixed(2) + "*" + width + "*" + length : "";
+  }
+  function setupWholeNumberInput(input) {
+    input.addEventListener("input", function() {
+      const digits = input.value.replace(/\D/g, "");
+      if (input.value !== digits) input.value = digits;
+    });
+  }
+  function setupConditionalOther(select, label, input) {
+    select.addEventListener("change", function() {
+      updateConditionalOther(select, label, input);
+    });
+    updateConditionalOther(select, label, input);
+  }
+  function updateConditionalOther(select, label, input) {
+    const show = select.value === "OTHER";
+    label.classList.toggle("hidden", !show);
+    input.required = show;
+    if (!show) input.value = "";
+  }
+  function selectedOrOther(select, otherInput, label) {
+    if (!select.value) throw new Error("Select " + label.toLowerCase() + ".");
+    if (select.value !== "OTHER") return select.value;
+    const value = otherInput.value.trim();
+    if (!value) throw new Error("Enter the other " + label.toLowerCase() + ".");
+    return value;
+  }
+  function setupCurrencyInput(input) {
+    input.dataset.cents = "0";
+    input.addEventListener("focus", function() {
+      requestAnimationFrame(function() {
+        input.setSelectionRange(input.value.length, input.value.length);
+      });
+    });
+    input.addEventListener("input", function() {
+      const digits = input.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 11);
+      const cents = Number(digits || 0);
+      input.dataset.cents = String(cents);
+      input.value = (cents / 100).toFixed(2);
+      requestAnimationFrame(function() {
+        input.setSelectionRange(input.value.length, input.value.length);
+      });
+    });
+  }
+  function parseManualDate(value) {
+    const match = String(value || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) throw new Error("Date received must contain day, month and four-digit year.");
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (year < 2e3 || year > 2100 || date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+      throw new Error("Enter a valid date received in day/month/year order.");
+    }
+    return String(year) + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+  }
+  $("#manualStockForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const signature = $("#manualSignature").signatureData();
+    if (!signature) return showToast("PIC signature is required.", true);
+    let payload;
+    try {
+      const batchNumber = $("#manualBatch").value;
+      if (!/^\d{2}\/\d+$/.test(batchNumber)) throw new Error("Batch number must start with two digits followed by the automatically inserted slash.");
+      if (state.knownBatchNumbers.has(batchNumber)) throw new Error("Batch " + batchNumber + " already exists and cannot be added again.");
+      const dimensions = $("#manualDimensions").value;
+      if (!parseDimensions2(dimensions)) throw new Error("Complete all three size boxes with positive whole numbers.");
+      const sheets = Number($("#manualSheets").value);
+      const kg = Number($("#manualKg").value);
+      if (!Number.isSafeInteger(sheets) || sheets <= 0) throw new Error("Sheets must be a positive whole number.");
+      if (!Number.isSafeInteger(kg) || kg <= 0) throw new Error("KG must be a positive whole number.");
+      payload = {
+        type: "MANUAL_ADDITION",
+        location: $("#manualStockDialog").dataset.location,
+        batchNumber,
+        supplierName: selectedOrOther($("#manualSupplier"), $("#manualSupplierOther"), "Supplier"),
+        dimensions,
+        temper: selectedOrOther($("#manualTemper"), $("#manualTemperOther"), "Temper"),
+        tinCoating: selectedOrOther($("#manualCoating"), $("#manualCoatingOther"), "Tin coating"),
+        sheets,
+        kg,
+        price: Number($("#manualPrice").dataset.cents || 0) / 100,
+        totalAmount: Number($("#manualTotalAmount").dataset.cents || 0) / 100,
+        dateReceived: parseManualDate($("#manualDateReceived").value),
+        description: $("#manualReason").value.trim(),
+        picName: $("#manualPic").value.trim(),
+        signature
+      };
+    } catch (error) {
+      return showToast(error.message, true);
+    }
+    const button = $("#submitManualStock");
+    button.disabled = true;
+    button.textContent = "Adding\u2026";
+    try {
+      const result = await api("/records", { method: "POST", body: JSON.stringify(payload) });
+      $("#manualStockDialog").close();
+      state.selectedLotIds.clear();
+      showToast("Batch " + payload.batchNumber + " added to " + locationLabel(payload.location) + " under record " + result.record.id + ".");
+      await Promise.all([loadInventory(), loadRecords(false)]);
+    } catch (error) {
+      showToast(error.message, true);
+    } finally {
+      button.disabled = false;
+      button.textContent = "Add New Batch";
+    }
+  });
   var STOCK_COLUMN_ALIASES = {
     batchNumber: ["BATCHNO", "BATCHNUMBER", "BATCH"],
     supplierName: ["SUPPLIERNAME", "SUPPLIER"],
@@ -4145,7 +2926,7 @@
     }
     $("#importReading").classList.remove("hidden");
     try {
-      const workbook = await readXlsxFile(await readFileAsArrayBuffer(file));
+      const workbook = await readExcelWorkbook(await readFileAsArrayBuffer(file));
       const preview = buildStockImportPreview(workbook, file.name);
       state.importPreview = preview;
       renderStockImportPreview(preview);
@@ -4167,6 +2948,15 @@
       };
       reader.readAsArrayBuffer(file);
     });
+  }
+  async function readExcelWorkbook(arrayBuffer) {
+    const sheets = await readXlsxFile(arrayBuffer, { getSheets: true });
+    return Promise.all(sheets.map(async function(sheet) {
+      return {
+        sheet: sheet.name,
+        data: await readXlsxFile(arrayBuffer, { sheet: sheet.name })
+      };
+    }));
   }
   function buildStockImportPreview(workbook, fileName) {
     if (!Array.isArray(workbook) || workbook.length === 0) throw new Error("The Excel workbook contains no worksheets.");
@@ -4196,7 +2986,7 @@
       const batchNumber = normalizeImportedBatch(rawBatch);
       const dimensions = normalizeImportedDimensions(rawDimensions);
       const sheets = importedWholeNumber(rawSheets);
-      if (!/^\d+\/\d+$/.test(batchNumber)) errors.push("Batch must use integer/integer format");
+      if (!/^\d{2}\/\d+$/.test(batchNumber)) errors.push("Batch must start with two digits followed by / and whole numbers");
       if (!/^0\.\d+\*\d+\*\d+$/.test(dimensions)) errors.push("Size must use 0.integer*integer*integer format");
       if (!Number.isSafeInteger(sheets) || sheets <= 0) errors.push("Sheets must be a positive whole number");
       const kgResult = importedOptionalNumber(stockCell(cells, match.headerMap.kg));
@@ -4545,7 +3335,7 @@
   function updateSlittingCalculations() {
     const lot = selectedSlittingLot();
     if (!lot) return;
-    const parts = parseDimensions(lot.dimensions);
+    const parts = parseDimensions2(lot.dimensions);
     const consumed = Number($("#sheetsConsumed").value || 0);
     $("#sourceBalanceAfter").value = formatNumber(Math.max(0, Number(lot.quantity) - consumed)) + " sheets";
     let outputArea = 0;
@@ -4593,7 +3383,7 @@
         }
         return { width, length, quantity };
       });
-      const dimensions = parseDimensions(lot.dimensions);
+      const dimensions = parseDimensions2(lot.dimensions);
       const inputArea = dimensions.width * dimensions.length * sheetsConsumed;
       const outputArea = outputs.reduce(function(total, output) {
         return total + output.width * output.length * output.quantity;
@@ -4669,7 +3459,7 @@
     }
     $("#recordsBody").innerHTML = records.map(function(record) {
       const destination = recordDestinationLabel(record);
-      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : purposeSummary(record.purpose);
+      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : purposeSummary(record.purpose);
       return "<tr><td><strong>" + escapeHtml(record.id) + "</strong></td><td>" + escapeHtml(recordTypeLabel(record.type)) + "</td><td>" + escapeHtml(locationLabel(record.sourceLocation)) + "</td><td>" + escapeHtml(destination) + "</td><td>" + formatNumber((record.lines || []).length) + '</td><td class="description-cell">' + escapeHtml(purpose) + "</td><td>" + escapeHtml(record.picName) + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + titleCase(record.status) + '</td><td><button class="secondary table-action view-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View</button></td></tr>';
     }).join("");
     $$("#recordsBody .view-record").forEach(function(button) {
@@ -4705,14 +3495,18 @@
   }
   function renderRecordDetail(record) {
     const destination = recordDestinationLabel(record);
-    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : purposeSummary(record.purpose)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + "</dl>";
+    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : purposeSummary(record.purpose)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + "</dl>";
     if (record.type === "TRANSFER") {
       html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th></tr></thead><tbody>' + record.items.map(function(item) {
         return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td></tr>";
       }).join("") + "</tbody></table></div></section>";
+    } else if (record.type === "MANUAL_ADDITION") {
+      html += '<section class="record-items"><h3>Batch added to ' + escapeHtml(locationLabel(record.destinationLocation)) + '</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Price</th><th>Total amount</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
+        return "<tr><td>" + escapeHtml(item.lotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.supplierName || "\u2014") + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(item.temper || "\u2014") + "</td><td>" + escapeHtml(item.tinCoating || "\u2014") + "</td><td>" + formatNumber(item.quantity) + "</td><td>" + formatNumber(item.kg) + "</td><td>" + formatMoney(item.price) + "</td><td>" + formatMoney(item.totalAmount) + "</td><td>" + escapeHtml(formatReceivedDate(item.dateReceived)) + "</td></tr>";
+      }).join("") + "</tbody></table></div></section>";
     } else if (record.type === "STOCK_IMPORT") {
       html += '<section class="record-items"><h3>Stock batches added to Storage</h3><div class="table-wrap"><table><thead><tr><th>Excel row</th><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Price</th><th>Total amount</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
-        return "<tr><td>" + item.sourceRow + "</td><td>" + escapeHtml(item.lotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.supplierName || "\u2014") + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(item.temper || "\u2014") + "</td><td>" + escapeHtml(item.tinCoating || "\u2014") + "</td><td>" + formatNumber(item.quantity) + "</td><td>" + formatDecimal(item.kg) + "</td><td>" + formatMoney(item.price) + "</td><td>" + formatMoney(item.totalAmount) + "</td><td>" + escapeHtml(item.dateReceived || "\u2014") + "</td></tr>";
+        return "<tr><td>" + item.sourceRow + "</td><td>" + escapeHtml(item.lotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.supplierName || "\u2014") + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(item.temper || "\u2014") + "</td><td>" + escapeHtml(item.tinCoating || "\u2014") + "</td><td>" + formatNumber(item.quantity) + "</td><td>" + formatDecimal(item.kg) + "</td><td>" + formatMoney(item.price) + "</td><td>" + formatMoney(item.totalAmount) + "</td><td>" + escapeHtml(formatReceivedDate(item.dateReceived)) + "</td></tr>";
       }).join("") + "</tbody></table></div>";
       if (Array.isArray(record.ignoredRows) && record.ignoredRows.length) {
         html += '<h3>Rows ignored by the Worker</h3><div class="table-wrap"><table><thead><tr><th>Excel row</th><th>Batch</th><th>Reason</th></tr></thead><tbody>' + record.ignoredRows.map(function(row) {
@@ -4850,7 +3644,7 @@
           line.kg == null ? "" : line.kg,
           line.price == null ? "" : line.price,
           line.totalAmount == null ? "" : line.totalAmount,
-          line.dateReceived || ""
+          line.dateReceived ? formatReceivedDate(line.dateReceived) : ""
         ]);
       });
     });
@@ -4867,7 +3661,7 @@
       URL.revokeObjectURL(link.href);
     }, 0);
   });
-  function parseDimensions(value) {
+  function parseDimensions2(value) {
     const match = String(value || "").match(/^(0\.\d+)\*(\d+)\*(\d+)$/);
     if (!match) return null;
     return { thickness: match[1], width: Number(match[2]), length: Number(match[3]) };
@@ -4880,6 +3674,7 @@
   }
   function recordTypeLabel(type) {
     if (type === "STOCK_IMPORT") return "Stock Import";
+    if (type === "MANUAL_ADDITION") return "Manual Addition";
     if (type === "SLITTING") return "Slitting";
     return type === "TRANSFER" ? "Transfer" : titleCase(type);
   }
@@ -4911,6 +3706,11 @@
   function formatMoney(value) {
     if (value == null || value === "") return "\u2014";
     return new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", maximumFractionDigits: 4 }).format(Number(value));
+  }
+  function formatReceivedDate(value) {
+    if (!value) return "\u2014";
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? match[3] + "/" + match[2] + "/" + match[1] : String(value);
   }
   function formatDate(value) {
     if (!value) return "\u2014";
