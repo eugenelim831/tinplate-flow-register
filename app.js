@@ -6,7 +6,11 @@
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __commonJS = (cb, mod) => function __require() {
-    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    try {
+      return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    } catch (e) {
+      throw mod = 0, e;
+    }
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -171,8 +175,8 @@
           return (this.buffer[bufIndex] >>> 7 - index % 8 & 1) === 1;
         },
         put: function(num, length) {
-          for (let i = 0; i < length; i++) {
-            this.putBit((num >>> length - i - 1 & 1) === 1);
+          for (let i2 = 0; i2 < length; i2++) {
+            this.putBit((num >>> length - i2 - 1 & 1) === 1);
           }
         },
         getLengthInBits: function() {
@@ -232,8 +236,8 @@
         const size = getSymbolSize(version);
         const intervals = size === 145 ? 26 : Math.ceil((size - 13) / (2 * posCount - 2)) * 2;
         const positions = [size - 7];
-        for (let i = 1; i < posCount - 1; i++) {
-          positions[i] = positions[i - 1] - intervals;
+        for (let i2 = 1; i2 < posCount - 1; i2++) {
+          positions[i2] = positions[i2 - 1] - intervals;
         }
         positions.push(6);
         return positions.reverse();
@@ -242,14 +246,14 @@
         const coords = [];
         const pos = exports.getRowColCoords(version);
         const posLength = pos.length;
-        for (let i = 0; i < posLength; i++) {
+        for (let i2 = 0; i2 < posLength; i2++) {
           for (let j = 0; j < posLength; j++) {
-            if (i === 0 && j === 0 || // top-left
-            i === 0 && j === posLength - 1 || // bottom-left
-            i === posLength - 1 && j === 0) {
+            if (i2 === 0 && j === 0 || // top-left
+            i2 === 0 && j === posLength - 1 || // bottom-left
+            i2 === posLength - 1 && j === 0) {
               continue;
             }
-            coords.push([pos[i], pos[j]]);
+            coords.push([pos[i2], pos[j]]);
           }
         }
         return coords;
@@ -364,28 +368,28 @@
       exports.getPenaltyN4 = function getPenaltyN4(data) {
         let darkCount = 0;
         const modulesCount = data.data.length;
-        for (let i = 0; i < modulesCount; i++) darkCount += data.data[i];
+        for (let i2 = 0; i2 < modulesCount; i2++) darkCount += data.data[i2];
         const k = Math.abs(Math.ceil(darkCount * 100 / modulesCount / 5) - 10);
         return k * PenaltyScores.N4;
       };
-      function getMaskAt(maskPattern, i, j) {
+      function getMaskAt(maskPattern, i2, j) {
         switch (maskPattern) {
           case exports.Patterns.PATTERN000:
-            return (i + j) % 2 === 0;
+            return (i2 + j) % 2 === 0;
           case exports.Patterns.PATTERN001:
-            return i % 2 === 0;
+            return i2 % 2 === 0;
           case exports.Patterns.PATTERN010:
             return j % 3 === 0;
           case exports.Patterns.PATTERN011:
-            return (i + j) % 3 === 0;
+            return (i2 + j) % 3 === 0;
           case exports.Patterns.PATTERN100:
-            return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+            return (Math.floor(i2 / 2) + Math.floor(j / 3)) % 2 === 0;
           case exports.Patterns.PATTERN101:
-            return i * j % 2 + i * j % 3 === 0;
+            return i2 * j % 2 + i2 * j % 3 === 0;
           case exports.Patterns.PATTERN110:
-            return (i * j % 2 + i * j % 3) % 2 === 0;
+            return (i2 * j % 2 + i2 * j % 3) % 2 === 0;
           case exports.Patterns.PATTERN111:
-            return (i * j % 3 + (i + j) % 2) % 2 === 0;
+            return (i2 * j % 3 + (i2 + j) % 2) % 2 === 0;
           default:
             throw new Error("bad maskPattern:" + maskPattern);
         }
@@ -785,17 +789,17 @@
       var EXP_TABLE = new Uint8Array(512);
       var LOG_TABLE = new Uint8Array(256);
       (function initTables() {
-        let x = 1;
-        for (let i = 0; i < 255; i++) {
-          EXP_TABLE[i] = x;
-          LOG_TABLE[x] = i;
-          x <<= 1;
-          if (x & 256) {
-            x ^= 285;
+        let x2 = 1;
+        for (let i2 = 0; i2 < 255; i2++) {
+          EXP_TABLE[i2] = x2;
+          LOG_TABLE[x2] = i2;
+          x2 <<= 1;
+          if (x2 & 256) {
+            x2 ^= 285;
           }
         }
-        for (let i = 255; i < 512; i++) {
-          EXP_TABLE[i] = EXP_TABLE[i - 255];
+        for (let i2 = 255; i2 < 512; i2++) {
+          EXP_TABLE[i2] = EXP_TABLE[i2 - 255];
         }
       })();
       exports.log = function log(n) {
@@ -805,9 +809,9 @@
       exports.exp = function exp(n) {
         return EXP_TABLE[n];
       };
-      exports.mul = function mul(x, y) {
-        if (x === 0 || y === 0) return 0;
-        return EXP_TABLE[LOG_TABLE[x] + LOG_TABLE[y]];
+      exports.mul = function mul(x2, y) {
+        if (x2 === 0 || y === 0) return 0;
+        return EXP_TABLE[LOG_TABLE[x2] + LOG_TABLE[y]];
       };
     }
   });
@@ -818,9 +822,9 @@
       var GF = require_galois_field();
       exports.mul = function mul(p1, p2) {
         const coeff = new Uint8Array(p1.length + p2.length - 1);
-        for (let i = 0; i < p1.length; i++) {
+        for (let i2 = 0; i2 < p1.length; i2++) {
           for (let j = 0; j < p2.length; j++) {
-            coeff[i + j] ^= GF.mul(p1[i], p2[j]);
+            coeff[i2 + j] ^= GF.mul(p1[i2], p2[j]);
           }
         }
         return coeff;
@@ -829,8 +833,8 @@
         let result = new Uint8Array(divident);
         while (result.length - divisor.length >= 0) {
           const coeff = result[0];
-          for (let i = 0; i < divisor.length; i++) {
-            result[i] ^= GF.mul(divisor[i], coeff);
+          for (let i2 = 0; i2 < divisor.length; i2++) {
+            result[i2] ^= GF.mul(divisor[i2], coeff);
           }
           let offset = 0;
           while (offset < result.length && result[offset] === 0) offset++;
@@ -840,8 +844,8 @@
       };
       exports.generateECPolynomial = function generateECPolynomial(degree) {
         let poly = new Uint8Array([1]);
-        for (let i = 0; i < degree; i++) {
-          poly = exports.mul(poly, new Uint8Array([1, GF.exp(i)]));
+        for (let i2 = 0; i2 < degree; i2++) {
+          poly = exports.mul(poly, new Uint8Array([1, GF.exp(i2)]));
         }
         return poly;
       };
@@ -1129,15 +1133,15 @@
         return NumericData.getBitsLength(this.data.length);
       };
       NumericData.prototype.write = function write(bitBuffer) {
-        let i, group, value;
-        for (i = 0; i + 3 <= this.data.length; i += 3) {
-          group = this.data.substr(i, 3);
+        let i2, group, value;
+        for (i2 = 0; i2 + 3 <= this.data.length; i2 += 3) {
+          group = this.data.substr(i2, 3);
           value = parseInt(group, 10);
           bitBuffer.put(value, 10);
         }
-        const remainingNum = this.data.length - i;
+        const remainingNum = this.data.length - i2;
         if (remainingNum > 0) {
-          group = this.data.substr(i);
+          group = this.data.substr(i2);
           value = parseInt(group, 10);
           bitBuffer.put(value, remainingNum * 3 + 1);
         }
@@ -1211,14 +1215,14 @@
         return AlphanumericData.getBitsLength(this.data.length);
       };
       AlphanumericData.prototype.write = function write(bitBuffer) {
-        let i;
-        for (i = 0; i + 2 <= this.data.length; i += 2) {
-          let value = ALPHA_NUM_CHARS.indexOf(this.data[i]) * 45;
-          value += ALPHA_NUM_CHARS.indexOf(this.data[i + 1]);
+        let i2;
+        for (i2 = 0; i2 + 2 <= this.data.length; i2 += 2) {
+          let value = ALPHA_NUM_CHARS.indexOf(this.data[i2]) * 45;
+          value += ALPHA_NUM_CHARS.indexOf(this.data[i2 + 1]);
           bitBuffer.put(value, 11);
         }
         if (this.data.length % 2) {
-          bitBuffer.put(ALPHA_NUM_CHARS.indexOf(this.data[i]), 6);
+          bitBuffer.put(ALPHA_NUM_CHARS.indexOf(this.data[i2]), 6);
         }
       };
       module.exports = AlphanumericData;
@@ -1247,8 +1251,8 @@
         return ByteData.getBitsLength(this.data.length);
       };
       ByteData.prototype.write = function(bitBuffer) {
-        for (let i = 0, l = this.data.length; i < l; i++) {
-          bitBuffer.put(this.data[i], 8);
+        for (let i2 = 0, l = this.data.length; i2 < l; i2++) {
+          bitBuffer.put(this.data[i2], 8);
         }
       };
       module.exports = ByteData;
@@ -1274,16 +1278,16 @@
         return KanjiData.getBitsLength(this.data.length);
       };
       KanjiData.prototype.write = function(bitBuffer) {
-        let i;
-        for (i = 0; i < this.data.length; i++) {
-          let value = Utils.toSJIS(this.data[i]);
+        let i2;
+        for (i2 = 0; i2 < this.data.length; i2++) {
+          let value = Utils.toSJIS(this.data[i2]);
           if (value >= 33088 && value <= 40956) {
             value -= 33088;
           } else if (value >= 57408 && value <= 60351) {
             value -= 49472;
           } else {
             throw new Error(
-              "Invalid SJIS character: " + this.data[i] + "\nMake sure your charset is UTF-8"
+              "Invalid SJIS character: " + this.data[i2] + "\nMake sure your charset is UTF-8"
             );
           }
           value = (value >>> 8 & 255) * 192 + (value & 255);
@@ -1470,8 +1474,8 @@
       }
       function buildNodes(segs) {
         const nodes = [];
-        for (let i = 0; i < segs.length; i++) {
-          const seg = segs[i];
+        for (let i2 = 0; i2 < segs.length; i2++) {
+          const seg = segs[i2];
           switch (seg.mode) {
             case Mode.NUMERIC:
               nodes.push([
@@ -1504,12 +1508,12 @@
         const table = {};
         const graph = { start: {} };
         let prevNodeIds = ["start"];
-        for (let i = 0; i < nodes.length; i++) {
-          const nodeGroup = nodes[i];
+        for (let i2 = 0; i2 < nodes.length; i2++) {
+          const nodeGroup = nodes[i2];
           const currentNodeIds = [];
           for (let j = 0; j < nodeGroup.length; j++) {
             const node = nodeGroup[j];
-            const key = "" + i + j;
+            const key = "" + i2 + j;
             currentNodeIds.push(key);
             table[key] = { node, lastCount: 0 };
             graph[key] = {};
@@ -1568,8 +1572,8 @@
         const graph = buildGraph(nodes, version);
         const path = dijkstra.find_path(graph.map, "start", "end");
         const optimizedSegs = [];
-        for (let i = 1; i < path.length - 1; i++) {
-          optimizedSegs.push(graph.table[path[i]].node);
+        for (let i2 = 1; i2 < path.length - 1; i2++) {
+          optimizedSegs.push(graph.table[path[i2]].node);
         }
         return exports.fromArray(mergeSegments(optimizedSegs));
       };
@@ -1600,9 +1604,9 @@
       function setupFinderPattern(matrix, version) {
         const size = matrix.size;
         const pos = FinderPattern.getPositions(version);
-        for (let i = 0; i < pos.length; i++) {
-          const row = pos[i][0];
-          const col = pos[i][1];
+        for (let i2 = 0; i2 < pos.length; i2++) {
+          const row = pos[i2][0];
+          const col = pos[i2][1];
           for (let r = -1; r <= 7; r++) {
             if (row + r <= -1 || size <= row + r) continue;
             for (let c = -1; c <= 7; c++) {
@@ -1626,9 +1630,9 @@
       }
       function setupAlignmentPattern(matrix, version) {
         const pos = AlignmentPattern.getPositions(version);
-        for (let i = 0; i < pos.length; i++) {
-          const row = pos[i][0];
-          const col = pos[i][1];
+        for (let i2 = 0; i2 < pos.length; i2++) {
+          const row = pos[i2][0];
+          const col = pos[i2][1];
           for (let r = -2; r <= 2; r++) {
             for (let c = -2; c <= 2; c++) {
               if (r === -2 || r === 2 || c === -2 || c === 2 || r === 0 && c === 0) {
@@ -1644,10 +1648,10 @@
         const size = matrix.size;
         const bits2 = Version.getEncodedBits(version);
         let row, col, mod;
-        for (let i = 0; i < 18; i++) {
-          row = Math.floor(i / 3);
-          col = i % 3 + size - 8 - 3;
-          mod = (bits2 >> i & 1) === 1;
+        for (let i2 = 0; i2 < 18; i2++) {
+          row = Math.floor(i2 / 3);
+          col = i2 % 3 + size - 8 - 3;
+          mod = (bits2 >> i2 & 1) === 1;
           matrix.set(row, col, mod, true);
           matrix.set(col, row, mod, true);
         }
@@ -1655,22 +1659,22 @@
       function setupFormatInfo(matrix, errorCorrectionLevel, maskPattern) {
         const size = matrix.size;
         const bits2 = FormatInfo.getEncodedBits(errorCorrectionLevel, maskPattern);
-        let i, mod;
-        for (i = 0; i < 15; i++) {
-          mod = (bits2 >> i & 1) === 1;
-          if (i < 6) {
-            matrix.set(i, 8, mod, true);
-          } else if (i < 8) {
-            matrix.set(i + 1, 8, mod, true);
+        let i2, mod;
+        for (i2 = 0; i2 < 15; i2++) {
+          mod = (bits2 >> i2 & 1) === 1;
+          if (i2 < 6) {
+            matrix.set(i2, 8, mod, true);
+          } else if (i2 < 8) {
+            matrix.set(i2 + 1, 8, mod, true);
           } else {
-            matrix.set(size - 15 + i, 8, mod, true);
+            matrix.set(size - 15 + i2, 8, mod, true);
           }
-          if (i < 8) {
-            matrix.set(8, size - i - 1, mod, true);
-          } else if (i < 9) {
-            matrix.set(8, 15 - i - 1 + 1, mod, true);
+          if (i2 < 8) {
+            matrix.set(8, size - i2 - 1, mod, true);
+          } else if (i2 < 9) {
+            matrix.set(8, 15 - i2 - 1 + 1, mod, true);
           } else {
-            matrix.set(8, 15 - i - 1, mod, true);
+            matrix.set(8, 15 - i2 - 1, mod, true);
           }
         }
         matrix.set(size - 8, 8, 1, true);
@@ -1724,8 +1728,8 @@
           buffer.putBit(0);
         }
         const remainingByte = (dataTotalCodewordsBits - buffer.getLengthInBits()) / 8;
-        for (let i = 0; i < remainingByte; i++) {
-          buffer.put(i % 2 ? 17 : 236, 8);
+        for (let i2 = 0; i2 < remainingByte; i2++) {
+          buffer.put(i2 % 2 ? 17 : 236, 8);
         }
         return createCodewords(buffer, version, errorCorrectionLevel);
       }
@@ -1755,17 +1759,17 @@
         }
         const data = new Uint8Array(totalCodewords);
         let index = 0;
-        let i, r;
-        for (i = 0; i < maxDataSize; i++) {
+        let i2, r;
+        for (i2 = 0; i2 < maxDataSize; i2++) {
           for (r = 0; r < ecTotalBlocks; r++) {
-            if (i < dcData[r].length) {
-              data[index++] = dcData[r][i];
+            if (i2 < dcData[r].length) {
+              data[index++] = dcData[r][i2];
             }
           }
         }
-        for (i = 0; i < ecCount; i++) {
+        for (i2 = 0; i2 < ecCount; i2++) {
           for (r = 0; r < ecTotalBlocks; r++) {
-            data[index++] = ecData[r][i];
+            data[index++] = ecData[r][i2];
           }
         }
         return data;
@@ -1903,12 +1907,12 @@
         const symbolSize = Math.floor((size + opts.margin * 2) * scale);
         const scaledMargin = opts.margin * scale;
         const palette = [opts.color.light, opts.color.dark];
-        for (let i = 0; i < symbolSize; i++) {
+        for (let i2 = 0; i2 < symbolSize; i2++) {
           for (let j = 0; j < symbolSize; j++) {
-            let posDst = (i * symbolSize + j) * 4;
+            let posDst = (i2 * symbolSize + j) * 4;
             let pxColor = opts.color.light;
-            if (i >= scaledMargin && j >= scaledMargin && i < symbolSize - scaledMargin && j < symbolSize - scaledMargin) {
-              const iSrc = Math.floor((i - scaledMargin) / scale);
+            if (i2 >= scaledMargin && j >= scaledMargin && i2 < symbolSize - scaledMargin && j < symbolSize - scaledMargin) {
+              const iSrc = Math.floor((i2 - scaledMargin) / scale);
               const jSrc = Math.floor((j - scaledMargin) / scale);
               pxColor = palette[data[iSrc * size + jSrc] ? 1 : 0];
             }
@@ -1984,8 +1988,8 @@
         const str = attrib + '="' + color.hex + '"';
         return alpha < 1 ? str + " " + attrib + '-opacity="' + alpha.toFixed(2).slice(1) + '"' : str;
       }
-      function svgCmd(cmd, x, y) {
-        let str = cmd + x;
+      function svgCmd(cmd, x2, y) {
+        let str = cmd + x2;
         if (typeof y !== "undefined") str += " " + y;
         return str;
       }
@@ -1994,18 +1998,18 @@
         let moveBy = 0;
         let newRow = false;
         let lineLength = 0;
-        for (let i = 0; i < data.length; i++) {
-          const col = Math.floor(i % size);
-          const row = Math.floor(i / size);
+        for (let i2 = 0; i2 < data.length; i2++) {
+          const col = Math.floor(i2 % size);
+          const row = Math.floor(i2 / size);
           if (!col && !newRow) newRow = true;
-          if (data[i]) {
+          if (data[i2]) {
             lineLength++;
-            if (!(i > 0 && col > 0 && data[i - 1])) {
+            if (!(i2 > 0 && col > 0 && data[i2 - 1])) {
               path += newRow ? svgCmd("M", col + margin, 0.5 + row + margin) : svgCmd("m", moveBy, 0);
               moveBy = 0;
               newRow = false;
             }
-            if (!(col + 1 < size && data[i + 1])) {
+            if (!(col + 1 < size && data[i2 + 1])) {
               path += svgCmd("h", lineLength);
               lineLength = 0;
             }
@@ -2113,7 +2117,7 @@
   // ../../../../../tmp/tinplate-web-build/node_modules/fflate/esm/browser.js
   var u8 = Uint8Array;
   var u16 = Uint16Array;
-  var i32 = Int32Array;
+  var u32 = Uint32Array;
   var fleb = new u8([
     0,
     0,
@@ -2188,64 +2192,64 @@
   var clim = new u8([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
   var freb = function(eb, start) {
     var b = new u16(31);
-    for (var i = 0; i < 31; ++i) {
-      b[i] = start += 1 << eb[i - 1];
+    for (var i2 = 0; i2 < 31; ++i2) {
+      b[i2] = start += 1 << eb[i2 - 1];
     }
-    var r = new i32(b[30]);
-    for (var i = 1; i < 30; ++i) {
-      for (var j = b[i]; j < b[i + 1]; ++j) {
-        r[j] = j - b[i] << 5 | i;
+    var r = new u32(b[30]);
+    for (var i2 = 1; i2 < 30; ++i2) {
+      for (var j = b[i2]; j < b[i2 + 1]; ++j) {
+        r[j] = j - b[i2] << 5 | i2;
       }
     }
-    return { b, r };
+    return [b, r];
   };
   var _a = freb(fleb, 2);
-  var fl = _a.b;
-  var revfl = _a.r;
+  var fl = _a[0];
+  var revfl = _a[1];
   fl[28] = 258, revfl[258] = 28;
   var _b = freb(fdeb, 0);
-  var fd = _b.b;
-  var revfd = _b.r;
+  var fd = _b[0];
+  var revfd = _b[1];
   var rev = new u16(32768);
   for (i = 0; i < 32768; ++i) {
-    x = (i & 43690) >> 1 | (i & 21845) << 1;
-    x = (x & 52428) >> 2 | (x & 13107) << 2;
-    x = (x & 61680) >> 4 | (x & 3855) << 4;
-    rev[i] = ((x & 65280) >> 8 | (x & 255) << 8) >> 1;
+    x = (i & 43690) >>> 1 | (i & 21845) << 1;
+    x = (x & 52428) >>> 2 | (x & 13107) << 2;
+    x = (x & 61680) >>> 4 | (x & 3855) << 4;
+    rev[i] = ((x & 65280) >>> 8 | (x & 255) << 8) >>> 1;
   }
   var x;
   var i;
   var hMap = (function(cd, mb, r) {
     var s = cd.length;
-    var i = 0;
+    var i2 = 0;
     var l = new u16(mb);
-    for (; i < s; ++i) {
-      if (cd[i])
-        ++l[cd[i] - 1];
+    for (; i2 < s; ++i2) {
+      if (cd[i2])
+        ++l[cd[i2] - 1];
     }
     var le = new u16(mb);
-    for (i = 1; i < mb; ++i) {
-      le[i] = le[i - 1] + l[i - 1] << 1;
+    for (i2 = 0; i2 < mb; ++i2) {
+      le[i2] = le[i2 - 1] + l[i2 - 1] << 1;
     }
     var co;
     if (r) {
       co = new u16(1 << mb);
       var rvb = 15 - mb;
-      for (i = 0; i < s; ++i) {
-        if (cd[i]) {
-          var sv = i << 4 | cd[i];
-          var r_1 = mb - cd[i];
-          var v = le[cd[i] - 1]++ << r_1;
+      for (i2 = 0; i2 < s; ++i2) {
+        if (cd[i2]) {
+          var sv = i2 << 4 | cd[i2];
+          var r_1 = mb - cd[i2];
+          var v = le[cd[i2] - 1]++ << r_1;
           for (var m = v | (1 << r_1) - 1; v <= m; ++v) {
-            co[rev[v] >> rvb] = sv;
+            co[rev[v] >>> rvb] = sv;
           }
         }
       }
     } else {
       co = new u16(s);
-      for (i = 0; i < s; ++i) {
-        if (cd[i]) {
-          co[i] = rev[le[cd[i] - 1]++] >> 15 - cd[i];
+      for (i2 = 0; i2 < s; ++i2) {
+        if (cd[i2]) {
+          co[i2] = rev[le[cd[i2] - 1]++] >>> 15 - cd[i2];
         }
       }
     }
@@ -2272,9 +2276,9 @@
   var fdrm = /* @__PURE__ */ hMap(fdt, 5, 1);
   var max = function(a) {
     var m = a[0];
-    for (var i = 1; i < a.length; ++i) {
-      if (a[i] > m)
-        m = a[i];
+    for (var i2 = 1; i2 < a.length; ++i2) {
+      if (a[i2] > m)
+        m = a[i2];
     }
     return m;
   };
@@ -2294,7 +2298,9 @@
       s = 0;
     if (e == null || e > v.length)
       e = v.length;
-    return new u8(v.subarray(s, e));
+    var n = new (v.BYTES_PER_ELEMENT == 2 ? u16 : v.BYTES_PER_ELEMENT == 4 ? u32 : u8)(e - s);
+    n.set(v.subarray(s, e));
+    return n;
   };
   var ec = [
     "unexpected EOF",
@@ -2304,7 +2310,6 @@
     "stream finished",
     "no stream handler",
     ,
-    // determined by compression function
     "no callback",
     "invalid UTF-8 data",
     "extra field too long",
@@ -2323,14 +2328,15 @@
       throw e;
     return e;
   };
-  var inflt = function(dat, st, buf, dict) {
-    var sl = dat.length, dl = dict ? dict.length : 0;
-    if (!sl || st.f && !st.l)
+  var inflt = function(dat, buf, st) {
+    var sl = dat.length;
+    if (!sl || st && st.f && !st.l)
       return buf || new u8(0);
-    var noBuf = !buf;
-    var resize = noBuf || st.i != 2;
-    var noSt = st.i;
-    if (noBuf)
+    var noBuf = !buf || st;
+    var noSt = !st || st.i;
+    if (!st)
+      st = {};
+    if (!buf)
       buf = new u8(sl * 3);
     var cbuf = function(l2) {
       var bl = buf.length;
@@ -2354,7 +2360,7 @@
               err(0);
             break;
           }
-          if (resize)
+          if (noBuf)
             cbuf(bt + l);
           buf.set(dat.subarray(s, t), bt);
           st.b = bt += l, st.p = pos = t * 8, st.f = final;
@@ -2367,28 +2373,28 @@
           pos += 14;
           var ldt = new u8(tl);
           var clt = new u8(19);
-          for (var i = 0; i < hcLen; ++i) {
-            clt[clim[i]] = bits(dat, pos + i * 3, 7);
+          for (var i2 = 0; i2 < hcLen; ++i2) {
+            clt[clim[i2]] = bits(dat, pos + i2 * 3, 7);
           }
           pos += hcLen * 3;
           var clb = max(clt), clbmsk = (1 << clb) - 1;
           var clm = hMap(clt, clb, 1);
-          for (var i = 0; i < tl; ) {
+          for (var i2 = 0; i2 < tl; ) {
             var r = clm[bits(dat, pos, clbmsk)];
             pos += r & 15;
-            var s = r >> 4;
+            var s = r >>> 4;
             if (s < 16) {
-              ldt[i++] = s;
+              ldt[i2++] = s;
             } else {
               var c = 0, n = 0;
               if (s == 16)
-                n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i - 1];
+                n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i2 - 1];
               else if (s == 17)
                 n = 3 + bits(dat, pos, 7), pos += 3;
               else if (s == 18)
                 n = 11 + bits(dat, pos, 127), pos += 7;
               while (n--)
-                ldt[i++] = c;
+                ldt[i2++] = c;
             }
           }
           var lt = ldt.subarray(0, hLit), dt = ldt.subarray(hLit);
@@ -2404,12 +2410,12 @@
           break;
         }
       }
-      if (resize)
+      if (noBuf)
         cbuf(bt + 131072);
       var lms = (1 << lbt) - 1, dms = (1 << dbt) - 1;
       var lpos = pos;
       for (; ; lpos = pos) {
-        var c = lm[bits16(dat, pos) & lms], sym = c >> 4;
+        var c = lm[bits16(dat, pos) & lms], sym = c >>> 4;
         pos += c & 15;
         if (pos > tbts) {
           if (noSt)
@@ -2426,11 +2432,11 @@
         } else {
           var add = sym - 254;
           if (sym > 264) {
-            var i = sym - 257, b = fleb[i];
-            add = bits(dat, pos, (1 << b) - 1) + fl[i];
+            var i2 = sym - 257, b = fleb[i2];
+            add = bits(dat, pos, (1 << b) - 1) + fl[i2];
             pos += b;
           }
-          var d = dm[bits16(dat, pos) & dms], dsym = d >> 4;
+          var d = dm[bits16(dat, pos) & dms], dsym = d >>> 4;
           if (!d)
             err(3);
           pos += d & 15;
@@ -2444,25 +2450,23 @@
               err(0);
             break;
           }
-          if (resize)
+          if (noBuf)
             cbuf(bt + 131072);
           var end = bt + add;
-          if (bt < dt) {
-            var shift = dl - dt, dend = Math.min(dt, end);
-            if (shift + bt < 0)
-              err(3);
-            for (; bt < dend; ++bt)
-              buf[bt] = dict[shift + bt];
-          }
-          for (; bt < end; ++bt)
+          for (; bt < end; bt += 4) {
             buf[bt] = buf[bt - dt];
+            buf[bt + 1] = buf[bt + 1 - dt];
+            buf[bt + 2] = buf[bt + 2 - dt];
+            buf[bt + 3] = buf[bt + 3 - dt];
+          }
+          bt = end;
         }
       }
       st.l = lm, st.p = lpos, st.b = bt, st.f = final;
       if (lm)
         final = 1, st.m = lbt, st.d = dm, st.n = dbt;
     } while (!final);
-    return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
+    return bt == buf.length ? buf : slc(buf, 0, bt);
   };
   var et = /* @__PURE__ */ new u8(0);
   var b2 = function(d, b) {
@@ -2474,8 +2478,8 @@
   var b8 = function(d, b) {
     return b4(d, b) + b4(d, b + 4) * 4294967296;
   };
-  function inflateSync(data, opts) {
-    return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
+  function inflateSync(data, out) {
+    return inflt(data, out);
   }
   var td = typeof TextDecoder != "undefined" && /* @__PURE__ */ new TextDecoder();
   var tds = 0;
@@ -2485,62 +2489,51 @@
   } catch (e) {
   }
   var dutf8 = function(d) {
-    for (var r = "", i = 0; ; ) {
-      var c = d[i++];
+    for (var r = "", i2 = 0; ; ) {
+      var c = d[i2++];
       var eb = (c > 127) + (c > 223) + (c > 239);
-      if (i + eb > d.length)
-        return { s: r, r: slc(d, i - 1) };
+      if (i2 + eb > d.length)
+        return [r, slc(d, i2 - 1)];
       if (!eb)
         r += String.fromCharCode(c);
       else if (eb == 3) {
-        c = ((c & 15) << 18 | (d[i++] & 63) << 12 | (d[i++] & 63) << 6 | d[i++] & 63) - 65536, r += String.fromCharCode(55296 | c >> 10, 56320 | c & 1023);
+        c = ((c & 15) << 18 | (d[i2++] & 63) << 12 | (d[i2++] & 63) << 6 | d[i2++] & 63) - 65536, r += String.fromCharCode(55296 | c >> 10, 56320 | c & 1023);
       } else if (eb & 1)
-        r += String.fromCharCode((c & 31) << 6 | d[i++] & 63);
+        r += String.fromCharCode((c & 31) << 6 | d[i2++] & 63);
       else
-        r += String.fromCharCode((c & 15) << 12 | (d[i++] & 63) << 6 | d[i++] & 63);
+        r += String.fromCharCode((c & 15) << 12 | (d[i2++] & 63) << 6 | d[i2++] & 63);
     }
   };
   function strFromU8(dat, latin1) {
     if (latin1) {
       var r = "";
-      for (var i = 0; i < dat.length; i += 16384)
-        r += String.fromCharCode.apply(null, dat.subarray(i, i + 16384));
+      for (var i2 = 0; i2 < dat.length; i2 += 16384)
+        r += String.fromCharCode.apply(null, dat.subarray(i2, i2 + 16384));
       return r;
-    } else if (td) {
+    } else if (td)
       return td.decode(dat);
-    } else {
-      var _a2 = dutf8(dat), s = _a2.s, r = _a2.r;
-      if (r.length)
+    else {
+      var _a2 = dutf8(dat), out = _a2[0], ext = _a2[1];
+      if (ext.length)
         err(8);
-      return s;
+      return out;
     }
   }
   var slzh = function(d, b) {
     return b + 30 + b2(d, b + 26) + b2(d, b + 28);
   };
   var zh = function(d, b, z) {
-    var fnl = b2(d, b + 28), efl = b2(d, b + 30), fn = strFromU8(d.subarray(b + 46, b + 46 + fnl), !(b2(d, b + 8) & 2048)), es = b + 46 + fnl;
-    var _a2 = z64hs(d, es, efl, z, b4(d, b + 20), b4(d, b + 24), b4(d, b + 42)), sc = _a2[0], su = _a2[1], off = _a2[2];
+    var fnl = b2(d, b + 28), efl = b2(d, b + 30), fn = strFromU8(d.subarray(b + 46, b + 46 + fnl), !(b2(d, b + 8) & 2048)), es = b + 46 + fnl, bs = b4(d, b + 20);
+    var _a2 = z && bs == 4294967295 ? z64e(d, es, efl) : [bs, b4(d, b + 24), b4(d, b + 42)], sc = _a2[0], su = _a2[1], off = _a2[2];
     return [b2(d, b + 10), sc, su, fn, es + efl + b2(d, b + 32), off];
   };
-  var z64hs = function(d, b, l, z, sc, su, off) {
-    var nsc = sc == 4294967295, nsu = su == 4294967295, noff = off == 4294967295, e = b + l;
-    var nf = nsc + nsu + noff;
-    if (z && nf) {
-      for (; b + 4 < e; b += 4 + b2(d, b + 2)) {
-        if (b2(d, b) == 1) {
-          return [
-            nsc ? b8(d, b + 4 + 8 * nsu) : sc,
-            nsu ? b8(d, b + 4) : su,
-            noff ? b8(d, b + 4 + 8 * (nsu + nsc)) : off,
-            1
-          ];
-        }
-      }
-      if (z < 2)
+  var z64e = function(d, b, l) {
+    var e = b + l;
+    for (; b2(d, b) != 1; b += 4 + b2(d, b + 2)) {
+      if (b + 4 > e)
         err(13);
     }
-    return [sc, su, off, 0];
+    return [b8(d, b + 12), b8(d, b + 4), b8(d, b + 20)];
   };
   function unzipSync(data, opts) {
     var files = {};
@@ -2554,7 +2547,7 @@
     if (!c)
       return {};
     var o = b4(data, e + 16);
-    var z = b4(data, e - 20) == 117853008;
+    var z = o == 4294967295 || c == 65535;
     if (z) {
       var ze = b4(data, e - 12);
       z = b4(data, ze) == 101075792;
@@ -2564,7 +2557,7 @@
       }
     }
     var fltr = opts && opts.filter;
-    for (var i = 0; i < c; ++i) {
+    for (var i2 = 0; i2 < c; ++i2) {
       var _a2 = zh(data, o, z), c_2 = _a2[0], sc = _a2[1], su = _a2[2], fn = _a2[3], no = _a2[4], off = _a2[5], b = slzh(data, off);
       o = no;
       if (!fltr || fltr({
@@ -2576,7 +2569,7 @@
         if (!c_2)
           files[fn] = slc(data, b, b + sc);
         else if (c_2 == 8)
-          files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
+          files[fn] = inflateSync(data.subarray(b, b + sc), new u8(su));
         else
           err(14, "unknown compression type " + c_2);
       }
@@ -2610,45 +2603,45 @@
 
   // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xml/dom.js
   function findChild(node, tagName) {
-    var i = 0;
-    while (i < node.childNodes.length) {
-      var childNode = node.childNodes[i];
+    var i2 = 0;
+    while (i2 < node.childNodes.length) {
+      var childNode = node.childNodes[i2];
       if (childNode.nodeType === 1 && getTagName(childNode) === tagName) {
         return childNode;
       }
-      i++;
+      i2++;
     }
   }
   function findChildren(node, tagName) {
     var results = [];
-    var i = 0;
-    while (i < node.childNodes.length) {
-      var childNode = node.childNodes[i];
+    var i2 = 0;
+    while (i2 < node.childNodes.length) {
+      var childNode = node.childNodes[i2];
       if (childNode.nodeType === 1 && getTagName(childNode) === tagName) {
         results.push(childNode);
       }
-      i++;
+      i2++;
     }
     return results;
   }
   function forEach(node, tagName, func) {
-    var i = 0;
-    while (i < node.childNodes.length) {
-      var childNode = node.childNodes[i];
+    var i2 = 0;
+    while (i2 < node.childNodes.length) {
+      var childNode = node.childNodes[i2];
       if (tagName) {
         if (childNode.nodeType === 1 && getTagName(childNode) === tagName) {
-          func(childNode, i);
+          func(childNode, i2);
         }
       } else {
-        func(childNode, i);
+        func(childNode, i2);
       }
-      i++;
+      i2++;
     }
   }
   function map(node, tagName, func) {
     var results = [];
-    forEach(node, tagName, function(node2, i) {
-      results.push(func(node2, i));
+    forEach(node, tagName, function(node2, i2) {
+      results.push(func(node2, i2));
     });
     return results;
   }
@@ -2667,10 +2660,10 @@
       j++;
     }
     xml += ">";
-    var i = 0;
-    while (i < node.childNodes.length) {
-      xml += getOuterXml(node.childNodes[i]);
-      i++;
+    var i2 = 0;
+    while (i2 < node.childNodes.length) {
+      xml += getOuterXml(node.childNodes[i2]);
+      i2++;
     }
     xml += "</" + getTagName(node) + ">";
     return xml;
@@ -2927,10 +2920,10 @@
     if (it) return (it = it.call(o)).next.bind(it);
     if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
       if (it) o = it;
-      var i = 0;
+      var i2 = 0;
       return function() {
-        if (i >= o.length) return { done: true };
-        return { done: false, value: o[i++] };
+        if (i2 >= o.length) return { done: true };
+        return { done: false, value: o[i2++] };
       };
     }
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -2945,7 +2938,7 @@
   }
   function _arrayLikeToArray(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    for (var i2 = 0, arr2 = new Array(len); i2 < len; i2++) arr2[i2] = arr[i2];
     return arr2;
   }
   function isDateTimestamp(styleId, styles, options) {
@@ -3187,11 +3180,11 @@
   }
   function columnLettersToNumber(columnLetters) {
     var n = 0;
-    var i = 0;
-    while (i < columnLetters.length) {
+    var i2 = 0;
+    while (i2 < columnLetters.length) {
       n *= 26;
-      n += LETTERS.indexOf(columnLetters[i]);
-      i++;
+      n += LETTERS.indexOf(columnLetters[i2]);
+      i2++;
     }
     return n;
   }
@@ -3247,8 +3240,8 @@
   }
 
   // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/parseDimensions.js
-  function _slicedToArray(arr, i) {
-    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray2(arr, i) || _nonIterableRest();
+  function _slicedToArray(arr, i2) {
+    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i2) || _unsupportedIterableToArray2(arr, i2) || _nonIterableRest();
   }
   function _nonIterableRest() {
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -3263,18 +3256,18 @@
   }
   function _arrayLikeToArray2(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    for (var i2 = 0, arr2 = new Array(len); i2 < len; i2++) arr2[i2] = arr[i2];
     return arr2;
   }
   function _iterableToArrayLimit(r, l) {
     var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
     if (null != t) {
-      var e, n, i, u, a = [], f = true, o = false;
+      var e, n, i2, u, a = [], f = true, o = false;
       try {
-        if (i = (t = t.call(r)).next, 0 === l) {
+        if (i2 = (t = t.call(r)).next, 0 === l) {
           if (Object(t) !== t) return;
           f = false;
-        } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = true) ;
+        } else for (; !(f = (e = i2.call(t)).done) && (a.push(e.value), a.length !== l); f = true) ;
       } catch (r2) {
         o = true, n = r2;
       } finally {
@@ -3324,10 +3317,10 @@
     if (it) return (it = it.call(o)).next.bind(it);
     if (Array.isArray(o) || (it = _unsupportedIterableToArray3(o)) || allowArrayLike && o && typeof o.length === "number") {
       if (it) o = it;
-      var i = 0;
+      var i2 = 0;
       return function() {
-        if (i >= o.length) return { done: true };
-        return { done: false, value: o[i++] };
+        if (i2 >= o.length) return { done: true };
+        return { done: false, value: o[i2++] };
       };
     }
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -3342,17 +3335,17 @@
   }
   function _arrayLikeToArray3(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    for (var i2 = 0, arr2 = new Array(len); i2 < len; i2++) arr2[i2] = arr[i2];
     return arr2;
   }
   function dropEmptyRows(data) {
-    var _ref = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, rowIndexSourceMap = _ref.rowIndexSourceMap, _ref$accessor = _ref.accessor, accessor = _ref$accessor === void 0 ? function(_) {
+    var _ref = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, rowIndexMap = _ref.rowIndexMap, _ref$accessor = _ref.accessor, accessor = _ref$accessor === void 0 ? function(_) {
       return _;
     } : _ref$accessor, onlyTrimAtTheEnd = _ref.onlyTrimAtTheEnd;
-    var i = data.length - 1;
-    while (i >= 0) {
+    var i2 = data.length - 1;
+    while (i2 >= 0) {
       var empty = true;
-      for (var _iterator = _createForOfIteratorHelperLoose2(data[i]), _step; !(_step = _iterator()).done; ) {
+      for (var _iterator = _createForOfIteratorHelperLoose2(data[i2]), _step; !(_step = _iterator()).done; ) {
         var cell = _step.value;
         if (accessor(cell) !== null) {
           empty = false;
@@ -3360,14 +3353,14 @@
         }
       }
       if (empty) {
-        data.splice(i, 1);
-        if (rowIndexSourceMap) {
-          rowIndexSourceMap.splice(i, 1);
+        data.splice(i2, 1);
+        if (rowIndexMap) {
+          rowIndexMap.splice(i2, 1);
         }
       } else if (onlyTrimAtTheEnd) {
         break;
       }
-      i--;
+      i2--;
     }
     return data;
   }
@@ -3378,10 +3371,10 @@
     if (it) return (it = it.call(o)).next.bind(it);
     if (Array.isArray(o) || (it = _unsupportedIterableToArray4(o)) || allowArrayLike && o && typeof o.length === "number") {
       if (it) o = it;
-      var i = 0;
+      var i2 = 0;
       return function() {
-        if (i >= o.length) return { done: true };
-        return { done: false, value: o[i++] };
+        if (i2 >= o.length) return { done: true };
+        return { done: false, value: o[i2++] };
       };
     }
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -3396,19 +3389,19 @@
   }
   function _arrayLikeToArray4(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    for (var i2 = 0, arr2 = new Array(len); i2 < len; i2++) arr2[i2] = arr[i2];
     return arr2;
   }
   function dropEmptyColumns(data) {
     var _ref = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, _ref$accessor = _ref.accessor, accessor = _ref$accessor === void 0 ? function(_) {
       return _;
     } : _ref$accessor, onlyTrimAtTheEnd = _ref.onlyTrimAtTheEnd;
-    var i = data[0].length - 1;
-    while (i >= 0) {
+    var i2 = data[0].length - 1;
+    while (i2 >= 0) {
       var empty = true;
       for (var _iterator = _createForOfIteratorHelperLoose3(data), _step; !(_step = _iterator()).done; ) {
         var row = _step.value;
-        if (accessor(row[i]) !== null) {
+        if (accessor(row[i2]) !== null) {
           empty = false;
           break;
         }
@@ -3416,13 +3409,13 @@
       if (empty) {
         var j = 0;
         while (j < data.length) {
-          data[j].splice(i, 1);
+          data[j].splice(i2, 1);
           j++;
         }
       } else if (onlyTrimAtTheEnd) {
         break;
       }
-      i--;
+      i2--;
     }
     return data;
   }
@@ -3433,16 +3426,16 @@
     if (it) return (it = it.call(o)).next.bind(it);
     if (Array.isArray(o) || (it = _unsupportedIterableToArray5(o)) || allowArrayLike && o && typeof o.length === "number") {
       if (it) o = it;
-      var i = 0;
+      var i2 = 0;
       return function() {
-        if (i >= o.length) return { done: true };
-        return { done: false, value: o[i++] };
+        if (i2 >= o.length) return { done: true };
+        return { done: false, value: o[i2++] };
       };
     }
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
-  function _slicedToArray2(arr, i) {
-    return _arrayWithHoles2(arr) || _iterableToArrayLimit2(arr, i) || _unsupportedIterableToArray5(arr, i) || _nonIterableRest2();
+  function _slicedToArray2(arr, i2) {
+    return _arrayWithHoles2(arr) || _iterableToArrayLimit2(arr, i2) || _unsupportedIterableToArray5(arr, i2) || _nonIterableRest2();
   }
   function _nonIterableRest2() {
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -3457,18 +3450,18 @@
   }
   function _arrayLikeToArray5(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    for (var i2 = 0, arr2 = new Array(len); i2 < len; i2++) arr2[i2] = arr[i2];
     return arr2;
   }
   function _iterableToArrayLimit2(r, l) {
     var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
     if (null != t) {
-      var e, n, i, u, a = [], f = true, o = false;
+      var e, n, i2, u, a = [], f = true, o = false;
       try {
-        if (i = (t = t.call(r)).next, 0 === l) {
+        if (i2 = (t = t.call(r)).next, 0 === l) {
           if (Object(t) !== t) return;
           f = false;
-        } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = true) ;
+        } else for (; !(f = (e = i2.call(t)).done) && (a.push(e.value), a.length !== l); f = true) ;
       } catch (r2) {
         o = true, n = r2;
       } finally {
@@ -3493,15 +3486,15 @@
     var colsCount = rightBottom.column;
     var rowsCount = rightBottom.row;
     var data = new Array(rowsCount);
-    var i = 0;
-    while (i < rowsCount) {
-      data[i] = new Array(colsCount);
+    var i2 = 0;
+    while (i2 < rowsCount) {
+      data[i2] = new Array(colsCount);
       var j = 0;
       while (j < colsCount) {
-        data[i][j] = null;
+        data[i2][j] = null;
         j++;
       }
-      i++;
+      i2++;
     }
     for (var _iterator = _createForOfIteratorHelperLoose4(cells), _step; !(_step = _iterator()).done; ) {
       var cell = _step.value;
@@ -3511,11 +3504,11 @@
         data[rowIndex][columnIndex] = cell.value;
       }
     }
-    var rowIndexSourceMap = options.rowIndexSourceMap;
-    if (rowIndexSourceMap) {
+    var rowIndexMap = options.rowMap;
+    if (rowIndexMap) {
       var _i = 0;
       while (_i < data.length) {
-        rowIndexSourceMap[_i] = _i;
+        rowIndexMap[_i] = _i;
         _i++;
       }
     }
@@ -3523,7 +3516,7 @@
       onlyTrimAtTheEnd: true
     }), {
       onlyTrimAtTheEnd: true,
-      rowIndexSourceMap
+      rowIndexMap
     });
     if (options.transformData) {
       data = options.transformData(data);
@@ -3545,10 +3538,10 @@
     if (it) return (it = it.call(o)).next.bind(it);
     if (Array.isArray(o) || (it = _unsupportedIterableToArray6(o)) || allowArrayLike && o && typeof o.length === "number") {
       if (it) o = it;
-      var i = 0;
+      var i2 = 0;
       return function() {
-        if (i >= o.length) return { done: true };
-        return { done: false, value: o[i++] };
+        if (i2 >= o.length) return { done: true };
+        return { done: false, value: o[i2++] };
       };
     }
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -3563,7 +3556,7 @@
   }
   function _arrayLikeToArray6(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    for (var i2 = 0, arr2 = new Array(len); i2 < len; i2++) arr2[i2] = arr[i2];
     return arr2;
   }
   function ownKeys2(e, r) {
@@ -3641,9 +3634,9 @@
     }
     var sheet = parseSheet(getXmlFileContent(filePaths.sheets[sheetId]), xml, values, styles, properties, options);
     options = _objectSpread2({
-      // Create a `rowIndexSourceMap` for the original dataset, if not passed,
+      // Create a `rowIndexMap` for the original dataset, if not passed,
       // because "empty" rows will be dropped from the input data.
-      rowIndexSourceMap: []
+      rowMap: []
     }, options);
     var data = getData(sheet, options);
     if (options.properties) {
@@ -3667,8 +3660,8 @@
     }
   }
   function createSheetNotFoundError(sheet, sheets) {
-    var sheetsList = sheets && sheets.map(function(sheet2, i) {
-      return '"'.concat(sheet2.name, '" (#').concat(i + 1, ")");
+    var sheetsList = sheets && sheets.map(function(sheet2, i2) {
+      return '"'.concat(sheet2.name, '" (#').concat(i2 + 1, ")");
     }).join(", ");
     return new Error("Sheet ".concat(typeof sheet === "number" ? "#" + sheet : '"' + sheet + '"', " not found in the *.xlsx file.").concat(sheets ? " Available sheets: " + sheetsList + "." : ""));
   }
@@ -3683,8 +3676,8 @@
     }, _typeof3(o);
   }
   function _defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
+    for (var i2 = 0; i2 < props.length; i2++) {
+      var descriptor = props[i2];
       descriptor.enumerable = descriptor.enumerable || false;
       descriptor.configurable = true;
       if ("value" in descriptor) descriptor.writable = true;
@@ -3898,17 +3891,8 @@
   }
 
   // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/schema/mapToObjects.js
-  var _excluded = ["isColumnOriented", "ignoreEmptyRows", "rowIndexSourceMap"];
-  function _typeof4(o) {
-    "@babel/helpers - typeof";
-    return _typeof4 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
-      return typeof o2;
-    } : function(o2) {
-      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
-    }, _typeof4(o);
-  }
-  function _slicedToArray3(arr, i) {
-    return _arrayWithHoles3(arr) || _iterableToArrayLimit3(arr, i) || _unsupportedIterableToArray7(arr, i) || _nonIterableRest3();
+  function _slicedToArray3(arr, i2) {
+    return _arrayWithHoles3(arr) || _iterableToArrayLimit3(arr, i2) || _unsupportedIterableToArray7(arr, i2) || _nonIterableRest3();
   }
   function _nonIterableRest3() {
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -3916,12 +3900,12 @@
   function _iterableToArrayLimit3(r, l) {
     var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
     if (null != t) {
-      var e, n, i, u, a = [], f = true, o = false;
+      var e, n, i2, u, a = [], f = true, o = false;
       try {
-        if (i = (t = t.call(r)).next, 0 === l) {
+        if (i2 = (t = t.call(r)).next, 0 === l) {
           if (Object(t) !== t) return;
           f = false;
-        } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = true) ;
+        } else for (; !(f = (e = i2.call(t)).done) && (a.push(e.value), a.length !== l); f = true) ;
       } catch (r2) {
         o = true, n = r2;
       } finally {
@@ -3937,15 +3921,23 @@
   function _arrayWithHoles3(arr) {
     if (Array.isArray(arr)) return arr;
   }
+  function _typeof4(o) {
+    "@babel/helpers - typeof";
+    return _typeof4 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof4(o);
+  }
   function _createForOfIteratorHelperLoose6(o, allowArrayLike) {
     var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
     if (it) return (it = it.call(o)).next.bind(it);
     if (Array.isArray(o) || (it = _unsupportedIterableToArray7(o)) || allowArrayLike && o && typeof o.length === "number") {
       if (it) o = it;
-      var i = 0;
+      var i2 = 0;
       return function() {
-        if (i >= o.length) return { done: true };
-        return { done: false, value: o[i++] };
+        if (i2 >= o.length) return { done: true };
+        return { done: false, value: o[i2++] };
       };
     }
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
@@ -3960,35 +3952,8 @@
   }
   function _arrayLikeToArray7(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
-    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    for (var i2 = 0, arr2 = new Array(len); i2 < len; i2++) arr2[i2] = arr[i2];
     return arr2;
-  }
-  function _objectWithoutProperties(source, excluded) {
-    if (source == null) return {};
-    var target = _objectWithoutPropertiesLoose(source, excluded);
-    var key, i;
-    if (Object.getOwnPropertySymbols) {
-      var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
-      for (i = 0; i < sourceSymbolKeys.length; i++) {
-        key = sourceSymbolKeys[i];
-        if (excluded.indexOf(key) >= 0) continue;
-        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
-        target[key] = source[key];
-      }
-    }
-    return target;
-  }
-  function _objectWithoutPropertiesLoose(source, excluded) {
-    if (source == null) return {};
-    var target = {};
-    var sourceKeys = Object.keys(source);
-    var key, i;
-    for (i = 0; i < sourceKeys.length; i++) {
-      key = sourceKeys[i];
-      if (excluded.indexOf(key) >= 0) continue;
-      target[key] = source[key];
-    }
-    return target;
   }
   function ownKeys3(e, r) {
     var t = Object.keys(e);
@@ -4036,7 +4001,8 @@
   }
   var DEFAULT_OPTIONS = {
     schemaPropertyValueForMissingColumn: void 0,
-    schemaPropertyValueForMissingValue: null,
+    schemaPropertyValueForUndefinedCellValue: void 0,
+    schemaPropertyValueForNullCellValue: null,
     schemaPropertyShouldSkipRequiredValidationForMissingColumn: function schemaPropertyShouldSkipRequiredValidationForMissingColumn() {
       return false;
     },
@@ -4049,7 +4015,6 @@
       return null;
     },
     isColumnOriented: false,
-    ignoreEmptyRows: true,
     arrayValueSeparator: ","
   };
   function mapToObjects(data, schema, options) {
@@ -4058,37 +4023,22 @@
     } else {
       options = DEFAULT_OPTIONS;
     }
-    var _options = options, isColumnOriented = _options.isColumnOriented, ignoreEmptyRows = _options.ignoreEmptyRows, rowIndexSourceMapOriginal = _options.rowIndexSourceMap, schemaTransformOptions = _objectWithoutProperties(_options, _excluded);
-    var rowIndexSourceMap = rowIndexSourceMapOriginal && rowIndexSourceMapOriginal.slice();
+    var _options = options, isColumnOriented = _options.isColumnOriented, rowIndexMap = _options.rowIndexMap;
     validateSchema(schema);
     if (isColumnOriented) {
       data = transpose(data);
     }
-    if (ignoreEmptyRows) {
-      data = data.filter(function(row, i2) {
-        var isEmptyRow = row.every(function(cell) {
-          return cell === null;
-        });
-        if (isEmptyRow) {
-          if (rowIndexSourceMap) {
-            rowIndexSourceMap.splice(i2, 1);
-          }
-          return false;
-        }
-        return true;
-      });
-    }
     var columns = data[0];
     var results = [];
     var errors = [];
-    for (var i = 1; i < data.length; i++) {
-      var result = read(schema, data[i], i, void 0, columns, errors, schemaTransformOptions);
+    for (var i2 = 1; i2 < data.length; i2++) {
+      var result = read(schema, data[i2], i2, void 0, columns, errors, options);
       results.push(result);
     }
-    if (rowIndexSourceMap) {
+    if (rowIndexMap) {
       for (var _iterator = _createForOfIteratorHelperLoose6(errors), _step; !(_step = _iterator()).done; ) {
         var error = _step.value;
-        error.row = rowIndexSourceMap[error.row - 1] + 1;
+        error.row = rowIndexMap[error.row - 1] + 1;
       }
     }
     return {
@@ -4100,30 +4050,29 @@
     var object = {};
     var isEmptyObject = true;
     var createError = function createError2(_ref) {
-      var schemaEntry2 = _ref.schemaEntry, value2 = _ref.value, errorMessage = _ref.error, reason = _ref.reason;
+      var column2 = _ref.column, value2 = _ref.value, errorMessage = _ref.error, reason = _ref.reason;
       var error = {
         error: errorMessage,
         row: rowIndex + 1,
-        column: schemaEntry2.column,
+        column: column2,
         value: value2
       };
       if (reason) {
         error.reason = reason;
       }
-      if (schemaEntry2.type) {
-        error.type = schemaEntry2.type;
+      if (schema[column2].type) {
+        error.type = schema[column2].type;
       }
       return error;
     };
     var pendingRequiredChecks = [];
     var _loop = function _loop2() {
       var key = _Object$keys[_i];
-      var schemaEntry2 = schema[key];
-      var propertyName = key;
-      var columnTitle = schemaEntry2.column;
-      var propertyPath = "".concat(path || "", ".").concat(propertyName);
+      var schemaEntry = schema[key];
+      var isNestedSchema = _typeof4(schemaEntry.type) === "object" && !Array.isArray(schemaEntry.type);
+      var propertyPath = "".concat(path || "", ".").concat(schemaEntry.prop);
       var cellValue;
-      var columnIndex = columns.indexOf(columnTitle);
+      var columnIndex = columns.indexOf(key);
       var isMissingColumn2 = columnIndex < 0;
       if (!isMissingColumn2) {
         cellValue = row[columnIndex];
@@ -4131,27 +4080,21 @@
       var value2;
       var error;
       var reason;
-      if (schemaEntry2.schema) {
-        value2 = read(schemaEntry2.schema, row, rowIndex, propertyPath, columns, errors, options);
+      if (isNestedSchema) {
+        value2 = read(schemaEntry.type, row, rowIndex, propertyPath, columns, errors, options);
       } else {
         if (isMissingColumn2) {
-          if ("schemaPropertyValueForMissingColumn" in options) {
-            value2 = options.schemaPropertyValueForMissingColumn;
-          }
+          value2 = options.schemaPropertyValueForMissingColumn;
         } else if (cellValue === void 0) {
-          if ("schemaPropertyValueForMissingValue" in options) {
-            value2 = options.schemaPropertyValueForMissingValue;
-          }
+          value2 = options.schemaPropertyValueForUndefinedCellValue;
         } else if (cellValue === null) {
-          if ("schemaPropertyValueForMissingValue" in options) {
-            value2 = options.schemaPropertyValueForMissingValue;
-          }
-        } else if (Array.isArray(schemaEntry2.type)) {
+          value2 = options.schemaPropertyValueForNullCellValue;
+        } else if (Array.isArray(schemaEntry.type)) {
           var array = parseArray(cellValue, options.arrayValueSeparator).map(function(_value) {
             if (error) {
               return;
             }
-            var result2 = parseValue(_value, schemaEntry2, options);
+            var result2 = parseValue(_value, schemaEntry, options);
             if (result2.error) {
               value2 = _value;
               error = result2.error;
@@ -4166,16 +4109,16 @@
             }) : array;
           }
         } else {
-          var result = parseValue(cellValue, schemaEntry2, options);
+          var result = parseValue(cellValue, schemaEntry, options);
           error = result.error;
           reason = result.reason;
           value2 = error ? cellValue : result.value;
         }
       }
       if (!error && isEmptyValue(value2)) {
-        if (schemaEntry2.required) {
+        if (schemaEntry.required) {
           pendingRequiredChecks.push({
-            schemaEntry: schemaEntry2,
+            column: key,
             value: value2,
             isMissingColumn: isMissingColumn2
           });
@@ -4183,7 +4126,7 @@
       }
       if (error) {
         errors.push(createError({
-          schemaEntry: schemaEntry2,
+          column: key,
           value: value2,
           error,
           reason
@@ -4193,7 +4136,7 @@
           isEmptyObject = false;
         }
         if (value2 !== void 0) {
-          object[propertyName] = value2;
+          object[schemaEntry.prop] = value2;
         }
       }
     };
@@ -4206,16 +4149,16 @@
       });
     }
     for (var _i2 = 0, _pendingRequiredCheck = pendingRequiredChecks; _i2 < _pendingRequiredCheck.length; _i2++) {
-      var _pendingRequiredCheck2 = _pendingRequiredCheck[_i2], schemaEntry = _pendingRequiredCheck2.schemaEntry, value = _pendingRequiredCheck2.value, isMissingColumn = _pendingRequiredCheck2.isMissingColumn;
-      var skipRequiredValidation = isMissingColumn && options.schemaPropertyShouldSkipRequiredValidationForMissingColumn(schemaEntry.column, {
+      var _pendingRequiredCheck2 = _pendingRequiredCheck[_i2], column = _pendingRequiredCheck2.column, value = _pendingRequiredCheck2.value, isMissingColumn = _pendingRequiredCheck2.isMissingColumn;
+      var skipRequiredValidation = isMissingColumn && options.schemaPropertyShouldSkipRequiredValidationForMissingColumn(column, {
         object
       });
       if (!skipRequiredValidation) {
-        var required = schemaEntry.required;
+        var required = schema[column].required;
         var isRequired = typeof required === "boolean" ? required : required(object);
         if (isRequired) {
           errors.push(createError({
-            schemaEntry,
+            column,
             value,
             error: "required"
           }));
@@ -4232,7 +4175,7 @@
     }
     var result;
     if (schemaEntry.parse) {
-      throw new Error("`schemaEntry.parse` property was renamed to `schemaEntry.type`");
+      result = parseCustomValue(value, schemaEntry.parse);
     } else if (schemaEntry.type) {
       result = parseValueOfType(
         value,
@@ -4314,23 +4257,23 @@
     }
   }
   function getBlock(string, endCharacter, startIndex) {
-    var i = 0;
+    var i2 = 0;
     var substring = "";
     var character;
-    while (startIndex + i < string.length) {
-      var _character = string[startIndex + i];
+    while (startIndex + i2 < string.length) {
+      var _character = string[startIndex + i2];
       if (_character === endCharacter) {
-        return [substring, i];
+        return [substring, i2];
       } else if (_character === '"') {
-        var block = getBlock(string, '"', startIndex + i + 1);
+        var block = getBlock(string, '"', startIndex + i2 + 1);
         substring += block[0];
-        i += '"'.length + block[1] + '"'.length;
+        i2 += '"'.length + block[1] + '"'.length;
       } else {
         substring += _character;
-        i++;
+        i2++;
       }
     }
-    return [substring, i];
+    return [substring, i2];
   }
   function parseArray(string, arrayValueSeparator) {
     var blocks = [];
@@ -4343,23 +4286,18 @@
     return blocks;
   }
   var transpose = function transpose2(array) {
-    return array[0].map(function(_, i) {
+    return array[0].map(function(_, i2) {
       return array.map(function(row) {
-        return row[i];
+        return row[i2];
       });
     });
   };
   function validateSchema(schema) {
     for (var _i3 = 0, _Object$keys2 = Object.keys(schema); _i3 < _Object$keys2.length; _i3++) {
       var key = _Object$keys2[_i3];
-      var schemaEntry = schema[key];
-      if (_typeof4(schemaEntry.type) === "object" && !Array.isArray(schemaEntry.type)) {
-        throw new Error("When defining a nested schema, use a `schema` property instead of a `type` property");
-      }
-      if (!schemaEntry.schema) {
-        if (!schemaEntry.column) {
-          throw new Error('"column" not defined for schema entry "'.concat(key, '".'));
-        }
+      var entry = schema[key];
+      if (!entry.prop) {
+        throw new Error('"prop" not defined for schema entry "'.concat(key, '".'));
       }
     }
   }
@@ -4367,7 +4305,7 @@
     return value === void 0 || value === null;
   }
 
-  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/readXlsxFileContents.js
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/schema/mapToObjects.legacy.js
   function _typeof5(o) {
     "@babel/helpers - typeof";
     return _typeof5 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
@@ -4376,7 +4314,6 @@
       return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
     }, _typeof5(o);
   }
-  var _excluded2 = ["schema"];
   function ownKeys4(e, r) {
     var t = Object.keys(e);
     if (Object.getOwnPropertySymbols) {
@@ -4421,14 +4358,229 @@
     }
     return (hint === "string" ? String : Number)(input);
   }
+  function mapToObjectsLegacyBehavior(data, schema) {
+    var options = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : {};
+    var includeNullValues = options.includeNullValues, ignoreEmptyRows = options.ignoreEmptyRows, isColumnOriented = options.isColumnOriented, rowMap = options.rowMap;
+    var defaultConversionOptions = {
+      schemaPropertyValueForMissingColumn: void 0,
+      schemaPropertyValueForUndefinedCellValue: void 0,
+      schemaPropertyValueForNullCellValue: void 0,
+      schemaPropertyShouldSkipRequiredValidationForMissingColumn: function schemaPropertyShouldSkipRequiredValidationForMissingColumn2(column, _ref) {
+        var path = _ref.path;
+        return false;
+      },
+      getEmptyObjectValue: function getEmptyObjectValue2(object, _ref2) {
+        var path = _ref2.path;
+        return path ? void 0 : null;
+      },
+      getEmptyArrayValue: function getEmptyArrayValue2() {
+        return null;
+      },
+      arrayValueSeparator: ","
+    };
+    if (includeNullValues) {
+      defaultConversionOptions.schemaPropertyValueForMissingColumn = null;
+      defaultConversionOptions.schemaPropertyValueForUndefinedCellValue = null;
+      defaultConversionOptions.schemaPropertyValueForNullCellValue = null;
+      defaultConversionOptions.getEmptyObjectValue = function(object, _ref3) {
+        var path = _ref3.path;
+        return null;
+      };
+    }
+    var result = mapToObjects(data, schema, _objectSpread4(_objectSpread4({}, defaultConversionOptions), {}, {
+      rowIndexMap: rowMap,
+      isColumnOriented
+    }));
+    if (ignoreEmptyRows !== false) {
+      result.rows = result.rows.filter(function(_) {
+        return _ !== defaultConversionOptions.getEmptyObjectValue(_, {
+          path: void 0
+        });
+      });
+    }
+    return result;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/schema/mapToObjects.spreadsheet.js
+  function _typeof6(o) {
+    "@babel/helpers - typeof";
+    return _typeof6 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof6(o);
+  }
+  var _excluded = ["schemaPropertyValueForEmptyCell"];
+  function ownKeys5(e, r) {
+    var t = Object.keys(e);
+    if (Object.getOwnPropertySymbols) {
+      var o = Object.getOwnPropertySymbols(e);
+      r && (o = o.filter(function(r2) {
+        return Object.getOwnPropertyDescriptor(e, r2).enumerable;
+      })), t.push.apply(t, o);
+    }
+    return t;
+  }
+  function _objectSpread5(e) {
+    for (var r = 1; r < arguments.length; r++) {
+      var t = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys5(Object(t), true).forEach(function(r2) {
+        _defineProperty5(e, r2, t[r2]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys5(Object(t)).forEach(function(r2) {
+        Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
+      });
+    }
+    return e;
+  }
+  function _defineProperty5(obj, key, value) {
+    key = _toPropertyKey6(key);
+    if (key in obj) {
+      Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
+    } else {
+      obj[key] = value;
+    }
+    return obj;
+  }
+  function _toPropertyKey6(arg) {
+    var key = _toPrimitive6(arg, "string");
+    return _typeof6(key) === "symbol" ? key : String(key);
+  }
+  function _toPrimitive6(input, hint) {
+    if (_typeof6(input) !== "object" || input === null) return input;
+    var prim = input[Symbol.toPrimitive];
+    if (prim !== void 0) {
+      var res = prim.call(input, hint || "default");
+      if (_typeof6(res) !== "object") return res;
+      throw new TypeError("@@toPrimitive must return a primitive value.");
+    }
+    return (hint === "string" ? String : Number)(input);
+  }
+  function _objectWithoutProperties(source, excluded) {
+    if (source == null) return {};
+    var target = _objectWithoutPropertiesLoose(source, excluded);
+    var key, i2;
+    if (Object.getOwnPropertySymbols) {
+      var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
+      for (i2 = 0; i2 < sourceSymbolKeys.length; i2++) {
+        key = sourceSymbolKeys[i2];
+        if (excluded.indexOf(key) >= 0) continue;
+        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+        target[key] = source[key];
+      }
+    }
+    return target;
+  }
+  function _objectWithoutPropertiesLoose(source, excluded) {
+    if (source == null) return {};
+    var target = {};
+    var sourceKeys = Object.keys(source);
+    var key, i2;
+    for (i2 = 0; i2 < sourceKeys.length; i2++) {
+      key = sourceKeys[i2];
+      if (excluded.indexOf(key) >= 0) continue;
+      target[key] = source[key];
+    }
+    return target;
+  }
+  function mapToObjectsSpreadsheetBehavior(mapToObjects2, data, schema) {
+    var options = arguments.length > 3 && arguments[3] !== void 0 ? arguments[3] : {};
+    var schemaPropertyValueForEmptyCell = options.schemaPropertyValueForEmptyCell, restOptions = _objectWithoutProperties(options, _excluded);
+    return mapToObjects2(data, schema, _objectSpread5(_objectSpread5({}, restOptions), {}, {
+      schemaPropertyValueForNullCellValue: schemaPropertyValueForEmptyCell
+    }));
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/schema/convertMapToSchema.js
+  function _typeof7(o) {
+    "@babel/helpers - typeof";
+    return _typeof7 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof7(o);
+  }
+  function convertMapToSchema(map2) {
+    var schema = {};
+    for (var _i = 0, _Object$keys = Object.keys(map2); _i < _Object$keys.length; _i++) {
+      var key = _Object$keys[_i];
+      var prop = map2[key];
+      var type = void 0;
+      if (_typeof7(prop) === "object") {
+        prop = Object.keys(map2[key])[0];
+        type = convertMapToSchema(map2[key][prop]);
+      }
+      schema[key] = {
+        prop
+      };
+      if (type) {
+        schema[key].type = type;
+      }
+    }
+    return schema;
+  }
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/read/readXlsxFileContents.js
+  function _typeof8(o) {
+    "@babel/helpers - typeof";
+    return _typeof8 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+      return typeof o2;
+    } : function(o2) {
+      return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+    }, _typeof8(o);
+  }
+  var _excluded2 = ["schema", "map"];
+  function ownKeys6(e, r) {
+    var t = Object.keys(e);
+    if (Object.getOwnPropertySymbols) {
+      var o = Object.getOwnPropertySymbols(e);
+      r && (o = o.filter(function(r2) {
+        return Object.getOwnPropertyDescriptor(e, r2).enumerable;
+      })), t.push.apply(t, o);
+    }
+    return t;
+  }
+  function _objectSpread6(e) {
+    for (var r = 1; r < arguments.length; r++) {
+      var t = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys6(Object(t), true).forEach(function(r2) {
+        _defineProperty6(e, r2, t[r2]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys6(Object(t)).forEach(function(r2) {
+        Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
+      });
+    }
+    return e;
+  }
+  function _defineProperty6(obj, key, value) {
+    key = _toPropertyKey7(key);
+    if (key in obj) {
+      Object.defineProperty(obj, key, { value, enumerable: true, configurable: true, writable: true });
+    } else {
+      obj[key] = value;
+    }
+    return obj;
+  }
+  function _toPropertyKey7(arg) {
+    var key = _toPrimitive7(arg, "string");
+    return _typeof8(key) === "symbol" ? key : String(key);
+  }
+  function _toPrimitive7(input, hint) {
+    if (_typeof8(input) !== "object" || input === null) return input;
+    var prim = input[Symbol.toPrimitive];
+    if (prim !== void 0) {
+      var res = prim.call(input, hint || "default");
+      if (_typeof8(res) !== "object") return res;
+      throw new TypeError("@@toPrimitive must return a primitive value.");
+    }
+    return (hint === "string" ? String : Number)(input);
+  }
   function _objectWithoutProperties2(source, excluded) {
     if (source == null) return {};
     var target = _objectWithoutPropertiesLoose2(source, excluded);
-    var key, i;
+    var key, i2;
     if (Object.getOwnPropertySymbols) {
       var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
-      for (i = 0; i < sourceSymbolKeys.length; i++) {
-        key = sourceSymbolKeys[i];
+      for (i2 = 0; i2 < sourceSymbolKeys.length; i2++) {
+        key = sourceSymbolKeys[i2];
         if (excluded.indexOf(key) >= 0) continue;
         if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
         target[key] = source[key];
@@ -4440,24 +4592,24 @@
     if (source == null) return {};
     var target = {};
     var sourceKeys = Object.keys(source);
-    var key, i;
-    for (i = 0; i < sourceKeys.length; i++) {
-      key = sourceKeys[i];
+    var key, i2;
+    for (i2 = 0; i2 < sourceKeys.length; i2++) {
+      key = sourceKeys[i2];
       if (excluded.indexOf(key) >= 0) continue;
       target[key] = source[key];
     }
     return target;
   }
   function readXlsxFileContents(entries, xml, _ref) {
-    var schema = _ref.schema, options = _objectWithoutProperties2(_ref, _excluded2);
-    if (options.map) {
-      throw new Error("`map` option was removed. Pass a `schema` option instead.");
+    var schema = _ref.schema, map2 = _ref.map, options = _objectWithoutProperties2(_ref, _excluded2);
+    if (!schema && map2) {
+      schema = convertMapToSchema(map2);
     }
-    var result = readXlsx(entries, xml, _objectSpread4(_objectSpread4({}, options), {}, {
+    var result = readXlsx(entries, xml, _objectSpread6(_objectSpread6({}, options), {}, {
       properties: schema || options.properties
     }));
     if (schema) {
-      return mapToObjects(result.data, schema, _objectSpread4(_objectSpread4({}, options), {}, {
+      return mapToObjectsSpreadsheetBehavior(mapToObjectsLegacyBehavior, result.data, schema, _objectSpread6(_objectSpread6({}, options), {}, {
         properties: result.properties
       }));
     }
@@ -4475,7 +4627,7 @@
   // app.source.js
   var import_qrcode = __toESM(require_browser(), 1);
   var API_URL = window.TINPLATE_API_URL || "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";
-  var APP_BUILD = "20260817-full-operations-1";
+  var APP_BUILD = "20260817-finished-cans-1";
   var PIN_STORAGE_KEY = "movementAppPin";
   var STAFF_ID_STORAGE_KEY = "tinplateStaffId";
   var STAFF_PIN_STORAGE_KEY = "tinplateStaffPin";
@@ -4487,7 +4639,8 @@
     PRODUCTION_LINE: "Production Line",
     EXCEL_IMPORT: "Excel Import",
     MANUAL_ENTRY: "Manual Entry",
-    PRODUCTION_USE: "Production Use / Waste"
+    PRODUCTION_USE: "Prior Production Use / Waste",
+    FINISHED_CANS: "Finished Cans"
   };
   var PURPOSE_LABELS = {
     CUSTOMER_BRAND: "Customer / Brand",
@@ -5595,7 +5748,7 @@
       return '<option value="' + location + '">' + LOCATION_LABELS[location] + "</option>";
     }).join("");
     $("#transferItems").innerHTML = lots.map(function(lot, index) {
-      return '<article class="item-card transfer-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + "<label>Quantity to transfer (" + unitLabel(lot.unit).toLowerCase() + ')<input class="transfer-quantity" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" value="' + Number(lot.quantity) + '" required></label><div class="slitter-item-fields form-grid hidden"><label>Slitting for<select class="slitting-for"><option value="">Select Component or Body</option><option value="COMPONENT">Component</option><option value="BODY">Body</option></select></label><label>Customer (optional)<input class="slitter-customer" maxlength="160" placeholder="Customer name"></label><label>Brand / design (optional)<input class="slitter-brand" maxlength="160" placeholder="Brand or item"></label><label>Job / work order (optional)<input class="slitter-work-order" maxlength="100"></label><label>Due date (optional)<input class="slitter-due-date" type="date"></label><label>Expected blank width (mm)<input class="slitter-expected-width" type="number" inputmode="numeric" min="1" step="1"></label><label>Expected blank length (mm)<input class="slitter-expected-length" type="number" inputmode="numeric" min="1" step="1"></label><label>Expected blanks per sheet<input class="slitter-expected-pieces" type="number" inputmode="numeric" min="1" step="1"></label><label class="wide">Item description<textarea class="slitter-item-description" rows="2" maxlength="300" placeholder="Describe the component or body this batch will be slitted for"></textarea></label></div></article>';
+      return '<article class="item-card transfer-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + "<label>Quantity to transfer (" + unitLabel(lot.unit).toLowerCase() + ')<input class="transfer-quantity" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" value="' + Number(lot.quantity) + '" required></label><div class="slitter-item-fields form-grid hidden"><label>Slitting for<select class="slitting-for"><option value="">Select Component or Body</option><option value="COMPONENT">Component</option><option value="BODY">Body</option></select></label><label>Job / work order (optional)<input class="slitter-work-order" maxlength="100"></label><label class="wide">Item description<textarea class="slitter-item-description" rows="2" maxlength="300" placeholder="Describe the component or body this batch will be slitted for"></textarea></label></div></article>';
     }).join("");
     setupPurposeFields($("#transferPurposeFields"));
     configureTransferDestination();
@@ -5605,10 +5758,10 @@
   }
   function transferDestinationDetailsHtml(destination) {
     if (destination === "PRINTING") {
-      return '<div class="form-grid destination-details"><label>Printing job / work order (optional)<input class="destination-work-order" maxlength="100"></label><label>Due date (optional)<input class="destination-due-date" type="date"></label><label>Artwork code (optional)<input class="destination-artwork-code" maxlength="120"></label><label>Colours (optional)<input class="destination-colours" maxlength="160" placeholder="e.g. CMYK + spot red"></label><label class="wide">Printing instructions (optional)<textarea class="destination-printing-instructions" rows="2" maxlength="300"></textarea></label></div>';
+      return '<div class="form-grid destination-details"><label>Printing job / work order (optional)<input class="destination-work-order" maxlength="100"></label><label>Due date (optional)<input class="destination-due-date" type="date"></label><label class="wide">Printing instructions (optional)<textarea class="destination-printing-instructions" rows="2" maxlength="300"></textarea></label></div>';
     }
     if (destination === "PRODUCTION_LINE") {
-      return '<div class="form-grid destination-details"><label>Material is for<select class="destination-product-type" required><option value="">Select Body, Component, Blank or Other</option><option value="BODY">Body</option><option value="COMPONENT">Component</option><option value="BLANK">Blank</option><option value="OTHER">Other</option></select></label><label>Product / component<input class="destination-product-description" maxlength="240" required placeholder="e.g. 1 litre paint can body"></label><label>Job / work order<input class="destination-work-order" maxlength="100" required></label><label>Expected production quantity<input class="destination-expected-quantity" type="number" inputmode="numeric" min="1" step="1" required></label><label>Customer (optional)<input class="destination-customer" maxlength="160"></label><label>Brand / design (optional)<input class="destination-brand" maxlength="160"></label><label>Due date (optional)<input class="destination-due-date" type="date"></label></div>';
+      return '<div class="form-grid destination-details"><label>Can / product description<input class="destination-product-description" maxlength="240" required placeholder="e.g. 1 litre rectangular paint can"></label><label>Job / work order<input class="destination-work-order" maxlength="100" required></label><label>Expected cans<input class="destination-expected-quantity" type="number" inputmode="numeric" min="1" step="1" required></label><label>Customer (optional)<input class="destination-customer" maxlength="160"></label><label>Brand / design (optional)<input class="destination-brand" maxlength="160"></label></div>';
     }
     if (destination === "STORAGE" && state.currentLocation !== "STORAGE") {
       return '<div class="form-grid destination-details"><label class="wide">Reason for return to Storage<select class="destination-return-reason" required><option value="">Select return reason</option><option value="UNUSED">Unused material</option><option value="OVERPRODUCTION">Overproduction</option><option value="REJECTED_HOLD">Rejected / quality hold</option><option value="JOB_COMPLETE">Job completed</option><option value="OTHER">Other</option></select></label></div>';
@@ -5631,10 +5784,8 @@
     const details = {
       workOrder: value(".destination-work-order"),
       dueDate: value(".destination-due-date"),
-      artworkCode: value(".destination-artwork-code"),
-      colours: value(".destination-colours"),
       printingInstructions: value(".destination-printing-instructions"),
-      productType: value(".destination-product-type"),
+      productType: destination === "PRODUCTION_LINE" ? "CAN" : "",
       productDescription: value(".destination-product-description"),
       expectedQuantity: integer(".destination-expected-quantity", "Expected production quantity", destination === "PRODUCTION_LINE"),
       customer: value(".destination-customer"),
@@ -5642,8 +5793,7 @@
       returnReason: value(".destination-return-reason")
     };
     if (destination === "PRODUCTION_LINE") {
-      if (!["BODY", "COMPONENT", "BLANK", "OTHER"].includes(details.productType)) throw new Error("Select what the Production Line material is for.");
-      if (!details.productDescription) throw new Error("Production item / product description is required.");
+      if (!details.productDescription) throw new Error("Can / product description is required.");
       if (!details.workOrder) throw new Error("Production job / work order is required.");
       if (details.customer && !details.brand || !details.customer && details.brand) throw new Error("Enter both customer and brand / design, or leave both blank.");
     }
@@ -5718,25 +5868,18 @@
           throw new Error("Item " + (index + 1) + ": select whether it is being slitted for a Component or Body.");
         }
         if (isSlitter && !itemDescription) throw new Error("Item " + (index + 1) + ": description is required.");
-        const optionalInteger = function(selector, label) {
-          const input = card.querySelector(selector);
-          if (!isSlitter || !input || !input.value) return null;
-          const value = Number(input.value);
-          if (!Number.isSafeInteger(value) || value <= 0) throw new Error("Item " + (index + 1) + ": " + label + " must be a positive whole number.");
-          return value;
-        };
         return {
           sourceLotId: lot.lotId,
           quantity,
           slittingFor,
           itemDescription,
-          customer: isSlitter ? card.querySelector(".slitter-customer").value.trim() : "",
-          brand: isSlitter ? card.querySelector(".slitter-brand").value.trim() : "",
           workOrder: isSlitter ? card.querySelector(".slitter-work-order").value.trim() : "",
-          dueDate: isSlitter ? card.querySelector(".slitter-due-date").value : "",
-          expectedBlankWidth: optionalInteger(".slitter-expected-width", "expected blank width"),
-          expectedBlankLength: optionalInteger(".slitter-expected-length", "expected blank length"),
-          expectedBlanksPerSheet: optionalInteger(".slitter-expected-pieces", "expected blanks per sheet")
+          customer: "",
+          brand: "",
+          dueDate: "",
+          expectedBlankWidth: null,
+          expectedBlankLength: null,
+          expectedBlanksPerSheet: null
         };
       });
       destinationDetails = collectDestinationDetails(destinationLocation);
@@ -5916,45 +6059,37 @@
   function openProductionUsageDialog() {
     const lots = selectedLots();
     if (state.currentLocation !== "PRODUCTION_LINE" || !lots.length) {
-      return showToast("Select at least one stock item from the Production Line tab.", true);
+      return showToast("Select at least one blank batch from the Production Line tab.", true);
+    }
+    const nonBlank = lots.find(function(lot) {
+      return lot.unit !== "BLANKS";
+    });
+    if (nonBlank) {
+      return showToast("Finished cans can only be recorded from blank stock. " + nonBlank.lotId + " is stored as " + unitLabel(nonBlank.unit) + ".", true);
     }
     $("#productionUsageForm").reset();
     $("#productionUsageSignature").clearSignature();
     $("#productionUsageItems").innerHTML = lots.map(function(lot, index) {
-      return '<article class="item-card production-usage-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + '<div class="form-grid"><label>Used (' + unitLabel(lot.unit).toLowerCase() + ')<input class="production-used" type="number" inputmode="numeric" min="0" max="' + Number(lot.quantity) + '" step="1" value="0" required></label><label>Waste (' + unitLabel(lot.unit).toLowerCase() + ')<input class="production-waste" type="number" inputmode="numeric" min="0" max="' + Number(lot.quantity) + '" step="1" value="0" required></label><label class="wide">Balance after<input class="production-balance-after" type="text" value="' + formatNumber(lot.quantity) + " " + unitLabel(lot.unit) + '" readonly></label></div></article>';
+      return '<article class="item-card production-usage-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + '<div class="form-grid"><label>Blanks used<input class="production-used" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" required placeholder="0"></label><label>Finished cans<input class="production-finished-cans" type="text" value="0" readonly></label><label class="wide">Blank balance after<input class="production-balance-after" type="text" value="' + formatNumber(lot.quantity) + ' Blanks" readonly></label></div></article>';
     }).join("");
-    $$("#productionUsageItems .production-used, #productionUsageItems .production-waste").forEach(function(input) {
+    $$("#productionUsageItems .production-used").forEach(function(input) {
       input.addEventListener("input", updateProductionUsageCalculations);
     });
-    const first = lots[0];
-    if (["BODY", "COMPONENT", "BLANK", "OTHER"].includes(first.productType)) $("#productionItemType").value = first.productType;
-    $("#productionProductDescription").value = first.productDescription || first.itemDescription || "";
-    $("#productionWorkOrder").value = first.workOrder || "";
-    $("#productionExpectedQuantity").value = first.expectedQuantity || "";
-    $("#productionCustomer").value = first.customer || "";
-    $("#productionBrand").value = first.brand || "";
-    $("#productionWasteReasonLabel").classList.add("hidden");
-    $("#productionWasteReason").required = false;
     applyPicIdentity($("#productionUsagePic"));
     $("#productionUsageDialog").showModal();
     $("#productionUsageSignature").prepareSignature();
   }
   function updateProductionUsageCalculations() {
-    let hasWaste = false;
     $$("#productionUsageItems .production-usage-item").forEach(function(card) {
       const lot = state.lots.find(function(candidate) {
         return candidate.lotId === card.dataset.lotId;
       });
       if (!lot) return;
       const used = Number(card.querySelector(".production-used").value || 0);
-      const waste = Number(card.querySelector(".production-waste").value || 0);
-      hasWaste = hasWaste || waste > 0;
-      const after = Number(lot.quantity) - used - waste;
-      card.querySelector(".production-balance-after").value = after < 0 ? "Exceeds balance by " + formatNumber(Math.abs(after)) : formatNumber(after) + " " + unitLabel(lot.unit);
+      const after = Number(lot.quantity) - used;
+      card.querySelector(".production-finished-cans").value = formatNumber(used);
+      card.querySelector(".production-balance-after").value = after < 0 ? "Exceeds balance by " + formatNumber(Math.abs(after)) : formatNumber(after) + " Blanks";
     });
-    $("#productionWasteReasonLabel").classList.toggle("hidden", !hasWaste);
-    $("#productionWasteReason").required = hasWaste;
-    if (!hasWaste) $("#productionWasteReason").value = "";
   }
   $("#productionUsageForm").addEventListener("submit", async function(event) {
     event.preventDefault();
@@ -5967,42 +6102,27 @@
           return candidate.lotId === card.dataset.lotId;
         });
         if (!lot) throw new Error("Item " + (index + 1) + " is no longer available.");
+        if (lot.unit !== "BLANKS") throw new Error("Item " + (index + 1) + ": finished cans can only be recorded from blank stock.");
         const usedQuantity = Number(card.querySelector(".production-used").value);
-        const wasteQuantity = Number(card.querySelector(".production-waste").value);
-        if (![usedQuantity, wasteQuantity].every(function(value) {
-          return Number.isSafeInteger(value) && value >= 0;
-        })) {
-          throw new Error("Item " + (index + 1) + ": used and waste must be zero or positive whole numbers.");
+        if (!Number.isSafeInteger(usedQuantity) || usedQuantity < 1) {
+          throw new Error("Item " + (index + 1) + ": blanks used must be a positive whole number.");
         }
-        if (usedQuantity + wasteQuantity < 1) throw new Error("Item " + (index + 1) + ": record at least one used or wasted unit.");
-        if (usedQuantity + wasteQuantity > Number(lot.quantity)) throw new Error("Item " + (index + 1) + ": used plus waste exceeds the available balance.");
-        return { sourceLotId: lot.lotId, usedQuantity, wasteQuantity };
+        if (usedQuantity > Number(lot.quantity)) throw new Error("Item " + (index + 1) + ": blanks used exceeds the available balance.");
+        return { sourceLotId: lot.lotId, usedQuantity };
       });
-      const customer = $("#productionCustomer").value.trim();
-      const brand = $("#productionBrand").value.trim();
-      if (customer && !brand || !customer && brand) throw new Error("Enter both customer and brand / design, or leave both blank.");
     } catch (error) {
       return showToast(error.message, true);
     }
     const payload = {
       type: "PRODUCTION_USAGE",
       sourceLocation: "PRODUCTION_LINE",
+      finishedCans: true,
       items,
-      production: {
-        productType: $("#productionItemType").value,
-        productDescription: $("#productionProductDescription").value.trim(),
-        workOrder: $("#productionWorkOrder").value.trim(),
-        expectedQuantity: Number($("#productionExpectedQuantity").value),
-        actualQuantity: $("#productionActualQuantity").value ? Number($("#productionActualQuantity").value) : null,
-        customer: $("#productionCustomer").value.trim(),
-        brand: $("#productionBrand").value.trim()
-      },
-      wasteReason: $("#productionWasteReason").value.trim(),
       description: $("#productionUsageDescription").value.trim(),
       picName: $("#productionUsagePic").value.trim(),
       signature
     };
-    await submitMovement($("#submitProductionUsage"), payload, $("#productionUsageDialog"), "Post Use / Waste Record");
+    await submitMovement($("#submitProductionUsage"), payload, $("#productionUsageDialog"), "Post Finished Cans");
   });
   $("#adjustSelected").addEventListener("click", openAdjustmentDialog);
   $("#adjustmentCounted").addEventListener("input", updateAdjustmentDifference);
@@ -6075,14 +6195,14 @@
     const postedThisMonth = state.records.filter(function(record) {
       return record.status === "POSTED" && malaysiaMonthKey(new Date(record.createdAt)) === currentMonth;
     });
-    const usageRecords = postedThisMonth.filter(function(record) {
-      return record.type === "PRODUCTION_USAGE";
+    const finishedCanRecords = postedThisMonth.filter(function(record) {
+      return record.type === "PRODUCTION_USAGE" && record.productionMode === "FINISHED_CANS";
     });
-    const used = usageRecords.reduce(function(total, record) {
-      return total + Number(record.totals && record.totals.used || 0);
+    const finishedCans = finishedCanRecords.reduce(function(total, record) {
+      return total + Number(record.totals && (record.totals.finishedCans || record.totals.used) || 0);
     }, 0);
-    const waste = usageRecords.reduce(function(total, record) {
-      return total + Number(record.totals && record.totals.waste || 0);
+    const productionBatches = finishedCanRecords.reduce(function(total, record) {
+      return total + (record.lines || []).length;
     }, 0);
     const yields = postedThisMonth.filter(function(record) {
       return record.type === "SLITTING" && Number.isFinite(Number(record.areaUtilizationPercent));
@@ -6096,8 +6216,8 @@
     $("#dashboardSheets").textContent = formatNumber(sumUnit(state.lots, "SHEETS"));
     $("#dashboardBlanks").textContent = formatNumber(sumUnit(state.lots, "BLANKS"));
     $("#dashboardValue").textContent = formatMoney2(totalValue);
-    $("#dashboardUsed").textContent = formatNumber(used);
-    $("#dashboardWaste").textContent = formatNumber(waste);
+    $("#dashboardUsed").textContent = formatNumber(finishedCans);
+    $("#dashboardProductionBatches").textContent = formatNumber(productionBatches);
     $("#dashboardYield").textContent = yields.length ? (yields.reduce(function(total, value) {
       return total + value;
     }, 0) / yields.length).toFixed(1) + "%" : "\u2014";
@@ -6122,8 +6242,6 @@
       return Number(lot.quantity) <= 10;
     });
     if (lowLots.length) alerts.push({ type: "", title: lowLots.length + " lot(s) have a balance of 10 or less", text: "Confirm whether these small balances are still physically present." });
-    const wasteRate = used + waste > 0 ? waste / (used + waste) * 100 : 0;
-    if (wasteRate > 5) alerts.push({ type: "danger", title: "Monthly waste rate is " + wasteRate.toFixed(1) + "%", text: "Open Production Use / Waste records to review the stated reasons." });
     if (!alerts.length) alerts.push({ type: "success", title: "No dashboard alerts", text: "Current stock and this month's activity have no automatic warnings." });
     $("#dashboardAlerts").innerHTML = alerts.map(function(alert) {
       return '<article class="dashboard-alert ' + escapeHtml(alert.type) + '"><strong>' + escapeHtml(alert.title) + "</strong><p>" + escapeHtml(alert.text) + "</p></article>";
@@ -6132,7 +6250,7 @@
       return new Date(b.createdAt) - new Date(a.createdAt);
     }).slice(0, 10);
     $("#dashboardRecentBody").innerHTML = recent.length ? recent.map(function(record) {
-      return '<tr><td><button class="batch-link dashboard-record" type="button" data-record-id="' + escapeHtml(record.id) + '">' + escapeHtml(record.id) + "</button></td><td>" + escapeHtml(recordTypeLabel(record.type)) + "</td><td>" + escapeHtml(recordDestinationLabel(record)) + "</td><td>" + escapeHtml(record.picName || "\u2014") + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + escapeHtml(titleCase(record.status)) + "</td></tr>";
+      return '<tr><td><button class="batch-link dashboard-record" type="button" data-record-id="' + escapeHtml(record.id) + '">' + escapeHtml(record.id) + "</button></td><td>" + escapeHtml(recordTypeLabel(record.type, record)) + "</td><td>" + escapeHtml(recordDestinationLabel(record)) + "</td><td>" + escapeHtml(record.picName || "\u2014") + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + escapeHtml(titleCase(record.status)) + "</td></tr>";
     }).join("") : '<tr><td colspan="6" class="empty-cell">No records have been posted.</td></tr>';
     $$("#dashboardRecentBody .dashboard-record").forEach(function(button) {
       button.addEventListener("click", function() {
@@ -6189,6 +6307,7 @@
           line.brand,
           line.workOrder,
           line.usedQuantity,
+          line.finishedCans,
           line.wasteQuantity,
           line.quantityBefore,
           line.quantityAfter,
@@ -6206,8 +6325,8 @@
     }
     $("#recordsBody").innerHTML = records.map(function(record) {
       const destination = recordDestinationLabel(record);
-      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : record.type === "PRODUCTION_USAGE" ? formatNumber(record.totals && record.totals.used) + " used \xB7 " + formatNumber(record.totals && record.totals.waste) + " waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed balance correction" : record.type === "STOCKTAKE_RECONCILIATION" ? formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " balance(s) reconciled" : recordPurposeSummary(record);
-      return "<tr><td><strong>" + escapeHtml(record.id) + "</strong></td><td>" + escapeHtml(recordTypeLabel(record.type)) + "</td><td>" + escapeHtml(locationLabel(record.sourceLocation)) + "</td><td>" + escapeHtml(destination) + "</td><td>" + formatNumber((record.lines || []).length) + '</td><td class="description-cell">' + escapeHtml(purpose) + "</td><td>" + escapeHtml(record.picName) + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + titleCase(record.status) + '</td><td><button class="secondary table-action view-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View</button></td></tr>';
+      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : record.type === "PRODUCTION_USAGE" ? record.productionMode === "FINISHED_CANS" ? formatNumber(record.totals && (record.totals.finishedCans || record.totals.used)) + " finished cans" : formatNumber(record.totals && record.totals.used) + " used \xB7 " + formatNumber(record.totals && record.totals.waste) + " waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed balance correction" : record.type === "STOCKTAKE_RECONCILIATION" ? formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " balance(s) reconciled" : recordPurposeSummary(record);
+      return "<tr><td><strong>" + escapeHtml(record.id) + "</strong></td><td>" + escapeHtml(recordTypeLabel(record.type, record)) + "</td><td>" + escapeHtml(locationLabel(record.sourceLocation)) + "</td><td>" + escapeHtml(destination) + "</td><td>" + formatNumber((record.lines || []).length) + '</td><td class="description-cell">' + escapeHtml(purpose) + "</td><td>" + escapeHtml(record.picName) + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + titleCase(record.status) + '</td><td><button class="secondary table-action view-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View</button></td></tr>';
     }).join("");
     $$("#recordsBody .view-record").forEach(function(button) {
       button.addEventListener("click", function() {
@@ -6244,11 +6363,14 @@
   }
   function renderRecordDetail(record) {
     const destination = recordDestinationLabel(record);
-    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Staff account", record.actor && record.actor.id ? record.actor.id + " \xB7 " + titleCase(record.actor.role) : "Shared APP PIN") + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : record.type === "PRODUCTION_USAGE" ? "Production use and waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed stock adjustment" : record.type === "STOCKTAKE_RECONCILIATION" ? "Stocktake reconciliation" : recordPurposeSummary(record)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + (record.type === "STOCKTAKE_RECONCILIATION" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Reconciliation result", formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " adjusted") : "") + destinationDetailsCells(record.destinationDetails) + "</dl>";
+    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type, record)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Staff account", record.actor && record.actor.id ? record.actor.id + " \xB7 " + titleCase(record.actor.role) : "Shared APP PIN") + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : record.type === "PRODUCTION_USAGE" ? record.productionMode === "FINISHED_CANS" ? "Blanks converted to finished cans" : "Production use and waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed stock adjustment" : record.type === "STOCKTAKE_RECONCILIATION" ? "Stocktake reconciliation" : recordPurposeSummary(record)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + (record.type === "STOCKTAKE_RECONCILIATION" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Reconciliation result", formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " adjusted") : "") + destinationDetailsCells(record.destinationDetails) + "</dl>";
     if (record.type === "TRANSFER") {
       const slitterTransfer = record.destinationLocation === "SLITTER";
-      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th>' + (slitterTransfer ? "<th>Slitting for</th><th>Customer / Brand</th><th>Job / Expected blank</th><th>Item description</th>" : "") + "</tr></thead><tbody>" + record.items.map(function(item) {
-        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td>" + (slitterTransfer ? "<td>" + escapeHtml(slittingForLabel(item.slittingFor)) + "</td><td>" + escapeHtml([item.customer, item.brand].filter(Boolean).join(" / ") || "\u2014") + '</td><td class="description-cell">' + escapeHtml([item.workOrder, expectedBlankSummary(item)].filter(Boolean).join(" \xB7 ") || "\u2014") + '</td><td class="description-cell">' + escapeHtml(item.itemDescription || "\u2014") + "</td>" : "") + "</tr>";
+      const legacySlitterDetails = slitterTransfer && record.items.some(function(item) {
+        return item.customer || item.brand || item.dueDate || item.expectedBlankWidth || item.expectedBlankLength || item.expectedBlanksPerSheet;
+      });
+      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th>' + (slitterTransfer ? "<th>Slitting for</th>" + (legacySlitterDetails ? "<th>Customer / Brand</th>" : "") + "<th>Work order</th>" + (legacySlitterDetails ? "<th>Expected blank</th>" : "") + "<th>Item description</th>" : "") + "</tr></thead><tbody>" + record.items.map(function(item) {
+        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td>" + (slitterTransfer ? "<td>" + escapeHtml(slittingForLabel(item.slittingFor)) + "</td>" + (legacySlitterDetails ? "<td>" + escapeHtml([item.customer, item.brand].filter(Boolean).join(" / ") || "\u2014") + "</td>" : "") + '<td class="description-cell">' + escapeHtml(item.workOrder || "\u2014") + "</td>" + (legacySlitterDetails ? '<td class="description-cell">' + escapeHtml(expectedBlankSummary(item) || "\u2014") + "</td>" : "") + '<td class="description-cell">' + escapeHtml(item.itemDescription || "\u2014") + "</td>" : "") + "</tr>";
       }).join("") + "</tbody></table></div></section>";
     } else if (record.type === "MANUAL_ADDITION") {
       html += '<section class="record-items"><h3>Batch added to ' + escapeHtml(locationLabel(record.destinationLocation)) + '</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Price</th><th>Total amount</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
@@ -6276,9 +6398,15 @@
         return "<tr><td>" + escapeHtml(output.lotId) + "</td><td>" + escapeHtml(output.batchNumber) + "</td><td>" + escapeHtml(output.dimensions) + "</td><td>" + formatNumber(output.quantity) + " Blanks</td></tr>";
       }).join("") + '</tbody></table></div><p class="info-banner">Material yield: ' + escapeHtml(Number(record.areaUtilizationPercent || 0).toFixed(1)) + "% \xB7 Scrap / offcut area: " + escapeHtml(Number(record.scrapPercent || 0).toFixed(1)) + "%" + (record.scrapDescription ? " \xB7 " + escapeHtml(record.scrapDescription) : "") + "</p></section>";
     } else if (record.type === "PRODUCTION_USAGE") {
-      html += '<section class="record-items"><h3>Production job</h3><dl class="detail-grid">' + detailCell("Output type", titleCase(record.production && record.production.productType)) + detailCell("Product / component", record.production && record.production.productDescription) + detailCell("Job / work order", record.production && record.production.workOrder) + detailCell("Expected output", formatNumber(record.production && record.production.expectedQuantity)) + detailCell("Actual output", record.production && record.production.actualQuantity ? formatNumber(record.production.actualQuantity) : "\u2014") + detailCell("Customer / Brand", [record.production && record.production.customer, record.production && record.production.brand].filter(Boolean).join(" / ") || "\u2014") + detailCell("Waste reason", record.wasteReason || "No waste recorded") + '</dl><h3>Stock consumed</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Used</th><th>Waste</th><th>Before</th><th>After</th></tr></thead><tbody>' + record.items.map(function(item) {
-        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.usedQuantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td><td>" + formatNumber(item.wasteQuantity) + "</td><td>" + formatNumber(item.quantityBefore) + "</td><td>" + formatNumber(item.quantityAfter) + "</td></tr>";
-      }).join("") + "</tbody></table></div></section>";
+      if (record.productionMode === "FINISHED_CANS") {
+        html += '<section class="record-items"><h3>Finished cans</h3><dl class="detail-grid">' + detailCell("Can / product", record.production && record.production.productDescription) + detailCell("Job / work order", record.production && record.production.workOrder) + detailCell("Customer / Brand", [record.production && record.production.customer, record.production && record.production.brand].filter(Boolean).join(" / ") || "\u2014") + detailCell("Total finished cans", formatNumber(record.totals && (record.totals.finishedCans || record.totals.used))) + '</dl><h3>Blank batches consumed</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Job / product</th><th>Blanks used</th><th>Finished cans</th><th>Before</th><th>After</th></tr></thead><tbody>' + record.items.map(function(item) {
+          return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + '</td><td class="description-cell">' + escapeHtml([item.workOrder, item.productDescription].filter(Boolean).join(" \xB7 ") || "\u2014") + "</td><td>" + formatNumber(item.usedQuantity) + " Blanks</td><td>" + formatNumber(item.finishedCans || item.usedQuantity) + "</td><td>" + formatNumber(item.quantityBefore) + "</td><td>" + formatNumber(item.quantityAfter) + "</td></tr>";
+        }).join("") + "</tbody></table></div></section>";
+      } else {
+        html += '<section class="record-items"><h3>Prior production job</h3><dl class="detail-grid">' + detailCell("Output type", titleCase(record.production && record.production.productType)) + detailCell("Product / component", record.production && record.production.productDescription) + detailCell("Job / work order", record.production && record.production.workOrder) + detailCell("Expected output", formatNumber(record.production && record.production.expectedQuantity)) + detailCell("Actual output", record.production && record.production.actualQuantity ? formatNumber(record.production.actualQuantity) : "\u2014") + detailCell("Customer / Brand", [record.production && record.production.customer, record.production && record.production.brand].filter(Boolean).join(" / ") || "\u2014") + detailCell("Waste reason", record.wasteReason || "No waste recorded") + '</dl><h3>Stock consumed</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Used</th><th>Waste</th><th>Before</th><th>After</th></tr></thead><tbody>' + record.items.map(function(item) {
+          return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.usedQuantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td><td>" + formatNumber(item.wasteQuantity) + "</td><td>" + formatNumber(item.quantityBefore) + "</td><td>" + formatNumber(item.quantityAfter) + "</td></tr>";
+        }).join("") + "</tbody></table></div></section>";
+      }
     } else if (record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION") {
       const heading = record.type === "STOCK_ADJUSTMENT" ? "Corrected stock balance" : "Reconciled stocktake balances";
       html += '<section class="record-items"><h3>' + heading + '</h3><div class="table-wrap"><table><thead><tr>' + (record.type === "STOCKTAKE_RECONCILIATION" ? "<th>Excel row</th>" : "") + "<th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Unit</th><th>Before</th><th>After</th><th>Change</th></tr></thead><tbody>" + record.items.map(function(item) {
@@ -6364,8 +6492,9 @@
       "Unit",
       "Slitting For",
       "Item Description",
-      "Used Quantity",
-      "Waste Quantity",
+      "Blanks Used",
+      "Finished Cans",
+      "Prior Waste Quantity",
       "Balance Before",
       "Balance After",
       "Difference",
@@ -6398,7 +6527,7 @@
       lines.forEach(function(line) {
         rows.push([
           record.id,
-          record.type,
+          recordTypeLabel(record.type, record),
           record.status,
           record.createdAt,
           locationLabel(record.sourceLocation),
@@ -6420,6 +6549,7 @@
           line.slittingFor ? slittingForLabel(line.slittingFor) : "",
           line.itemDescription || "",
           line.usedQuantity == null ? "" : line.usedQuantity,
+          line.finishedCans == null ? "" : line.finishedCans,
           line.wasteQuantity == null ? "" : line.wasteQuantity,
           line.quantityBefore == null ? "" : line.quantityBefore,
           line.quantityAfter == null ? "" : line.quantityAfter,
@@ -6495,11 +6625,13 @@
         return line.batchNumber === batchNumber;
       });
       const quantityText = matching.map(function(line) {
-        if (record.type === "PRODUCTION_USAGE") return formatNumber(line.usedQuantity) + " used, " + formatNumber(line.wasteQuantity) + " waste";
+        if (record.type === "PRODUCTION_USAGE") {
+          return record.productionMode === "FINISHED_CANS" ? formatNumber(line.finishedCans || line.usedQuantity) + " finished cans" : formatNumber(line.usedQuantity) + " used, " + formatNumber(line.wasteQuantity) + " waste";
+        }
         if (record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION") return formatNumber(line.quantityBefore) + " \u2192 " + formatNumber(line.quantityAfter);
         return formatNumber(line.quantity) + " " + unitLabel(line.unit);
       }).join(" \xB7 ");
-      return '<article class="timeline-entry ' + escapeHtml(record.status) + '"><strong>' + escapeHtml(recordTypeLabel(record.type)) + " \xB7 " + escapeHtml(record.id) + "</strong><p>" + escapeHtml(locationLabel(record.sourceLocation)) + " \u2192 " + escapeHtml(recordDestinationLabel(record)) + "</p><p>" + escapeHtml(quantityText || record.description || "") + "</p><p>" + escapeHtml(record.picName || "\u2014") + " \xB7 " + formatDate(record.createdAt) + '</p><div class="actions"><button class="secondary table-action timeline-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View record</button></div></article>';
+      return '<article class="timeline-entry ' + escapeHtml(record.status) + '"><strong>' + escapeHtml(recordTypeLabel(record.type, record)) + " \xB7 " + escapeHtml(record.id) + "</strong><p>" + escapeHtml(locationLabel(record.sourceLocation)) + " \u2192 " + escapeHtml(recordDestinationLabel(record)) + "</p><p>" + escapeHtml(quantityText || record.description || "") + "</p><p>" + escapeHtml(record.picName || "\u2014") + " \xB7 " + formatDate(record.createdAt) + '</p><div class="actions"><button class="secondary table-action timeline-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View record</button></div></article>';
     }).join("") : '<p class="empty-cell">No batch records were found.</p>';
     $$("#timelineEntries .timeline-record").forEach(function(button) {
       button.addEventListener("click", function() {
@@ -6578,18 +6710,18 @@
     if (details.returnReason) html += detailCell("Storage return reason", returnReasonLabel(details.returnReason));
     return html;
   }
-  function recordTypeLabel(type) {
+  function recordTypeLabel(type, record) {
     if (type === "STOCK_IMPORT") return "Stock Import";
     if (type === "MANUAL_ADDITION") return "Manual Addition";
     if (type === "SLITTING") return "Slitting";
-    if (type === "PRODUCTION_USAGE") return "Production Use / Waste";
+    if (type === "PRODUCTION_USAGE") return record && record.productionMode === "FINISHED_CANS" ? "Finished Cans" : "Prior Production Use / Waste";
     if (type === "STOCK_ADJUSTMENT") return "Stock Adjustment";
     if (type === "STOCKTAKE_RECONCILIATION") return "Stocktake Reconciliation";
     return type === "TRANSFER" ? "Transfer" : titleCase(type);
   }
   function recordDestinationLabel(record) {
     if (record.type === "SLITTING") return "Slitting conversion";
-    if (record.type === "PRODUCTION_USAGE") return "Consumed / Waste";
+    if (record.type === "PRODUCTION_USAGE") return record.productionMode === "FINISHED_CANS" ? "Finished cans" : "Consumed / Waste";
     if (record.type === "STOCK_ADJUSTMENT") return "Balance adjustment at " + locationLabel(record.destinationLocation);
     if (record.type === "STOCKTAKE_RECONCILIATION") return "Stocktake at " + locationLabel(record.destinationLocation);
     return locationLabel(record.destinationLocation);

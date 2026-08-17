@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#173f35">
   <title>Tinplate Flow Register</title>
-  <link rel="stylesheet" href="styles.css?v=20260817-full-operations-1">
+  <link rel="stylesheet" href="styles.css?v=20260817-finished-cans-1">
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
@@ -66,7 +66,7 @@
             <button id="refreshInventory" class="secondary" type="button">Refresh</button>
             <button id="transferSelected" class="primary compact" type="button" disabled>Transfer Selected</button>
             <button id="slitSelected" class="primary compact hidden" type="button" disabled>Start Slitting</button>
-            <button id="useSelected" class="primary compact hidden" type="button" disabled>Record Use / Waste</button>
+            <button id="useSelected" class="primary compact hidden" type="button" disabled>Record Finished Cans</button>
           </div>
         </div>
 
@@ -119,8 +119,8 @@
           <article class="kpi-card"><span>Total sheets</span><strong id="dashboardSheets">0</strong></article>
           <article class="kpi-card"><span>Total blanks</span><strong id="dashboardBlanks">0</strong></article>
           <article class="kpi-card"><span>Stock value</span><strong id="dashboardValue">RM0.00</strong></article>
-          <article class="kpi-card success"><span>Used this month</span><strong id="dashboardUsed">0</strong></article>
-          <article class="kpi-card danger"><span>Waste this month</span><strong id="dashboardWaste">0</strong></article>
+          <article class="kpi-card success"><span>Finished cans this month</span><strong id="dashboardUsed">0</strong></article>
+          <article class="kpi-card"><span>Production batches used</span><strong id="dashboardProductionBatches">0</strong></article>
           <article class="kpi-card"><span>Average slitting yield</span><strong id="dashboardYield">—</strong></article>
           <article class="kpi-card muted"><span>Adjustments this month</span><strong id="dashboardAdjustments">0</strong></article>
         </div>
@@ -156,7 +156,7 @@
             <option value="MANUAL_ADDITION">Manual Addition</option>
             <option value="TRANSFER">Transfer</option>
             <option value="SLITTING">Slitting</option>
-            <option value="PRODUCTION_USAGE">Production Use / Waste</option>
+            <option value="PRODUCTION_USAGE">Finished Cans</option>
             <option value="STOCK_ADJUSTMENT">Stock Adjustment</option>
             <option value="STOCKTAKE_RECONCILIATION">Stocktake Reconciliation</option>
           </select>
@@ -435,42 +435,24 @@
   <dialog id="productionUsageDialog" class="wide-dialog">
     <form id="productionUsageForm">
       <div class="dialog-heading">
-        <div><p class="step">Production consumption</p><h2>Record Tinplate Use and Waste</h2></div>
-        <button class="icon-button close-dialog" type="button" aria-label="Close production use form">×</button>
+        <div><p class="step">Production consumption</p><h2>Record Finished Cans</h2></div>
+        <button class="icon-button close-dialog" type="button" aria-label="Close finished cans form">×</button>
       </div>
-      <p class="info-banner">Enter the quantity actually used and wasted for every selected Production Line stock item. Their combined quantity cannot exceed the live balance.</p>
+      <p class="info-banner">Enter how many blanks from each selected batch were used to make finished cans. The Worker deducts that quantity from the live blank balance.</p>
       <div id="productionUsageItems" class="item-list"></div>
       <div class="form-grid">
-        <label>Output type
-          <select id="productionItemType" required>
-            <option value="">Select output type</option>
-            <option value="BODY">Body</option>
-            <option value="COMPONENT">Component</option>
-            <option value="BLANK">Blank</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </label>
-        <label>Product / component<input id="productionProductDescription" maxlength="240" required placeholder="e.g. 1 litre paint can body"></label>
-        <label>Job / work order<input id="productionWorkOrder" maxlength="100" required></label>
-        <label>Expected production quantity<input id="productionExpectedQuantity" type="number" inputmode="numeric" min="1" step="1" required></label>
-        <label>Actual production quantity (optional)<input id="productionActualQuantity" type="number" inputmode="numeric" min="1" step="1"></label>
-        <label>Customer (optional)<input id="productionCustomer" maxlength="160"></label>
-        <label>Brand / design (optional)<input id="productionBrand" maxlength="160"></label>
-        <label id="productionWasteReasonLabel" class="wide hidden">Waste reason
-          <textarea id="productionWasteReason" rows="2" maxlength="300" placeholder="Explain rejected material, setup loss or damaged blanks"></textarea>
-        </label>
-        <label class="wide">Production use description
-          <textarea id="productionUsageDescription" rows="3" maxlength="500" required placeholder="Describe what the material was used for"></textarea>
+        <label class="wide">Production notes (optional)
+          <textarea id="productionUsageDescription" rows="3" maxlength="500" placeholder="Optional notes about the finished cans or production run"></textarea>
         </label>
         <label class="wide">Person-in-charge<input id="productionUsagePic" maxlength="120" autocomplete="name" required placeholder="Full name"></label>
       </div>
       <div class="signature-group">
-        <div><h3>PIC signature</h3><p>This signature confirms the used quantity, waste quantity, product and remaining balance.</p></div>
-        <canvas id="productionUsageSignature" class="signature" aria-label="Production use PIC signature"></canvas>
+        <div><h3>PIC signature</h3><p>This signature confirms the blanks used, finished cans recorded and remaining batch balance.</p></div>
+        <canvas id="productionUsageSignature" class="signature" aria-label="Finished cans PIC signature"></canvas>
         <button class="link-button clear-signature" data-canvas="productionUsageSignature" type="button">Clear signature</button>
       </div>
       <p class="server-time-note">The production record date and time are generated by the Cloudflare Worker.</p>
-      <button id="submitProductionUsage" class="primary submit-button" type="submit">Post Use / Waste Record</button>
+      <button id="submitProductionUsage" class="primary submit-button" type="submit">Post Finished Cans</button>
     </form>
   </dialog>
 
@@ -553,6 +535,6 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>window.TINPLATE_API_URL = "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";</script>
-  <script src="app.js?v=20260817-full-operations-1"></script>
+  <script src="app.js?v=20260817-finished-cans-1"></script>
 </body>
 </html>
