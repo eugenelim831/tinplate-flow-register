@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#173f35">
   <title>Tinplate Flow Register</title>
-  <link rel="stylesheet" href="styles.css?v=20260805-alignment-fix-1">
+  <link rel="stylesheet" href="styles.css?v=20260817-slitter-item-use-1">
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
@@ -298,7 +298,7 @@
       </div>
       <div id="transferPurposeFields"></div>
       <div class="form-grid">
-        <label class="wide">Movement description / reason
+        <label class="wide"><span id="transferDescriptionLabel">Movement description / reason</span>
           <textarea id="transferDescription" rows="3" maxlength="500" required placeholder="Describe why the material is being moved or what it will be used for"></textarea>
         </label>
         <label class="wide">Person-in-charge
@@ -394,6 +394,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=20260805-manual-stock-1"></script>
+  <script src="app.js?v=20260817-slitter-item-use-1"></script>
 </body>
 </html>

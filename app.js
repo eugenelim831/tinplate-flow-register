@@ -2370,7 +2370,7 @@
 
   // app.source.js
   var API_URL = window.TINPLATE_API_URL || "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";
-  var APP_BUILD = "20260805-manual-stock-1";
+  var APP_BUILD = "20260817-slitter-item-use-1";
   var PIN_STORAGE_KEY = "movementAppPin";
   var LOCATIONS = ["STORAGE", "SLITTER", "PRODUCTION_LINE", "PRINTING"];
   var LOCATION_LABELS = {
@@ -2384,7 +2384,8 @@
   var PURPOSE_LABELS = {
     CUSTOMER_BRAND: "Customer / Brand",
     COATING: "Coating",
-    INTERNAL: "Stock / Internal"
+    TRANSFER: "Transfer",
+    INTERNAL: "Transfer"
   };
   var state = {
     lots: [],
@@ -2645,6 +2646,8 @@
         lot.customer,
         lot.brand,
         lot.description,
+        lot.itemDescription,
+        lot.slittingFor,
         lot.coatingDescription,
         lot.supplierName,
         lot.temper,
@@ -2668,7 +2671,11 @@
     } else {
       $("#inventoryBody").innerHTML = lots.map(function(lot) {
         const customerBrand = [lot.customer, lot.brand].filter(Boolean).join(" / ") || "\u2014";
-        const description = [lot.description, lot.coatingDescription].filter(Boolean).join(" \xB7 ") || "\u2014";
+        const description = [
+          lot.slittingFor ? "Slitting for " + slittingForLabel(lot.slittingFor) : "",
+          lot.itemDescription || lot.description,
+          lot.coatingDescription
+        ].filter(Boolean).join(" \xB7 ") || "\u2014";
         const supplierSpec = [
           lot.supplierName,
           lot.temper ? "Temper " + lot.temper : "",
@@ -3159,8 +3166,11 @@
       button.textContent = "Import New Batches";
     }
   });
+  function standardPurposeOptionsHtml() {
+    return '<option value="CUSTOMER_BRAND">Customer / Brand</option><option value="COATING">Coating</option><option value="TRANSFER">Transfer</option>';
+  }
   function purposeFieldsHtml() {
-    return '<div class="form-grid purpose-block"><label>Purpose type<select class="purpose-type" required><option value="CUSTOMER_BRAND">Customer / Brand</option><option value="COATING">Coating</option><option value="INTERNAL">Stock / Internal</option></select></label><label class="purpose-customer">Customer<input class="customer" maxlength="160" required placeholder="Customer name"></label><label class="purpose-brand">Brand / design<input class="brand" maxlength="160" required placeholder="Brand or printed design"></label><label class="purpose-coating hidden">Coating description<input class="coating-description" maxlength="240" placeholder="e.g. White coat or epoxy gold"></label></div>';
+    return '<div class="form-grid purpose-block"><label>Purpose type<select class="purpose-type" required>' + standardPurposeOptionsHtml() + '</select></label><label class="purpose-customer">Customer<input class="customer" maxlength="160" required placeholder="Customer name"></label><label class="purpose-brand">Brand / design<input class="brand" maxlength="160" required placeholder="Brand or printed design"></label><label class="purpose-coating hidden">Coating description<input class="coating-description" maxlength="240" placeholder="e.g. White coat or epoxy gold"></label></div>';
   }
   function setupPurposeFields(container) {
     container.innerHTML = purposeFieldsHtml();
@@ -3204,6 +3214,7 @@
     return purpose;
   }
   $("#transferSelected").addEventListener("click", openTransferDialog);
+  $("#transferDestination").addEventListener("change", configureTransferDestination);
   function openTransferDialog() {
     const lots = selectedLots();
     if (!lots.length) return showToast("Select at least one stock lot.", true);
@@ -3216,11 +3227,45 @@
       return '<option value="' + location + '">' + LOCATION_LABELS[location] + "</option>";
     }).join("");
     $("#transferItems").innerHTML = lots.map(function(lot, index) {
-      return '<article class="item-card transfer-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + "<label>Quantity to transfer (" + unitLabel(lot.unit).toLowerCase() + ')<input class="transfer-quantity" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" value="' + Number(lot.quantity) + '" required></label></article>';
+      return '<article class="item-card transfer-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + "<label>Quantity to transfer (" + unitLabel(lot.unit).toLowerCase() + ')<input class="transfer-quantity" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" value="' + Number(lot.quantity) + '" required></label><div class="slitter-item-fields form-grid hidden"><label>Slitting for<select class="slitting-for"><option value="">Select Component or Body</option><option value="COMPONENT">Component</option><option value="BODY">Body</option></select></label><label class="wide">Item description<textarea class="slitter-item-description" rows="2" maxlength="300" placeholder="Describe the component or body this batch will be slitted for"></textarea></label></div></article>';
     }).join("");
     setupPurposeFields($("#transferPurposeFields"));
+    configureTransferDestination();
     $("#transferDialog").showModal();
     $("#transferSignature").prepareSignature();
+  }
+  function configureTransferDestination() {
+    const isSlitter = $("#transferDestination").value === "SLITTER";
+    const purposeContainer = $("#transferPurposeFields");
+    const purposeSelect = purposeContainer.querySelector(".purpose-type");
+    if (purposeSelect) {
+      if (isSlitter) {
+        purposeSelect.innerHTML = '<option value="TRANSFER">Transfer</option>';
+        purposeContainer.classList.add("hidden");
+      } else {
+        const hasStandardChoices = Array.from(purposeSelect.options).some(function(option) {
+          return option.value === "COATING";
+        });
+        if (!hasStandardChoices) purposeSelect.innerHTML = standardPurposeOptionsHtml();
+        purposeContainer.classList.remove("hidden");
+      }
+      updatePurposeFields(purposeContainer);
+    }
+    $$("#transferItems .transfer-item").forEach(function(card) {
+      const fields = card.querySelector(".slitter-item-fields");
+      const slittingFor = card.querySelector(".slitting-for");
+      const description = card.querySelector(".slitter-item-description");
+      fields.classList.toggle("hidden", !isSlitter);
+      slittingFor.required = isSlitter;
+      description.required = isSlitter;
+      if (!isSlitter) {
+        slittingFor.value = "";
+        description.value = "";
+      }
+    });
+    $("#transferDescriptionLabel").textContent = isSlitter ? "Overall transfer remarks (optional)" : "Movement description / reason";
+    $("#transferDescription").required = !isSlitter;
+    $("#transferDescription").placeholder = isSlitter ? "Optional notes applying to the whole Slitter transfer" : "Describe why the material is being moved or what it will be used for";
   }
   function stockSnapshotHtml(lot) {
     return '<div class="stock-snapshot"><div><span>Batch</span><strong>' + escapeHtml(lot.batchNumber) + "</strong></div><div><span>Dimensions</span><strong>" + escapeHtml(lot.dimensions) + "</strong></div><div><span>Available</span><strong>" + formatNumber(lot.quantity) + " " + unitLabel(lot.unit) + "</strong></div><div><span>Location</span><strong>" + escapeHtml(LOCATION_LABELS[lot.location] || lot.location) + "</strong></div></div>";
@@ -3231,8 +3276,11 @@
     if (!signature) return showToast("PIC signature is required.", true);
     let purpose;
     let items;
+    let description;
     try {
-      purpose = collectPurpose($("#transferPurposeFields"));
+      const destinationLocation = $("#transferDestination").value;
+      const isSlitter = destinationLocation === "SLITTER";
+      purpose = isSlitter ? { type: "TRANSFER", customer: "", brand: "", coatingDescription: "" } : collectPurpose($("#transferPurposeFields"));
       items = $$("#transferItems .transfer-item").map(function(card, index) {
         const lot = state.lots.find(function(candidate) {
           return candidate.lotId === card.dataset.lotId;
@@ -3241,8 +3289,26 @@
         if (!lot) throw new Error("Selected stock is no longer available. Refresh and try again.");
         if (!Number.isInteger(quantity) || quantity < 1) throw new Error("Item " + (index + 1) + ": quantity must be a whole number.");
         if (quantity > Number(lot.quantity)) throw new Error("Item " + (index + 1) + ": quantity exceeds the available balance.");
-        return { sourceLotId: lot.lotId, quantity };
+        const slittingFor = isSlitter ? card.querySelector(".slitting-for").value : "";
+        const itemDescription = isSlitter ? card.querySelector(".slitter-item-description").value.trim() : "";
+        if (isSlitter && !["COMPONENT", "BODY"].includes(slittingFor)) {
+          throw new Error("Item " + (index + 1) + ": select whether it is being slitted for a Component or Body.");
+        }
+        if (isSlitter && !itemDescription) throw new Error("Item " + (index + 1) + ": description is required.");
+        return {
+          sourceLotId: lot.lotId,
+          quantity,
+          slittingFor,
+          itemDescription
+        };
       });
+      description = $("#transferDescription").value.trim();
+      if (!description && isSlitter) {
+        const uses = Array.from(new Set(items.map(function(item) {
+          return slittingForLabel(item.slittingFor);
+        })));
+        description = "Transfer to Slitter for " + uses.join(" and ");
+      }
     } catch (error) {
       return showToast(error.message, true);
     }
@@ -3252,7 +3318,7 @@
       destinationLocation: $("#transferDestination").value,
       items,
       purpose,
-      description: $("#transferDescription").value.trim(),
+      description,
       picName: $("#transferPic").value.trim(),
       signature
     };
@@ -3445,7 +3511,9 @@
           line.supplierName,
           line.temper,
           line.tinCoating,
-          line.dateReceived
+          line.dateReceived,
+          line.slittingFor,
+          line.itemDescription
         ]);
       }, [])).join(" ").toLowerCase();
       return (!term || text.includes(term)) && (!type || record.type === type) && (!status || record.status === status);
@@ -3459,7 +3527,7 @@
     }
     $("#recordsBody").innerHTML = records.map(function(record) {
       const destination = recordDestinationLabel(record);
-      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : purposeSummary(record.purpose);
+      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : recordPurposeSummary(record);
       return "<tr><td><strong>" + escapeHtml(record.id) + "</strong></td><td>" + escapeHtml(recordTypeLabel(record.type)) + "</td><td>" + escapeHtml(locationLabel(record.sourceLocation)) + "</td><td>" + escapeHtml(destination) + "</td><td>" + formatNumber((record.lines || []).length) + '</td><td class="description-cell">' + escapeHtml(purpose) + "</td><td>" + escapeHtml(record.picName) + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + titleCase(record.status) + '</td><td><button class="secondary table-action view-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View</button></td></tr>';
     }).join("");
     $$("#recordsBody .view-record").forEach(function(button) {
@@ -3495,10 +3563,11 @@
   }
   function renderRecordDetail(record) {
     const destination = recordDestinationLabel(record);
-    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : purposeSummary(record.purpose)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + "</dl>";
+    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : recordPurposeSummary(record)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + "</dl>";
     if (record.type === "TRANSFER") {
-      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th></tr></thead><tbody>' + record.items.map(function(item) {
-        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td></tr>";
+      const slitterTransfer = record.destinationLocation === "SLITTER";
+      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th>' + (slitterTransfer ? "<th>Slitting for</th><th>Item description</th>" : "") + "</tr></thead><tbody>" + record.items.map(function(item) {
+        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td>" + (slitterTransfer ? "<td>" + escapeHtml(slittingForLabel(item.slittingFor)) + '</td><td class="description-cell">' + escapeHtml(item.itemDescription || "\u2014") + "</td>" : "") + "</tr>";
       }).join("") + "</tbody></table></div></section>";
     } else if (record.type === "MANUAL_ADDITION") {
       html += '<section class="record-items"><h3>Batch added to ' + escapeHtml(locationLabel(record.destinationLocation)) + '</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Price</th><th>Total amount</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
@@ -3601,6 +3670,8 @@
       "Dimensions",
       "Quantity",
       "Unit",
+      "Slitting For",
+      "Item Description",
       "Import File",
       "Source Sheet",
       "Excel Row",
@@ -3635,6 +3706,8 @@
           line.dimensions || "",
           line.quantity == null ? "" : line.quantity,
           line.unit || "",
+          line.slittingFor ? slittingForLabel(line.slittingFor) : "",
+          line.itemDescription || "",
           record.fileName || "",
           record.sourceSheet || "",
           line.sourceRow || "",
@@ -3670,7 +3743,21 @@
     if (!purpose) return "\u2014";
     if (purpose.type === "CUSTOMER_BRAND") return [purpose.customer, purpose.brand].filter(Boolean).join(" / ") || "Customer / Brand";
     if (purpose.type === "COATING") return purpose.coatingDescription || "Coating";
-    return "Stock / Internal";
+    return "Transfer";
+  }
+  function recordPurposeSummary(record) {
+    if (record && record.type === "TRANSFER" && record.destinationLocation === "SLITTER") {
+      const uses = Array.from(new Set((record.lines || record.items || []).map(function(line) {
+        return line.slittingFor ? slittingForLabel(line.slittingFor) : "";
+      }).filter(Boolean)));
+      return uses.length ? "Slitting \u2014 " + uses.join(", ") : "Transfer";
+    }
+    return purposeSummary(record && record.purpose);
+  }
+  function slittingForLabel(value) {
+    if (value === "COMPONENT") return "Component";
+    if (value === "BODY") return "Body";
+    return value || "\u2014";
   }
   function recordTypeLabel(type) {
     if (type === "STOCK_IMPORT") return "Stock Import";

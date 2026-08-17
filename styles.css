@@ -278,6 +278,11 @@ dialog > form, .dialog-content {
 .item-card-head strong { font-size: 17px; }
 .item-card .remove-output { padding-top: 0; color: var(--danger); }
 .item-card .remove-output:disabled { visibility: hidden; }
+.slitter-item-fields {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
 .stock-snapshot {
   display: grid;
   grid-template-columns: repeat(4, minmax(110px, 1fr));
