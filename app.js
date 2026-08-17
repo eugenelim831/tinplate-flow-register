@@ -1,4 +1,2108 @@
 (() => {
+  var __create = Object.create;
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __commonJS = (cb, mod) => function __require() {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/can-promise.js
+  var require_can_promise = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/can-promise.js"(exports, module) {
+      module.exports = function() {
+        return typeof Promise === "function" && Promise.prototype && Promise.prototype.then;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/utils.js
+  var require_utils = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/utils.js"(exports) {
+      var toSJISFunction;
+      var CODEWORDS_COUNT = [
+        0,
+        // Not used
+        26,
+        44,
+        70,
+        100,
+        134,
+        172,
+        196,
+        242,
+        292,
+        346,
+        404,
+        466,
+        532,
+        581,
+        655,
+        733,
+        815,
+        901,
+        991,
+        1085,
+        1156,
+        1258,
+        1364,
+        1474,
+        1588,
+        1706,
+        1828,
+        1921,
+        2051,
+        2185,
+        2323,
+        2465,
+        2611,
+        2761,
+        2876,
+        3034,
+        3196,
+        3362,
+        3532,
+        3706
+      ];
+      exports.getSymbolSize = function getSymbolSize(version) {
+        if (!version) throw new Error('"version" cannot be null or undefined');
+        if (version < 1 || version > 40) throw new Error('"version" should be in range from 1 to 40');
+        return version * 4 + 17;
+      };
+      exports.getSymbolTotalCodewords = function getSymbolTotalCodewords(version) {
+        return CODEWORDS_COUNT[version];
+      };
+      exports.getBCHDigit = function(data) {
+        let digit = 0;
+        while (data !== 0) {
+          digit++;
+          data >>>= 1;
+        }
+        return digit;
+      };
+      exports.setToSJISFunction = function setToSJISFunction(f) {
+        if (typeof f !== "function") {
+          throw new Error('"toSJISFunc" is not a valid function.');
+        }
+        toSJISFunction = f;
+      };
+      exports.isKanjiModeEnabled = function() {
+        return typeof toSJISFunction !== "undefined";
+      };
+      exports.toSJIS = function toSJIS(kanji) {
+        return toSJISFunction(kanji);
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/error-correction-level.js
+  var require_error_correction_level = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/error-correction-level.js"(exports) {
+      exports.L = { bit: 1 };
+      exports.M = { bit: 0 };
+      exports.Q = { bit: 3 };
+      exports.H = { bit: 2 };
+      function fromString(string) {
+        if (typeof string !== "string") {
+          throw new Error("Param is not a string");
+        }
+        const lcStr = string.toLowerCase();
+        switch (lcStr) {
+          case "l":
+          case "low":
+            return exports.L;
+          case "m":
+          case "medium":
+            return exports.M;
+          case "q":
+          case "quartile":
+            return exports.Q;
+          case "h":
+          case "high":
+            return exports.H;
+          default:
+            throw new Error("Unknown EC Level: " + string);
+        }
+      }
+      exports.isValid = function isValid(level) {
+        return level && typeof level.bit !== "undefined" && level.bit >= 0 && level.bit < 4;
+      };
+      exports.from = function from(value, defaultValue) {
+        if (exports.isValid(value)) {
+          return value;
+        }
+        try {
+          return fromString(value);
+        } catch (e) {
+          return defaultValue;
+        }
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/bit-buffer.js
+  var require_bit_buffer = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/bit-buffer.js"(exports, module) {
+      function BitBuffer() {
+        this.buffer = [];
+        this.length = 0;
+      }
+      BitBuffer.prototype = {
+        get: function(index) {
+          const bufIndex = Math.floor(index / 8);
+          return (this.buffer[bufIndex] >>> 7 - index % 8 & 1) === 1;
+        },
+        put: function(num, length) {
+          for (let i = 0; i < length; i++) {
+            this.putBit((num >>> length - i - 1 & 1) === 1);
+          }
+        },
+        getLengthInBits: function() {
+          return this.length;
+        },
+        putBit: function(bit) {
+          const bufIndex = Math.floor(this.length / 8);
+          if (this.buffer.length <= bufIndex) {
+            this.buffer.push(0);
+          }
+          if (bit) {
+            this.buffer[bufIndex] |= 128 >>> this.length % 8;
+          }
+          this.length++;
+        }
+      };
+      module.exports = BitBuffer;
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/bit-matrix.js
+  var require_bit_matrix = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/bit-matrix.js"(exports, module) {
+      function BitMatrix(size) {
+        if (!size || size < 1) {
+          throw new Error("BitMatrix size must be defined and greater than 0");
+        }
+        this.size = size;
+        this.data = new Uint8Array(size * size);
+        this.reservedBit = new Uint8Array(size * size);
+      }
+      BitMatrix.prototype.set = function(row, col, value, reserved) {
+        const index = row * this.size + col;
+        this.data[index] = value;
+        if (reserved) this.reservedBit[index] = true;
+      };
+      BitMatrix.prototype.get = function(row, col) {
+        return this.data[row * this.size + col];
+      };
+      BitMatrix.prototype.xor = function(row, col, value) {
+        this.data[row * this.size + col] ^= value;
+      };
+      BitMatrix.prototype.isReserved = function(row, col) {
+        return this.reservedBit[row * this.size + col];
+      };
+      module.exports = BitMatrix;
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/alignment-pattern.js
+  var require_alignment_pattern = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/alignment-pattern.js"(exports) {
+      var getSymbolSize = require_utils().getSymbolSize;
+      exports.getRowColCoords = function getRowColCoords(version) {
+        if (version === 1) return [];
+        const posCount = Math.floor(version / 7) + 2;
+        const size = getSymbolSize(version);
+        const intervals = size === 145 ? 26 : Math.ceil((size - 13) / (2 * posCount - 2)) * 2;
+        const positions = [size - 7];
+        for (let i = 1; i < posCount - 1; i++) {
+          positions[i] = positions[i - 1] - intervals;
+        }
+        positions.push(6);
+        return positions.reverse();
+      };
+      exports.getPositions = function getPositions(version) {
+        const coords = [];
+        const pos = exports.getRowColCoords(version);
+        const posLength = pos.length;
+        for (let i = 0; i < posLength; i++) {
+          for (let j = 0; j < posLength; j++) {
+            if (i === 0 && j === 0 || // top-left
+            i === 0 && j === posLength - 1 || // bottom-left
+            i === posLength - 1 && j === 0) {
+              continue;
+            }
+            coords.push([pos[i], pos[j]]);
+          }
+        }
+        return coords;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/finder-pattern.js
+  var require_finder_pattern = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/finder-pattern.js"(exports) {
+      var getSymbolSize = require_utils().getSymbolSize;
+      var FINDER_PATTERN_SIZE = 7;
+      exports.getPositions = function getPositions(version) {
+        const size = getSymbolSize(version);
+        return [
+          // top-left
+          [0, 0],
+          // top-right
+          [size - FINDER_PATTERN_SIZE, 0],
+          // bottom-left
+          [0, size - FINDER_PATTERN_SIZE]
+        ];
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/mask-pattern.js
+  var require_mask_pattern = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/mask-pattern.js"(exports) {
+      exports.Patterns = {
+        PATTERN000: 0,
+        PATTERN001: 1,
+        PATTERN010: 2,
+        PATTERN011: 3,
+        PATTERN100: 4,
+        PATTERN101: 5,
+        PATTERN110: 6,
+        PATTERN111: 7
+      };
+      var PenaltyScores = {
+        N1: 3,
+        N2: 3,
+        N3: 40,
+        N4: 10
+      };
+      exports.isValid = function isValid(mask) {
+        return mask != null && mask !== "" && !isNaN(mask) && mask >= 0 && mask <= 7;
+      };
+      exports.from = function from(value) {
+        return exports.isValid(value) ? parseInt(value, 10) : void 0;
+      };
+      exports.getPenaltyN1 = function getPenaltyN1(data) {
+        const size = data.size;
+        let points = 0;
+        let sameCountCol = 0;
+        let sameCountRow = 0;
+        let lastCol = null;
+        let lastRow = null;
+        for (let row = 0; row < size; row++) {
+          sameCountCol = sameCountRow = 0;
+          lastCol = lastRow = null;
+          for (let col = 0; col < size; col++) {
+            let module2 = data.get(row, col);
+            if (module2 === lastCol) {
+              sameCountCol++;
+            } else {
+              if (sameCountCol >= 5) points += PenaltyScores.N1 + (sameCountCol - 5);
+              lastCol = module2;
+              sameCountCol = 1;
+            }
+            module2 = data.get(col, row);
+            if (module2 === lastRow) {
+              sameCountRow++;
+            } else {
+              if (sameCountRow >= 5) points += PenaltyScores.N1 + (sameCountRow - 5);
+              lastRow = module2;
+              sameCountRow = 1;
+            }
+          }
+          if (sameCountCol >= 5) points += PenaltyScores.N1 + (sameCountCol - 5);
+          if (sameCountRow >= 5) points += PenaltyScores.N1 + (sameCountRow - 5);
+        }
+        return points;
+      };
+      exports.getPenaltyN2 = function getPenaltyN2(data) {
+        const size = data.size;
+        let points = 0;
+        for (let row = 0; row < size - 1; row++) {
+          for (let col = 0; col < size - 1; col++) {
+            const last = data.get(row, col) + data.get(row, col + 1) + data.get(row + 1, col) + data.get(row + 1, col + 1);
+            if (last === 4 || last === 0) points++;
+          }
+        }
+        return points * PenaltyScores.N2;
+      };
+      exports.getPenaltyN3 = function getPenaltyN3(data) {
+        const size = data.size;
+        let points = 0;
+        let bitsCol = 0;
+        let bitsRow = 0;
+        for (let row = 0; row < size; row++) {
+          bitsCol = bitsRow = 0;
+          for (let col = 0; col < size; col++) {
+            bitsCol = bitsCol << 1 & 2047 | data.get(row, col);
+            if (col >= 10 && (bitsCol === 1488 || bitsCol === 93)) points++;
+            bitsRow = bitsRow << 1 & 2047 | data.get(col, row);
+            if (col >= 10 && (bitsRow === 1488 || bitsRow === 93)) points++;
+          }
+        }
+        return points * PenaltyScores.N3;
+      };
+      exports.getPenaltyN4 = function getPenaltyN4(data) {
+        let darkCount = 0;
+        const modulesCount = data.data.length;
+        for (let i = 0; i < modulesCount; i++) darkCount += data.data[i];
+        const k = Math.abs(Math.ceil(darkCount * 100 / modulesCount / 5) - 10);
+        return k * PenaltyScores.N4;
+      };
+      function getMaskAt(maskPattern, i, j) {
+        switch (maskPattern) {
+          case exports.Patterns.PATTERN000:
+            return (i + j) % 2 === 0;
+          case exports.Patterns.PATTERN001:
+            return i % 2 === 0;
+          case exports.Patterns.PATTERN010:
+            return j % 3 === 0;
+          case exports.Patterns.PATTERN011:
+            return (i + j) % 3 === 0;
+          case exports.Patterns.PATTERN100:
+            return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+          case exports.Patterns.PATTERN101:
+            return i * j % 2 + i * j % 3 === 0;
+          case exports.Patterns.PATTERN110:
+            return (i * j % 2 + i * j % 3) % 2 === 0;
+          case exports.Patterns.PATTERN111:
+            return (i * j % 3 + (i + j) % 2) % 2 === 0;
+          default:
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+      }
+      exports.applyMask = function applyMask(pattern, data) {
+        const size = data.size;
+        for (let col = 0; col < size; col++) {
+          for (let row = 0; row < size; row++) {
+            if (data.isReserved(row, col)) continue;
+            data.xor(row, col, getMaskAt(pattern, row, col));
+          }
+        }
+      };
+      exports.getBestMask = function getBestMask(data, setupFormatFunc) {
+        const numPatterns = Object.keys(exports.Patterns).length;
+        let bestPattern = 0;
+        let lowerPenalty = Infinity;
+        for (let p = 0; p < numPatterns; p++) {
+          setupFormatFunc(p);
+          exports.applyMask(p, data);
+          const penalty = exports.getPenaltyN1(data) + exports.getPenaltyN2(data) + exports.getPenaltyN3(data) + exports.getPenaltyN4(data);
+          exports.applyMask(p, data);
+          if (penalty < lowerPenalty) {
+            lowerPenalty = penalty;
+            bestPattern = p;
+          }
+        }
+        return bestPattern;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/error-correction-code.js
+  var require_error_correction_code = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/error-correction-code.js"(exports) {
+      var ECLevel = require_error_correction_level();
+      var EC_BLOCKS_TABLE = [
+        // L  M  Q  H
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        1,
+        2,
+        2,
+        4,
+        1,
+        2,
+        4,
+        4,
+        2,
+        4,
+        4,
+        4,
+        2,
+        4,
+        6,
+        5,
+        2,
+        4,
+        6,
+        6,
+        2,
+        5,
+        8,
+        8,
+        4,
+        5,
+        8,
+        8,
+        4,
+        5,
+        8,
+        11,
+        4,
+        8,
+        10,
+        11,
+        4,
+        9,
+        12,
+        16,
+        4,
+        9,
+        16,
+        16,
+        6,
+        10,
+        12,
+        18,
+        6,
+        10,
+        17,
+        16,
+        6,
+        11,
+        16,
+        19,
+        6,
+        13,
+        18,
+        21,
+        7,
+        14,
+        21,
+        25,
+        8,
+        16,
+        20,
+        25,
+        8,
+        17,
+        23,
+        25,
+        9,
+        17,
+        23,
+        34,
+        9,
+        18,
+        25,
+        30,
+        10,
+        20,
+        27,
+        32,
+        12,
+        21,
+        29,
+        35,
+        12,
+        23,
+        34,
+        37,
+        12,
+        25,
+        34,
+        40,
+        13,
+        26,
+        35,
+        42,
+        14,
+        28,
+        38,
+        45,
+        15,
+        29,
+        40,
+        48,
+        16,
+        31,
+        43,
+        51,
+        17,
+        33,
+        45,
+        54,
+        18,
+        35,
+        48,
+        57,
+        19,
+        37,
+        51,
+        60,
+        19,
+        38,
+        53,
+        63,
+        20,
+        40,
+        56,
+        66,
+        21,
+        43,
+        59,
+        70,
+        22,
+        45,
+        62,
+        74,
+        24,
+        47,
+        65,
+        77,
+        25,
+        49,
+        68,
+        81
+      ];
+      var EC_CODEWORDS_TABLE = [
+        // L  M  Q  H
+        7,
+        10,
+        13,
+        17,
+        10,
+        16,
+        22,
+        28,
+        15,
+        26,
+        36,
+        44,
+        20,
+        36,
+        52,
+        64,
+        26,
+        48,
+        72,
+        88,
+        36,
+        64,
+        96,
+        112,
+        40,
+        72,
+        108,
+        130,
+        48,
+        88,
+        132,
+        156,
+        60,
+        110,
+        160,
+        192,
+        72,
+        130,
+        192,
+        224,
+        80,
+        150,
+        224,
+        264,
+        96,
+        176,
+        260,
+        308,
+        104,
+        198,
+        288,
+        352,
+        120,
+        216,
+        320,
+        384,
+        132,
+        240,
+        360,
+        432,
+        144,
+        280,
+        408,
+        480,
+        168,
+        308,
+        448,
+        532,
+        180,
+        338,
+        504,
+        588,
+        196,
+        364,
+        546,
+        650,
+        224,
+        416,
+        600,
+        700,
+        224,
+        442,
+        644,
+        750,
+        252,
+        476,
+        690,
+        816,
+        270,
+        504,
+        750,
+        900,
+        300,
+        560,
+        810,
+        960,
+        312,
+        588,
+        870,
+        1050,
+        336,
+        644,
+        952,
+        1110,
+        360,
+        700,
+        1020,
+        1200,
+        390,
+        728,
+        1050,
+        1260,
+        420,
+        784,
+        1140,
+        1350,
+        450,
+        812,
+        1200,
+        1440,
+        480,
+        868,
+        1290,
+        1530,
+        510,
+        924,
+        1350,
+        1620,
+        540,
+        980,
+        1440,
+        1710,
+        570,
+        1036,
+        1530,
+        1800,
+        570,
+        1064,
+        1590,
+        1890,
+        600,
+        1120,
+        1680,
+        1980,
+        630,
+        1204,
+        1770,
+        2100,
+        660,
+        1260,
+        1860,
+        2220,
+        720,
+        1316,
+        1950,
+        2310,
+        750,
+        1372,
+        2040,
+        2430
+      ];
+      exports.getBlocksCount = function getBlocksCount(version, errorCorrectionLevel) {
+        switch (errorCorrectionLevel) {
+          case ECLevel.L:
+            return EC_BLOCKS_TABLE[(version - 1) * 4 + 0];
+          case ECLevel.M:
+            return EC_BLOCKS_TABLE[(version - 1) * 4 + 1];
+          case ECLevel.Q:
+            return EC_BLOCKS_TABLE[(version - 1) * 4 + 2];
+          case ECLevel.H:
+            return EC_BLOCKS_TABLE[(version - 1) * 4 + 3];
+          default:
+            return void 0;
+        }
+      };
+      exports.getTotalCodewordsCount = function getTotalCodewordsCount(version, errorCorrectionLevel) {
+        switch (errorCorrectionLevel) {
+          case ECLevel.L:
+            return EC_CODEWORDS_TABLE[(version - 1) * 4 + 0];
+          case ECLevel.M:
+            return EC_CODEWORDS_TABLE[(version - 1) * 4 + 1];
+          case ECLevel.Q:
+            return EC_CODEWORDS_TABLE[(version - 1) * 4 + 2];
+          case ECLevel.H:
+            return EC_CODEWORDS_TABLE[(version - 1) * 4 + 3];
+          default:
+            return void 0;
+        }
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/galois-field.js
+  var require_galois_field = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/galois-field.js"(exports) {
+      var EXP_TABLE = new Uint8Array(512);
+      var LOG_TABLE = new Uint8Array(256);
+      (function initTables() {
+        let x = 1;
+        for (let i = 0; i < 255; i++) {
+          EXP_TABLE[i] = x;
+          LOG_TABLE[x] = i;
+          x <<= 1;
+          if (x & 256) {
+            x ^= 285;
+          }
+        }
+        for (let i = 255; i < 512; i++) {
+          EXP_TABLE[i] = EXP_TABLE[i - 255];
+        }
+      })();
+      exports.log = function log(n) {
+        if (n < 1) throw new Error("log(" + n + ")");
+        return LOG_TABLE[n];
+      };
+      exports.exp = function exp(n) {
+        return EXP_TABLE[n];
+      };
+      exports.mul = function mul(x, y) {
+        if (x === 0 || y === 0) return 0;
+        return EXP_TABLE[LOG_TABLE[x] + LOG_TABLE[y]];
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/polynomial.js
+  var require_polynomial = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/polynomial.js"(exports) {
+      var GF = require_galois_field();
+      exports.mul = function mul(p1, p2) {
+        const coeff = new Uint8Array(p1.length + p2.length - 1);
+        for (let i = 0; i < p1.length; i++) {
+          for (let j = 0; j < p2.length; j++) {
+            coeff[i + j] ^= GF.mul(p1[i], p2[j]);
+          }
+        }
+        return coeff;
+      };
+      exports.mod = function mod(divident, divisor) {
+        let result = new Uint8Array(divident);
+        while (result.length - divisor.length >= 0) {
+          const coeff = result[0];
+          for (let i = 0; i < divisor.length; i++) {
+            result[i] ^= GF.mul(divisor[i], coeff);
+          }
+          let offset = 0;
+          while (offset < result.length && result[offset] === 0) offset++;
+          result = result.slice(offset);
+        }
+        return result;
+      };
+      exports.generateECPolynomial = function generateECPolynomial(degree) {
+        let poly = new Uint8Array([1]);
+        for (let i = 0; i < degree; i++) {
+          poly = exports.mul(poly, new Uint8Array([1, GF.exp(i)]));
+        }
+        return poly;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/reed-solomon-encoder.js
+  var require_reed_solomon_encoder = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/reed-solomon-encoder.js"(exports, module) {
+      var Polynomial = require_polynomial();
+      function ReedSolomonEncoder(degree) {
+        this.genPoly = void 0;
+        this.degree = degree;
+        if (this.degree) this.initialize(this.degree);
+      }
+      ReedSolomonEncoder.prototype.initialize = function initialize(degree) {
+        this.degree = degree;
+        this.genPoly = Polynomial.generateECPolynomial(this.degree);
+      };
+      ReedSolomonEncoder.prototype.encode = function encode(data) {
+        if (!this.genPoly) {
+          throw new Error("Encoder not initialized");
+        }
+        const paddedData = new Uint8Array(data.length + this.degree);
+        paddedData.set(data);
+        const remainder = Polynomial.mod(paddedData, this.genPoly);
+        const start = this.degree - remainder.length;
+        if (start > 0) {
+          const buff = new Uint8Array(this.degree);
+          buff.set(remainder, start);
+          return buff;
+        }
+        return remainder;
+      };
+      module.exports = ReedSolomonEncoder;
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/version-check.js
+  var require_version_check = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/version-check.js"(exports) {
+      exports.isValid = function isValid(version) {
+        return !isNaN(version) && version >= 1 && version <= 40;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/regex.js
+  var require_regex = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/regex.js"(exports) {
+      var numeric = "[0-9]+";
+      var alphanumeric = "[A-Z $%*+\\-./:]+";
+      var kanji = "(?:[u3000-u303F]|[u3040-u309F]|[u30A0-u30FF]|[uFF00-uFFEF]|[u4E00-u9FAF]|[u2605-u2606]|[u2190-u2195]|u203B|[u2010u2015u2018u2019u2025u2026u201Cu201Du2225u2260]|[u0391-u0451]|[u00A7u00A8u00B1u00B4u00D7u00F7])+";
+      kanji = kanji.replace(/u/g, "\\u");
+      var byte = "(?:(?![A-Z0-9 $%*+\\-./:]|" + kanji + ")(?:.|[\r\n]))+";
+      exports.KANJI = new RegExp(kanji, "g");
+      exports.BYTE_KANJI = new RegExp("[^A-Z0-9 $%*+\\-./:]+", "g");
+      exports.BYTE = new RegExp(byte, "g");
+      exports.NUMERIC = new RegExp(numeric, "g");
+      exports.ALPHANUMERIC = new RegExp(alphanumeric, "g");
+      var TEST_KANJI = new RegExp("^" + kanji + "$");
+      var TEST_NUMERIC = new RegExp("^" + numeric + "$");
+      var TEST_ALPHANUMERIC = new RegExp("^[A-Z0-9 $%*+\\-./:]+$");
+      exports.testKanji = function testKanji(str) {
+        return TEST_KANJI.test(str);
+      };
+      exports.testNumeric = function testNumeric(str) {
+        return TEST_NUMERIC.test(str);
+      };
+      exports.testAlphanumeric = function testAlphanumeric(str) {
+        return TEST_ALPHANUMERIC.test(str);
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/mode.js
+  var require_mode = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/mode.js"(exports) {
+      var VersionCheck = require_version_check();
+      var Regex = require_regex();
+      exports.NUMERIC = {
+        id: "Numeric",
+        bit: 1 << 0,
+        ccBits: [10, 12, 14]
+      };
+      exports.ALPHANUMERIC = {
+        id: "Alphanumeric",
+        bit: 1 << 1,
+        ccBits: [9, 11, 13]
+      };
+      exports.BYTE = {
+        id: "Byte",
+        bit: 1 << 2,
+        ccBits: [8, 16, 16]
+      };
+      exports.KANJI = {
+        id: "Kanji",
+        bit: 1 << 3,
+        ccBits: [8, 10, 12]
+      };
+      exports.MIXED = {
+        bit: -1
+      };
+      exports.getCharCountIndicator = function getCharCountIndicator(mode, version) {
+        if (!mode.ccBits) throw new Error("Invalid mode: " + mode);
+        if (!VersionCheck.isValid(version)) {
+          throw new Error("Invalid version: " + version);
+        }
+        if (version >= 1 && version < 10) return mode.ccBits[0];
+        else if (version < 27) return mode.ccBits[1];
+        return mode.ccBits[2];
+      };
+      exports.getBestModeForData = function getBestModeForData(dataStr) {
+        if (Regex.testNumeric(dataStr)) return exports.NUMERIC;
+        else if (Regex.testAlphanumeric(dataStr)) return exports.ALPHANUMERIC;
+        else if (Regex.testKanji(dataStr)) return exports.KANJI;
+        else return exports.BYTE;
+      };
+      exports.toString = function toString(mode) {
+        if (mode && mode.id) return mode.id;
+        throw new Error("Invalid mode");
+      };
+      exports.isValid = function isValid(mode) {
+        return mode && mode.bit && mode.ccBits;
+      };
+      function fromString(string) {
+        if (typeof string !== "string") {
+          throw new Error("Param is not a string");
+        }
+        const lcStr = string.toLowerCase();
+        switch (lcStr) {
+          case "numeric":
+            return exports.NUMERIC;
+          case "alphanumeric":
+            return exports.ALPHANUMERIC;
+          case "kanji":
+            return exports.KANJI;
+          case "byte":
+            return exports.BYTE;
+          default:
+            throw new Error("Unknown mode: " + string);
+        }
+      }
+      exports.from = function from(value, defaultValue) {
+        if (exports.isValid(value)) {
+          return value;
+        }
+        try {
+          return fromString(value);
+        } catch (e) {
+          return defaultValue;
+        }
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/version.js
+  var require_version = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/version.js"(exports) {
+      var Utils = require_utils();
+      var ECCode = require_error_correction_code();
+      var ECLevel = require_error_correction_level();
+      var Mode = require_mode();
+      var VersionCheck = require_version_check();
+      var G18 = 1 << 12 | 1 << 11 | 1 << 10 | 1 << 9 | 1 << 8 | 1 << 5 | 1 << 2 | 1 << 0;
+      var G18_BCH = Utils.getBCHDigit(G18);
+      function getBestVersionForDataLength(mode, length, errorCorrectionLevel) {
+        for (let currentVersion = 1; currentVersion <= 40; currentVersion++) {
+          if (length <= exports.getCapacity(currentVersion, errorCorrectionLevel, mode)) {
+            return currentVersion;
+          }
+        }
+        return void 0;
+      }
+      function getReservedBitsCount(mode, version) {
+        return Mode.getCharCountIndicator(mode, version) + 4;
+      }
+      function getTotalBitsFromDataArray(segments, version) {
+        let totalBits = 0;
+        segments.forEach(function(data) {
+          const reservedBits = getReservedBitsCount(data.mode, version);
+          totalBits += reservedBits + data.getBitsLength();
+        });
+        return totalBits;
+      }
+      function getBestVersionForMixedData(segments, errorCorrectionLevel) {
+        for (let currentVersion = 1; currentVersion <= 40; currentVersion++) {
+          const length = getTotalBitsFromDataArray(segments, currentVersion);
+          if (length <= exports.getCapacity(currentVersion, errorCorrectionLevel, Mode.MIXED)) {
+            return currentVersion;
+          }
+        }
+        return void 0;
+      }
+      exports.from = function from(value, defaultValue) {
+        if (VersionCheck.isValid(value)) {
+          return parseInt(value, 10);
+        }
+        return defaultValue;
+      };
+      exports.getCapacity = function getCapacity(version, errorCorrectionLevel, mode) {
+        if (!VersionCheck.isValid(version)) {
+          throw new Error("Invalid QR Code version");
+        }
+        if (typeof mode === "undefined") mode = Mode.BYTE;
+        const totalCodewords = Utils.getSymbolTotalCodewords(version);
+        const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+        const dataTotalCodewordsBits = (totalCodewords - ecTotalCodewords) * 8;
+        if (mode === Mode.MIXED) return dataTotalCodewordsBits;
+        const usableBits = dataTotalCodewordsBits - getReservedBitsCount(mode, version);
+        switch (mode) {
+          case Mode.NUMERIC:
+            return Math.floor(usableBits / 10 * 3);
+          case Mode.ALPHANUMERIC:
+            return Math.floor(usableBits / 11 * 2);
+          case Mode.KANJI:
+            return Math.floor(usableBits / 13);
+          case Mode.BYTE:
+          default:
+            return Math.floor(usableBits / 8);
+        }
+      };
+      exports.getBestVersionForData = function getBestVersionForData(data, errorCorrectionLevel) {
+        let seg;
+        const ecl = ECLevel.from(errorCorrectionLevel, ECLevel.M);
+        if (Array.isArray(data)) {
+          if (data.length > 1) {
+            return getBestVersionForMixedData(data, ecl);
+          }
+          if (data.length === 0) {
+            return 1;
+          }
+          seg = data[0];
+        } else {
+          seg = data;
+        }
+        return getBestVersionForDataLength(seg.mode, seg.getLength(), ecl);
+      };
+      exports.getEncodedBits = function getEncodedBits(version) {
+        if (!VersionCheck.isValid(version) || version < 7) {
+          throw new Error("Invalid QR Code version");
+        }
+        let d = version << 12;
+        while (Utils.getBCHDigit(d) - G18_BCH >= 0) {
+          d ^= G18 << Utils.getBCHDigit(d) - G18_BCH;
+        }
+        return version << 12 | d;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/format-info.js
+  var require_format_info = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/format-info.js"(exports) {
+      var Utils = require_utils();
+      var G15 = 1 << 10 | 1 << 8 | 1 << 5 | 1 << 4 | 1 << 2 | 1 << 1 | 1 << 0;
+      var G15_MASK = 1 << 14 | 1 << 12 | 1 << 10 | 1 << 4 | 1 << 1;
+      var G15_BCH = Utils.getBCHDigit(G15);
+      exports.getEncodedBits = function getEncodedBits(errorCorrectionLevel, mask) {
+        const data = errorCorrectionLevel.bit << 3 | mask;
+        let d = data << 10;
+        while (Utils.getBCHDigit(d) - G15_BCH >= 0) {
+          d ^= G15 << Utils.getBCHDigit(d) - G15_BCH;
+        }
+        return (data << 10 | d) ^ G15_MASK;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/numeric-data.js
+  var require_numeric_data = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/numeric-data.js"(exports, module) {
+      var Mode = require_mode();
+      function NumericData(data) {
+        this.mode = Mode.NUMERIC;
+        this.data = data.toString();
+      }
+      NumericData.getBitsLength = function getBitsLength(length) {
+        return 10 * Math.floor(length / 3) + (length % 3 ? length % 3 * 3 + 1 : 0);
+      };
+      NumericData.prototype.getLength = function getLength() {
+        return this.data.length;
+      };
+      NumericData.prototype.getBitsLength = function getBitsLength() {
+        return NumericData.getBitsLength(this.data.length);
+      };
+      NumericData.prototype.write = function write(bitBuffer) {
+        let i, group, value;
+        for (i = 0; i + 3 <= this.data.length; i += 3) {
+          group = this.data.substr(i, 3);
+          value = parseInt(group, 10);
+          bitBuffer.put(value, 10);
+        }
+        const remainingNum = this.data.length - i;
+        if (remainingNum > 0) {
+          group = this.data.substr(i);
+          value = parseInt(group, 10);
+          bitBuffer.put(value, remainingNum * 3 + 1);
+        }
+      };
+      module.exports = NumericData;
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/alphanumeric-data.js
+  var require_alphanumeric_data = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/alphanumeric-data.js"(exports, module) {
+      var Mode = require_mode();
+      var ALPHA_NUM_CHARS = [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z",
+        " ",
+        "$",
+        "%",
+        "*",
+        "+",
+        "-",
+        ".",
+        "/",
+        ":"
+      ];
+      function AlphanumericData(data) {
+        this.mode = Mode.ALPHANUMERIC;
+        this.data = data;
+      }
+      AlphanumericData.getBitsLength = function getBitsLength(length) {
+        return 11 * Math.floor(length / 2) + 6 * (length % 2);
+      };
+      AlphanumericData.prototype.getLength = function getLength() {
+        return this.data.length;
+      };
+      AlphanumericData.prototype.getBitsLength = function getBitsLength() {
+        return AlphanumericData.getBitsLength(this.data.length);
+      };
+      AlphanumericData.prototype.write = function write(bitBuffer) {
+        let i;
+        for (i = 0; i + 2 <= this.data.length; i += 2) {
+          let value = ALPHA_NUM_CHARS.indexOf(this.data[i]) * 45;
+          value += ALPHA_NUM_CHARS.indexOf(this.data[i + 1]);
+          bitBuffer.put(value, 11);
+        }
+        if (this.data.length % 2) {
+          bitBuffer.put(ALPHA_NUM_CHARS.indexOf(this.data[i]), 6);
+        }
+      };
+      module.exports = AlphanumericData;
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/byte-data.js
+  var require_byte_data = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/byte-data.js"(exports, module) {
+      var Mode = require_mode();
+      function ByteData(data) {
+        this.mode = Mode.BYTE;
+        if (typeof data === "string") {
+          this.data = new TextEncoder().encode(data);
+        } else {
+          this.data = new Uint8Array(data);
+        }
+      }
+      ByteData.getBitsLength = function getBitsLength(length) {
+        return length * 8;
+      };
+      ByteData.prototype.getLength = function getLength() {
+        return this.data.length;
+      };
+      ByteData.prototype.getBitsLength = function getBitsLength() {
+        return ByteData.getBitsLength(this.data.length);
+      };
+      ByteData.prototype.write = function(bitBuffer) {
+        for (let i = 0, l = this.data.length; i < l; i++) {
+          bitBuffer.put(this.data[i], 8);
+        }
+      };
+      module.exports = ByteData;
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/kanji-data.js
+  var require_kanji_data = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/kanji-data.js"(exports, module) {
+      var Mode = require_mode();
+      var Utils = require_utils();
+      function KanjiData(data) {
+        this.mode = Mode.KANJI;
+        this.data = data;
+      }
+      KanjiData.getBitsLength = function getBitsLength(length) {
+        return length * 13;
+      };
+      KanjiData.prototype.getLength = function getLength() {
+        return this.data.length;
+      };
+      KanjiData.prototype.getBitsLength = function getBitsLength() {
+        return KanjiData.getBitsLength(this.data.length);
+      };
+      KanjiData.prototype.write = function(bitBuffer) {
+        let i;
+        for (i = 0; i < this.data.length; i++) {
+          let value = Utils.toSJIS(this.data[i]);
+          if (value >= 33088 && value <= 40956) {
+            value -= 33088;
+          } else if (value >= 57408 && value <= 60351) {
+            value -= 49472;
+          } else {
+            throw new Error(
+              "Invalid SJIS character: " + this.data[i] + "\nMake sure your charset is UTF-8"
+            );
+          }
+          value = (value >>> 8 & 255) * 192 + (value & 255);
+          bitBuffer.put(value, 13);
+        }
+      };
+      module.exports = KanjiData;
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/dijkstrajs/dijkstra.js
+  var require_dijkstra = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/dijkstrajs/dijkstra.js"(exports, module) {
+      "use strict";
+      var dijkstra = {
+        single_source_shortest_paths: function(graph, s, d) {
+          var predecessors = {};
+          var costs = {};
+          costs[s] = 0;
+          var open = dijkstra.PriorityQueue.make();
+          open.push(s, 0);
+          var closest, u, v, cost_of_s_to_u, adjacent_nodes, cost_of_e, cost_of_s_to_u_plus_cost_of_e, cost_of_s_to_v, first_visit;
+          while (!open.empty()) {
+            closest = open.pop();
+            u = closest.value;
+            cost_of_s_to_u = closest.cost;
+            adjacent_nodes = graph[u] || {};
+            for (v in adjacent_nodes) {
+              if (adjacent_nodes.hasOwnProperty(v)) {
+                cost_of_e = adjacent_nodes[v];
+                cost_of_s_to_u_plus_cost_of_e = cost_of_s_to_u + cost_of_e;
+                cost_of_s_to_v = costs[v];
+                first_visit = typeof costs[v] === "undefined";
+                if (first_visit || cost_of_s_to_v > cost_of_s_to_u_plus_cost_of_e) {
+                  costs[v] = cost_of_s_to_u_plus_cost_of_e;
+                  open.push(v, cost_of_s_to_u_plus_cost_of_e);
+                  predecessors[v] = u;
+                }
+              }
+            }
+          }
+          if (typeof d !== "undefined" && typeof costs[d] === "undefined") {
+            var msg = ["Could not find a path from ", s, " to ", d, "."].join("");
+            throw new Error(msg);
+          }
+          return predecessors;
+        },
+        extract_shortest_path_from_predecessor_list: function(predecessors, d) {
+          var nodes = [];
+          var u = d;
+          var predecessor;
+          while (u) {
+            nodes.push(u);
+            predecessor = predecessors[u];
+            u = predecessors[u];
+          }
+          nodes.reverse();
+          return nodes;
+        },
+        find_path: function(graph, s, d) {
+          var predecessors = dijkstra.single_source_shortest_paths(graph, s, d);
+          return dijkstra.extract_shortest_path_from_predecessor_list(
+            predecessors,
+            d
+          );
+        },
+        /**
+         * A very naive priority queue implementation.
+         */
+        PriorityQueue: {
+          make: function(opts) {
+            var T = dijkstra.PriorityQueue, t = {}, key;
+            opts = opts || {};
+            for (key in T) {
+              if (T.hasOwnProperty(key)) {
+                t[key] = T[key];
+              }
+            }
+            t.queue = [];
+            t.sorter = opts.sorter || T.default_sorter;
+            return t;
+          },
+          default_sorter: function(a, b) {
+            return a.cost - b.cost;
+          },
+          /**
+           * Add a new item to the queue and ensure the highest priority element
+           * is at the front of the queue.
+           */
+          push: function(value, cost) {
+            var item = { value, cost };
+            this.queue.push(item);
+            this.queue.sort(this.sorter);
+          },
+          /**
+           * Return the highest priority element in the queue.
+           */
+          pop: function() {
+            return this.queue.shift();
+          },
+          empty: function() {
+            return this.queue.length === 0;
+          }
+        }
+      };
+      if (typeof module !== "undefined") {
+        module.exports = dijkstra;
+      }
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/segments.js
+  var require_segments = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/segments.js"(exports) {
+      var Mode = require_mode();
+      var NumericData = require_numeric_data();
+      var AlphanumericData = require_alphanumeric_data();
+      var ByteData = require_byte_data();
+      var KanjiData = require_kanji_data();
+      var Regex = require_regex();
+      var Utils = require_utils();
+      var dijkstra = require_dijkstra();
+      function getStringByteLength(str) {
+        return unescape(encodeURIComponent(str)).length;
+      }
+      function getSegments(regex, mode, str) {
+        const segments = [];
+        let result;
+        while ((result = regex.exec(str)) !== null) {
+          segments.push({
+            data: result[0],
+            index: result.index,
+            mode,
+            length: result[0].length
+          });
+        }
+        return segments;
+      }
+      function getSegmentsFromString(dataStr) {
+        const numSegs = getSegments(Regex.NUMERIC, Mode.NUMERIC, dataStr);
+        const alphaNumSegs = getSegments(Regex.ALPHANUMERIC, Mode.ALPHANUMERIC, dataStr);
+        let byteSegs;
+        let kanjiSegs;
+        if (Utils.isKanjiModeEnabled()) {
+          byteSegs = getSegments(Regex.BYTE, Mode.BYTE, dataStr);
+          kanjiSegs = getSegments(Regex.KANJI, Mode.KANJI, dataStr);
+        } else {
+          byteSegs = getSegments(Regex.BYTE_KANJI, Mode.BYTE, dataStr);
+          kanjiSegs = [];
+        }
+        const segs = numSegs.concat(alphaNumSegs, byteSegs, kanjiSegs);
+        return segs.sort(function(s1, s2) {
+          return s1.index - s2.index;
+        }).map(function(obj) {
+          return {
+            data: obj.data,
+            mode: obj.mode,
+            length: obj.length
+          };
+        });
+      }
+      function getSegmentBitsLength(length, mode) {
+        switch (mode) {
+          case Mode.NUMERIC:
+            return NumericData.getBitsLength(length);
+          case Mode.ALPHANUMERIC:
+            return AlphanumericData.getBitsLength(length);
+          case Mode.KANJI:
+            return KanjiData.getBitsLength(length);
+          case Mode.BYTE:
+            return ByteData.getBitsLength(length);
+        }
+      }
+      function mergeSegments(segs) {
+        return segs.reduce(function(acc, curr) {
+          const prevSeg = acc.length - 1 >= 0 ? acc[acc.length - 1] : null;
+          if (prevSeg && prevSeg.mode === curr.mode) {
+            acc[acc.length - 1].data += curr.data;
+            return acc;
+          }
+          acc.push(curr);
+          return acc;
+        }, []);
+      }
+      function buildNodes(segs) {
+        const nodes = [];
+        for (let i = 0; i < segs.length; i++) {
+          const seg = segs[i];
+          switch (seg.mode) {
+            case Mode.NUMERIC:
+              nodes.push([
+                seg,
+                { data: seg.data, mode: Mode.ALPHANUMERIC, length: seg.length },
+                { data: seg.data, mode: Mode.BYTE, length: seg.length }
+              ]);
+              break;
+            case Mode.ALPHANUMERIC:
+              nodes.push([
+                seg,
+                { data: seg.data, mode: Mode.BYTE, length: seg.length }
+              ]);
+              break;
+            case Mode.KANJI:
+              nodes.push([
+                seg,
+                { data: seg.data, mode: Mode.BYTE, length: getStringByteLength(seg.data) }
+              ]);
+              break;
+            case Mode.BYTE:
+              nodes.push([
+                { data: seg.data, mode: Mode.BYTE, length: getStringByteLength(seg.data) }
+              ]);
+          }
+        }
+        return nodes;
+      }
+      function buildGraph(nodes, version) {
+        const table = {};
+        const graph = { start: {} };
+        let prevNodeIds = ["start"];
+        for (let i = 0; i < nodes.length; i++) {
+          const nodeGroup = nodes[i];
+          const currentNodeIds = [];
+          for (let j = 0; j < nodeGroup.length; j++) {
+            const node = nodeGroup[j];
+            const key = "" + i + j;
+            currentNodeIds.push(key);
+            table[key] = { node, lastCount: 0 };
+            graph[key] = {};
+            for (let n = 0; n < prevNodeIds.length; n++) {
+              const prevNodeId = prevNodeIds[n];
+              if (table[prevNodeId] && table[prevNodeId].node.mode === node.mode) {
+                graph[prevNodeId][key] = getSegmentBitsLength(table[prevNodeId].lastCount + node.length, node.mode) - getSegmentBitsLength(table[prevNodeId].lastCount, node.mode);
+                table[prevNodeId].lastCount += node.length;
+              } else {
+                if (table[prevNodeId]) table[prevNodeId].lastCount = node.length;
+                graph[prevNodeId][key] = getSegmentBitsLength(node.length, node.mode) + 4 + Mode.getCharCountIndicator(node.mode, version);
+              }
+            }
+          }
+          prevNodeIds = currentNodeIds;
+        }
+        for (let n = 0; n < prevNodeIds.length; n++) {
+          graph[prevNodeIds[n]].end = 0;
+        }
+        return { map: graph, table };
+      }
+      function buildSingleSegment(data, modesHint) {
+        let mode;
+        const bestMode = Mode.getBestModeForData(data);
+        mode = Mode.from(modesHint, bestMode);
+        if (mode !== Mode.BYTE && mode.bit < bestMode.bit) {
+          throw new Error('"' + data + '" cannot be encoded with mode ' + Mode.toString(mode) + ".\n Suggested mode is: " + Mode.toString(bestMode));
+        }
+        if (mode === Mode.KANJI && !Utils.isKanjiModeEnabled()) {
+          mode = Mode.BYTE;
+        }
+        switch (mode) {
+          case Mode.NUMERIC:
+            return new NumericData(data);
+          case Mode.ALPHANUMERIC:
+            return new AlphanumericData(data);
+          case Mode.KANJI:
+            return new KanjiData(data);
+          case Mode.BYTE:
+            return new ByteData(data);
+        }
+      }
+      exports.fromArray = function fromArray(array) {
+        return array.reduce(function(acc, seg) {
+          if (typeof seg === "string") {
+            acc.push(buildSingleSegment(seg, null));
+          } else if (seg.data) {
+            acc.push(buildSingleSegment(seg.data, seg.mode));
+          }
+          return acc;
+        }, []);
+      };
+      exports.fromString = function fromString(data, version) {
+        const segs = getSegmentsFromString(data, Utils.isKanjiModeEnabled());
+        const nodes = buildNodes(segs);
+        const graph = buildGraph(nodes, version);
+        const path = dijkstra.find_path(graph.map, "start", "end");
+        const optimizedSegs = [];
+        for (let i = 1; i < path.length - 1; i++) {
+          optimizedSegs.push(graph.table[path[i]].node);
+        }
+        return exports.fromArray(mergeSegments(optimizedSegs));
+      };
+      exports.rawSplit = function rawSplit(data) {
+        return exports.fromArray(
+          getSegmentsFromString(data, Utils.isKanjiModeEnabled())
+        );
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/qrcode.js
+  var require_qrcode = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/core/qrcode.js"(exports) {
+      var Utils = require_utils();
+      var ECLevel = require_error_correction_level();
+      var BitBuffer = require_bit_buffer();
+      var BitMatrix = require_bit_matrix();
+      var AlignmentPattern = require_alignment_pattern();
+      var FinderPattern = require_finder_pattern();
+      var MaskPattern = require_mask_pattern();
+      var ECCode = require_error_correction_code();
+      var ReedSolomonEncoder = require_reed_solomon_encoder();
+      var Version = require_version();
+      var FormatInfo = require_format_info();
+      var Mode = require_mode();
+      var Segments = require_segments();
+      function setupFinderPattern(matrix, version) {
+        const size = matrix.size;
+        const pos = FinderPattern.getPositions(version);
+        for (let i = 0; i < pos.length; i++) {
+          const row = pos[i][0];
+          const col = pos[i][1];
+          for (let r = -1; r <= 7; r++) {
+            if (row + r <= -1 || size <= row + r) continue;
+            for (let c = -1; c <= 7; c++) {
+              if (col + c <= -1 || size <= col + c) continue;
+              if (r >= 0 && r <= 6 && (c === 0 || c === 6) || c >= 0 && c <= 6 && (r === 0 || r === 6) || r >= 2 && r <= 4 && c >= 2 && c <= 4) {
+                matrix.set(row + r, col + c, true, true);
+              } else {
+                matrix.set(row + r, col + c, false, true);
+              }
+            }
+          }
+        }
+      }
+      function setupTimingPattern(matrix) {
+        const size = matrix.size;
+        for (let r = 8; r < size - 8; r++) {
+          const value = r % 2 === 0;
+          matrix.set(r, 6, value, true);
+          matrix.set(6, r, value, true);
+        }
+      }
+      function setupAlignmentPattern(matrix, version) {
+        const pos = AlignmentPattern.getPositions(version);
+        for (let i = 0; i < pos.length; i++) {
+          const row = pos[i][0];
+          const col = pos[i][1];
+          for (let r = -2; r <= 2; r++) {
+            for (let c = -2; c <= 2; c++) {
+              if (r === -2 || r === 2 || c === -2 || c === 2 || r === 0 && c === 0) {
+                matrix.set(row + r, col + c, true, true);
+              } else {
+                matrix.set(row + r, col + c, false, true);
+              }
+            }
+          }
+        }
+      }
+      function setupVersionInfo(matrix, version) {
+        const size = matrix.size;
+        const bits2 = Version.getEncodedBits(version);
+        let row, col, mod;
+        for (let i = 0; i < 18; i++) {
+          row = Math.floor(i / 3);
+          col = i % 3 + size - 8 - 3;
+          mod = (bits2 >> i & 1) === 1;
+          matrix.set(row, col, mod, true);
+          matrix.set(col, row, mod, true);
+        }
+      }
+      function setupFormatInfo(matrix, errorCorrectionLevel, maskPattern) {
+        const size = matrix.size;
+        const bits2 = FormatInfo.getEncodedBits(errorCorrectionLevel, maskPattern);
+        let i, mod;
+        for (i = 0; i < 15; i++) {
+          mod = (bits2 >> i & 1) === 1;
+          if (i < 6) {
+            matrix.set(i, 8, mod, true);
+          } else if (i < 8) {
+            matrix.set(i + 1, 8, mod, true);
+          } else {
+            matrix.set(size - 15 + i, 8, mod, true);
+          }
+          if (i < 8) {
+            matrix.set(8, size - i - 1, mod, true);
+          } else if (i < 9) {
+            matrix.set(8, 15 - i - 1 + 1, mod, true);
+          } else {
+            matrix.set(8, 15 - i - 1, mod, true);
+          }
+        }
+        matrix.set(size - 8, 8, 1, true);
+      }
+      function setupData(matrix, data) {
+        const size = matrix.size;
+        let inc = -1;
+        let row = size - 1;
+        let bitIndex = 7;
+        let byteIndex = 0;
+        for (let col = size - 1; col > 0; col -= 2) {
+          if (col === 6) col--;
+          while (true) {
+            for (let c = 0; c < 2; c++) {
+              if (!matrix.isReserved(row, col - c)) {
+                let dark = false;
+                if (byteIndex < data.length) {
+                  dark = (data[byteIndex] >>> bitIndex & 1) === 1;
+                }
+                matrix.set(row, col - c, dark);
+                bitIndex--;
+                if (bitIndex === -1) {
+                  byteIndex++;
+                  bitIndex = 7;
+                }
+              }
+            }
+            row += inc;
+            if (row < 0 || size <= row) {
+              row -= inc;
+              inc = -inc;
+              break;
+            }
+          }
+        }
+      }
+      function createData(version, errorCorrectionLevel, segments) {
+        const buffer = new BitBuffer();
+        segments.forEach(function(data) {
+          buffer.put(data.mode.bit, 4);
+          buffer.put(data.getLength(), Mode.getCharCountIndicator(data.mode, version));
+          data.write(buffer);
+        });
+        const totalCodewords = Utils.getSymbolTotalCodewords(version);
+        const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+        const dataTotalCodewordsBits = (totalCodewords - ecTotalCodewords) * 8;
+        if (buffer.getLengthInBits() + 4 <= dataTotalCodewordsBits) {
+          buffer.put(0, 4);
+        }
+        while (buffer.getLengthInBits() % 8 !== 0) {
+          buffer.putBit(0);
+        }
+        const remainingByte = (dataTotalCodewordsBits - buffer.getLengthInBits()) / 8;
+        for (let i = 0; i < remainingByte; i++) {
+          buffer.put(i % 2 ? 17 : 236, 8);
+        }
+        return createCodewords(buffer, version, errorCorrectionLevel);
+      }
+      function createCodewords(bitBuffer, version, errorCorrectionLevel) {
+        const totalCodewords = Utils.getSymbolTotalCodewords(version);
+        const ecTotalCodewords = ECCode.getTotalCodewordsCount(version, errorCorrectionLevel);
+        const dataTotalCodewords = totalCodewords - ecTotalCodewords;
+        const ecTotalBlocks = ECCode.getBlocksCount(version, errorCorrectionLevel);
+        const blocksInGroup2 = totalCodewords % ecTotalBlocks;
+        const blocksInGroup1 = ecTotalBlocks - blocksInGroup2;
+        const totalCodewordsInGroup1 = Math.floor(totalCodewords / ecTotalBlocks);
+        const dataCodewordsInGroup1 = Math.floor(dataTotalCodewords / ecTotalBlocks);
+        const dataCodewordsInGroup2 = dataCodewordsInGroup1 + 1;
+        const ecCount = totalCodewordsInGroup1 - dataCodewordsInGroup1;
+        const rs = new ReedSolomonEncoder(ecCount);
+        let offset = 0;
+        const dcData = new Array(ecTotalBlocks);
+        const ecData = new Array(ecTotalBlocks);
+        let maxDataSize = 0;
+        const buffer = new Uint8Array(bitBuffer.buffer);
+        for (let b = 0; b < ecTotalBlocks; b++) {
+          const dataSize = b < blocksInGroup1 ? dataCodewordsInGroup1 : dataCodewordsInGroup2;
+          dcData[b] = buffer.slice(offset, offset + dataSize);
+          ecData[b] = rs.encode(dcData[b]);
+          offset += dataSize;
+          maxDataSize = Math.max(maxDataSize, dataSize);
+        }
+        const data = new Uint8Array(totalCodewords);
+        let index = 0;
+        let i, r;
+        for (i = 0; i < maxDataSize; i++) {
+          for (r = 0; r < ecTotalBlocks; r++) {
+            if (i < dcData[r].length) {
+              data[index++] = dcData[r][i];
+            }
+          }
+        }
+        for (i = 0; i < ecCount; i++) {
+          for (r = 0; r < ecTotalBlocks; r++) {
+            data[index++] = ecData[r][i];
+          }
+        }
+        return data;
+      }
+      function createSymbol(data, version, errorCorrectionLevel, maskPattern) {
+        let segments;
+        if (Array.isArray(data)) {
+          segments = Segments.fromArray(data);
+        } else if (typeof data === "string") {
+          let estimatedVersion = version;
+          if (!estimatedVersion) {
+            const rawSegments = Segments.rawSplit(data);
+            estimatedVersion = Version.getBestVersionForData(rawSegments, errorCorrectionLevel);
+          }
+          segments = Segments.fromString(data, estimatedVersion || 40);
+        } else {
+          throw new Error("Invalid data");
+        }
+        const bestVersion = Version.getBestVersionForData(segments, errorCorrectionLevel);
+        if (!bestVersion) {
+          throw new Error("The amount of data is too big to be stored in a QR Code");
+        }
+        if (!version) {
+          version = bestVersion;
+        } else if (version < bestVersion) {
+          throw new Error(
+            "\nThe chosen QR Code version cannot contain this amount of data.\nMinimum version required to store current data is: " + bestVersion + ".\n"
+          );
+        }
+        const dataBits = createData(version, errorCorrectionLevel, segments);
+        const moduleCount = Utils.getSymbolSize(version);
+        const modules = new BitMatrix(moduleCount);
+        setupFinderPattern(modules, version);
+        setupTimingPattern(modules);
+        setupAlignmentPattern(modules, version);
+        setupFormatInfo(modules, errorCorrectionLevel, 0);
+        if (version >= 7) {
+          setupVersionInfo(modules, version);
+        }
+        setupData(modules, dataBits);
+        if (isNaN(maskPattern)) {
+          maskPattern = MaskPattern.getBestMask(
+            modules,
+            setupFormatInfo.bind(null, modules, errorCorrectionLevel)
+          );
+        }
+        MaskPattern.applyMask(maskPattern, modules);
+        setupFormatInfo(modules, errorCorrectionLevel, maskPattern);
+        return {
+          modules,
+          version,
+          errorCorrectionLevel,
+          maskPattern,
+          segments
+        };
+      }
+      exports.create = function create(data, options) {
+        if (typeof data === "undefined" || data === "") {
+          throw new Error("No input text");
+        }
+        let errorCorrectionLevel = ECLevel.M;
+        let version;
+        let mask;
+        if (typeof options !== "undefined") {
+          errorCorrectionLevel = ECLevel.from(options.errorCorrectionLevel, ECLevel.M);
+          version = Version.from(options.version);
+          mask = MaskPattern.from(options.maskPattern);
+          if (options.toSJISFunc) {
+            Utils.setToSJISFunction(options.toSJISFunc);
+          }
+        }
+        return createSymbol(data, version, errorCorrectionLevel, mask);
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/renderer/utils.js
+  var require_utils2 = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/renderer/utils.js"(exports) {
+      function hex2rgba(hex) {
+        if (typeof hex === "number") {
+          hex = hex.toString();
+        }
+        if (typeof hex !== "string") {
+          throw new Error("Color should be defined as hex string");
+        }
+        let hexCode = hex.slice().replace("#", "").split("");
+        if (hexCode.length < 3 || hexCode.length === 5 || hexCode.length > 8) {
+          throw new Error("Invalid hex color: " + hex);
+        }
+        if (hexCode.length === 3 || hexCode.length === 4) {
+          hexCode = Array.prototype.concat.apply([], hexCode.map(function(c) {
+            return [c, c];
+          }));
+        }
+        if (hexCode.length === 6) hexCode.push("F", "F");
+        const hexValue = parseInt(hexCode.join(""), 16);
+        return {
+          r: hexValue >> 24 & 255,
+          g: hexValue >> 16 & 255,
+          b: hexValue >> 8 & 255,
+          a: hexValue & 255,
+          hex: "#" + hexCode.slice(0, 6).join("")
+        };
+      }
+      exports.getOptions = function getOptions(options) {
+        if (!options) options = {};
+        if (!options.color) options.color = {};
+        const margin = typeof options.margin === "undefined" || options.margin === null || options.margin < 0 ? 4 : options.margin;
+        const width = options.width && options.width >= 21 ? options.width : void 0;
+        const scale = options.scale || 4;
+        return {
+          width,
+          scale: width ? 4 : scale,
+          margin,
+          color: {
+            dark: hex2rgba(options.color.dark || "#000000ff"),
+            light: hex2rgba(options.color.light || "#ffffffff")
+          },
+          type: options.type,
+          rendererOpts: options.rendererOpts || {}
+        };
+      };
+      exports.getScale = function getScale(qrSize, opts) {
+        return opts.width && opts.width >= qrSize + opts.margin * 2 ? opts.width / (qrSize + opts.margin * 2) : opts.scale;
+      };
+      exports.getImageWidth = function getImageWidth(qrSize, opts) {
+        const scale = exports.getScale(qrSize, opts);
+        return Math.floor((qrSize + opts.margin * 2) * scale);
+      };
+      exports.qrToImageData = function qrToImageData(imgData, qr, opts) {
+        const size = qr.modules.size;
+        const data = qr.modules.data;
+        const scale = exports.getScale(size, opts);
+        const symbolSize = Math.floor((size + opts.margin * 2) * scale);
+        const scaledMargin = opts.margin * scale;
+        const palette = [opts.color.light, opts.color.dark];
+        for (let i = 0; i < symbolSize; i++) {
+          for (let j = 0; j < symbolSize; j++) {
+            let posDst = (i * symbolSize + j) * 4;
+            let pxColor = opts.color.light;
+            if (i >= scaledMargin && j >= scaledMargin && i < symbolSize - scaledMargin && j < symbolSize - scaledMargin) {
+              const iSrc = Math.floor((i - scaledMargin) / scale);
+              const jSrc = Math.floor((j - scaledMargin) / scale);
+              pxColor = palette[data[iSrc * size + jSrc] ? 1 : 0];
+            }
+            imgData[posDst++] = pxColor.r;
+            imgData[posDst++] = pxColor.g;
+            imgData[posDst++] = pxColor.b;
+            imgData[posDst] = pxColor.a;
+          }
+        }
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/renderer/canvas.js
+  var require_canvas = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/renderer/canvas.js"(exports) {
+      var Utils = require_utils2();
+      function clearCanvas(ctx, canvas, size) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!canvas.style) canvas.style = {};
+        canvas.height = size;
+        canvas.width = size;
+        canvas.style.height = size + "px";
+        canvas.style.width = size + "px";
+      }
+      function getCanvasElement() {
+        try {
+          return document.createElement("canvas");
+        } catch (e) {
+          throw new Error("You need to specify a canvas element");
+        }
+      }
+      exports.render = function render(qrData, canvas, options) {
+        let opts = options;
+        let canvasEl = canvas;
+        if (typeof opts === "undefined" && (!canvas || !canvas.getContext)) {
+          opts = canvas;
+          canvas = void 0;
+        }
+        if (!canvas) {
+          canvasEl = getCanvasElement();
+        }
+        opts = Utils.getOptions(opts);
+        const size = Utils.getImageWidth(qrData.modules.size, opts);
+        const ctx = canvasEl.getContext("2d");
+        const image = ctx.createImageData(size, size);
+        Utils.qrToImageData(image.data, qrData, opts);
+        clearCanvas(ctx, canvasEl, size);
+        ctx.putImageData(image, 0, 0);
+        return canvasEl;
+      };
+      exports.renderToDataURL = function renderToDataURL(qrData, canvas, options) {
+        let opts = options;
+        if (typeof opts === "undefined" && (!canvas || !canvas.getContext)) {
+          opts = canvas;
+          canvas = void 0;
+        }
+        if (!opts) opts = {};
+        const canvasEl = exports.render(qrData, canvas, opts);
+        const type = opts.type || "image/png";
+        const rendererOpts = opts.rendererOpts || {};
+        return canvasEl.toDataURL(type, rendererOpts.quality);
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/renderer/svg-tag.js
+  var require_svg_tag = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/renderer/svg-tag.js"(exports) {
+      var Utils = require_utils2();
+      function getColorAttrib(color, attrib) {
+        const alpha = color.a / 255;
+        const str = attrib + '="' + color.hex + '"';
+        return alpha < 1 ? str + " " + attrib + '-opacity="' + alpha.toFixed(2).slice(1) + '"' : str;
+      }
+      function svgCmd(cmd, x, y) {
+        let str = cmd + x;
+        if (typeof y !== "undefined") str += " " + y;
+        return str;
+      }
+      function qrToPath(data, size, margin) {
+        let path = "";
+        let moveBy = 0;
+        let newRow = false;
+        let lineLength = 0;
+        for (let i = 0; i < data.length; i++) {
+          const col = Math.floor(i % size);
+          const row = Math.floor(i / size);
+          if (!col && !newRow) newRow = true;
+          if (data[i]) {
+            lineLength++;
+            if (!(i > 0 && col > 0 && data[i - 1])) {
+              path += newRow ? svgCmd("M", col + margin, 0.5 + row + margin) : svgCmd("m", moveBy, 0);
+              moveBy = 0;
+              newRow = false;
+            }
+            if (!(col + 1 < size && data[i + 1])) {
+              path += svgCmd("h", lineLength);
+              lineLength = 0;
+            }
+          } else {
+            moveBy++;
+          }
+        }
+        return path;
+      }
+      exports.render = function render(qrData, options, cb) {
+        const opts = Utils.getOptions(options);
+        const size = qrData.modules.size;
+        const data = qrData.modules.data;
+        const qrcodesize = size + opts.margin * 2;
+        const bg = !opts.color.light.a ? "" : "<path " + getColorAttrib(opts.color.light, "fill") + ' d="M0 0h' + qrcodesize + "v" + qrcodesize + 'H0z"/>';
+        const path = "<path " + getColorAttrib(opts.color.dark, "stroke") + ' d="' + qrToPath(data, size, opts.margin) + '"/>';
+        const viewBox = 'viewBox="0 0 ' + qrcodesize + " " + qrcodesize + '"';
+        const width = !opts.width ? "" : 'width="' + opts.width + '" height="' + opts.width + '" ';
+        const svgTag = '<svg xmlns="http://www.w3.org/2000/svg" ' + width + viewBox + ' shape-rendering="crispEdges">' + bg + path + "</svg>\n";
+        if (typeof cb === "function") {
+          cb(null, svgTag);
+        }
+        return svgTag;
+      };
+    }
+  });
+
+  // ../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/browser.js
+  var require_browser = __commonJS({
+    "../../../../../tmp/tinplate-web-build/node_modules/qrcode/lib/browser.js"(exports) {
+      var canPromise = require_can_promise();
+      var QRCode2 = require_qrcode();
+      var CanvasRenderer = require_canvas();
+      var SvgRenderer = require_svg_tag();
+      function renderCanvas(renderFunc, canvas, text, opts, cb) {
+        const args = [].slice.call(arguments, 1);
+        const argsNum = args.length;
+        const isLastArgCb = typeof args[argsNum - 1] === "function";
+        if (!isLastArgCb && !canPromise()) {
+          throw new Error("Callback required as last argument");
+        }
+        if (isLastArgCb) {
+          if (argsNum < 2) {
+            throw new Error("Too few arguments provided");
+          }
+          if (argsNum === 2) {
+            cb = text;
+            text = canvas;
+            canvas = opts = void 0;
+          } else if (argsNum === 3) {
+            if (canvas.getContext && typeof cb === "undefined") {
+              cb = opts;
+              opts = void 0;
+            } else {
+              cb = opts;
+              opts = text;
+              text = canvas;
+              canvas = void 0;
+            }
+          }
+        } else {
+          if (argsNum < 1) {
+            throw new Error("Too few arguments provided");
+          }
+          if (argsNum === 1) {
+            text = canvas;
+            canvas = opts = void 0;
+          } else if (argsNum === 2 && !canvas.getContext) {
+            opts = text;
+            text = canvas;
+            canvas = void 0;
+          }
+          return new Promise(function(resolve, reject) {
+            try {
+              const data = QRCode2.create(text, opts);
+              resolve(renderFunc(data, canvas, opts));
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }
+        try {
+          const data = QRCode2.create(text, opts);
+          cb(null, renderFunc(data, canvas, opts));
+        } catch (e) {
+          cb(e);
+        }
+      }
+      exports.create = QRCode2.create;
+      exports.toCanvas = renderCanvas.bind(null, CanvasRenderer.render);
+      exports.toDataURL = renderCanvas.bind(null, CanvasRenderer.renderToDataURL);
+      exports.toString = renderCanvas.bind(null, function(data, _, opts) {
+        return SvgRenderer.render(data, opts);
+      });
+    }
+  });
+
   // ../../../../../tmp/tinplate-web-build/node_modules/read-excel-file/modules/xml/xmlBrowser.js
   var xmlBrowser_default = {
     createDocument: function createDocument(content) {
@@ -2369,9 +4473,12 @@
   }
 
   // app.source.js
+  var import_qrcode = __toESM(require_browser(), 1);
   var API_URL = window.TINPLATE_API_URL || "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";
-  var APP_BUILD = "20260817-slitter-item-use-1";
+  var APP_BUILD = "20260817-full-operations-1";
   var PIN_STORAGE_KEY = "movementAppPin";
+  var STAFF_ID_STORAGE_KEY = "tinplateStaffId";
+  var STAFF_PIN_STORAGE_KEY = "tinplateStaffPin";
   var LOCATIONS = ["STORAGE", "SLITTER", "PRODUCTION_LINE", "PRINTING"];
   var LOCATION_LABELS = {
     STORAGE: "Storage",
@@ -2379,7 +4486,8 @@
     SLITTER: "Slitter",
     PRODUCTION_LINE: "Production Line",
     EXCEL_IMPORT: "Excel Import",
-    MANUAL_ENTRY: "Manual Entry"
+    MANUAL_ENTRY: "Manual Entry",
+    PRODUCTION_USE: "Production Use / Waste"
   };
   var PURPOSE_LABELS = {
     CUSTOMER_BRAND: "Customer / Brand",
@@ -2395,7 +4503,10 @@
     selectedLotIds: /* @__PURE__ */ new Set(),
     selectedRecord: null,
     signatureUrls: [],
-    importPreview: null
+    importPreview: null,
+    accountsEnabled: false,
+    currentUser: { id: "APP_PIN", name: "", role: "SUPERVISOR" },
+    pendingBatchQuery: new URLSearchParams(window.location.search).get("batch") || ""
   };
   var $ = function(selector) {
     return document.querySelector(selector);
@@ -2416,10 +4527,23 @@
   function getPin() {
     return localStorage.getItem(PIN_STORAGE_KEY) || "";
   }
-  async function api(path, options, pinOverride) {
+  function getCredentials() {
+    return {
+      appPin: getPin(),
+      staffId: localStorage.getItem(STAFF_ID_STORAGE_KEY) || "",
+      staffPin: sessionStorage.getItem(STAFF_PIN_STORAGE_KEY) || ""
+    };
+  }
+  async function api(path, options, credentialsOverride) {
     const settings = options || {};
+    const credentials = typeof credentialsOverride === "string" ? { appPin: credentialsOverride, staffId: "", staffPin: "" } : credentialsOverride || getCredentials();
     const headers = Object.assign(
-      { "Content-Type": "application/json", "X-App-Pin": pinOverride == null ? getPin() : pinOverride },
+      {
+        "Content-Type": "application/json",
+        "X-App-Pin": credentials.appPin || "",
+        "X-Staff-Id": credentials.staffId || "",
+        "X-Staff-Pin": credentials.staffPin || ""
+      },
       settings.headers || {}
     );
     let response;
@@ -2438,7 +4562,11 @@
     let response;
     try {
       response = await fetch(API_URL.replace(/\/$/, "") + path, {
-        headers: { "X-App-Pin": getPin() }
+        headers: {
+          "X-App-Pin": getCredentials().appPin,
+          "X-Staff-Id": getCredentials().staffId,
+          "X-Staff-Pin": getCredentials().staffPin
+        }
       });
     } catch (error) {
       throw new Error("Cannot connect to the Tinplate Flow API.");
@@ -2456,24 +4584,39 @@
     $("#appShell").classList.toggle("hidden", !loggedIn);
     if (!loggedIn) {
       $("#loginPin").value = "";
+      $("#loginStaffPin").value = "";
       setTimeout(function() {
         $("#loginPin").focus();
       }, 50);
     }
   }
-  async function authenticate(pin, quiet) {
+  async function authenticate(pin, quiet, staffId, staffPin) {
     const button = $("#loginButton");
     button.disabled = true;
     button.textContent = "Checking\u2026";
     try {
-      await api("/health", { method: "GET" }, pin);
+      const credentials = {
+        appPin: pin,
+        staffId: String(staffId || "").trim().toUpperCase(),
+        staffPin: String(staffPin || "").trim()
+      };
+      const health = await api("/health", { method: "GET" }, credentials);
       localStorage.setItem(PIN_STORAGE_KEY, pin);
+      if (credentials.staffId) localStorage.setItem(STAFF_ID_STORAGE_KEY, credentials.staffId);
+      else localStorage.removeItem(STAFF_ID_STORAGE_KEY);
+      if (credentials.staffPin) sessionStorage.setItem(STAFF_PIN_STORAGE_KEY, credentials.staffPin);
+      else sessionStorage.removeItem(STAFF_PIN_STORAGE_KEY);
+      state.accountsEnabled = Boolean(health.accountsEnabled);
+      state.currentUser = health.user || { id: "APP_PIN", name: "", role: "SUPERVISOR" };
+      renderSignedInUser();
       setLoggedIn(true);
       await Promise.all([loadInventory(), loadRecords(false)]);
+      applyPendingBatchQuery();
       if (!quiet) showToast("Logged in successfully.");
       return true;
     } catch (error) {
       localStorage.removeItem(PIN_STORAGE_KEY);
+      sessionStorage.removeItem(STAFF_PIN_STORAGE_KEY);
       setLoggedIn(false);
       if (!quiet) showToast(error.message, true);
       return false;
@@ -2484,18 +4627,36 @@
   }
   $("#loginForm").addEventListener("submit", function(event) {
     event.preventDefault();
-    authenticate($("#loginPin").value, false);
+    authenticate($("#loginPin").value, false, $("#loginStaffId").value, $("#loginStaffPin").value);
   });
   $("#logoutButton").addEventListener("click", function() {
     localStorage.removeItem(PIN_STORAGE_KEY);
+    localStorage.removeItem(STAFF_ID_STORAGE_KEY);
+    sessionStorage.removeItem(STAFF_PIN_STORAGE_KEY);
     state.lots = [];
     state.records = [];
     state.knownBatchNumbers.clear();
     state.importPreview = null;
     state.selectedLotIds.clear();
+    state.accountsEnabled = false;
+    state.currentUser = { id: "APP_PIN", name: "", role: "SUPERVISOR" };
     setLoggedIn(false);
     showToast("Logged out.");
   });
+  function renderSignedInUser() {
+    const name = state.currentUser && state.currentUser.name ? state.currentUser.name : "APP PIN user";
+    const role = state.accountsEnabled ? titleCase(state.currentUser.role) : "Shared access";
+    $("#signedInUser").innerHTML = "<span>" + escapeHtml(role) + "</span><strong>" + escapeHtml(name) + "</strong>";
+  }
+  function applyPicIdentity(input) {
+    if (!input) return;
+    if (state.accountsEnabled && state.currentUser.name) {
+      input.value = state.currentUser.name;
+      input.readOnly = true;
+    } else {
+      input.readOnly = false;
+    }
+  }
   function setupSignature(canvas) {
     const context = canvas.getContext("2d");
     let drawing = false;
@@ -2587,9 +4748,10 @@
     });
     $("#inventoryPanel").classList.add("active");
     $("#recordsPanel").classList.remove("active");
+    $("#dashboardPanel").classList.remove("active");
     $("#locationTitle").textContent = LOCATION_LABELS[location];
-    $("#importStock").classList.toggle("hidden", location !== "STORAGE");
     $("#slitSelected").classList.toggle("hidden", location !== "SLITTER");
+    $("#useSelected").classList.toggle("hidden", location !== "PRODUCTION_LINE");
     renderInventory();
   }
   $$(".tab[data-location]").forEach(function(button) {
@@ -2602,8 +4764,18 @@
       button.classList.toggle("active", button === event.currentTarget);
     });
     $("#inventoryPanel").classList.remove("active");
+    $("#dashboardPanel").classList.remove("active");
     $("#recordsPanel").classList.add("active");
     loadRecords(true);
+  });
+  $(".tab[data-view='dashboard']").addEventListener("click", function(event) {
+    $$(".tab").forEach(function(button) {
+      button.classList.toggle("active", button === event.currentTarget);
+    });
+    $("#inventoryPanel").classList.remove("active");
+    $("#recordsPanel").classList.remove("active");
+    $("#dashboardPanel").classList.add("active");
+    loadDashboard();
   });
   async function loadInventory() {
     $("#inventoryBody").innerHTML = '<tr><td colspan="9" class="empty-cell">Loading current stock\u2026</td></tr>';
@@ -2652,7 +4824,14 @@
         lot.supplierName,
         lot.temper,
         lot.tinCoating,
-        lot.dateReceived
+        lot.dateReceived,
+        lot.workOrder,
+        lot.artworkCode,
+        lot.colours,
+        lot.productType,
+        lot.productDescription,
+        lot.returnReason,
+        lot.dueDate
       ].join(" ").toLowerCase();
       return (!term || text.includes(term)) && (!unit || lot.unit === unit);
     });
@@ -2674,7 +4853,12 @@
         const description = [
           lot.slittingFor ? "Slitting for " + slittingForLabel(lot.slittingFor) : "",
           lot.itemDescription || lot.description,
-          lot.coatingDescription
+          lot.coatingDescription,
+          lot.productType ? titleCase(lot.productType) + ": " + (lot.productDescription || "") : "",
+          lot.workOrder ? "Job " + lot.workOrder : "",
+          lot.artworkCode ? "Artwork " + lot.artworkCode : "",
+          lot.colours ? "Colours " + lot.colours : "",
+          lot.returnReason ? "Returned: " + returnReasonLabel(lot.returnReason) : ""
         ].filter(Boolean).join(" \xB7 ") || "\u2014";
         const supplierSpec = [
           lot.supplierName,
@@ -2682,13 +4866,18 @@
           lot.tinCoating ? "Tin " + lot.tinCoating : "",
           lot.dateReceived ? "Received " + formatReceivedDate(lot.dateReceived) : ""
         ].filter(Boolean).join(" \xB7 ") || "\u2014";
-        return '<tr><td class="select-column"><input class="lot-checkbox" type="checkbox" data-lot-id="' + escapeHtml(lot.lotId) + '"' + (state.selectedLotIds.has(lot.lotId) ? " checked" : "") + ' aria-label="Select ' + escapeHtml(lot.lotId) + '"></td><td><strong>' + escapeHtml(lot.lotId) + "</strong></td><td>" + escapeHtml(lot.batchNumber) + "</td><td>" + escapeHtml(lot.dimensions) + '</td><td class="quantity-cell"><strong>' + formatNumber(lot.quantity) + "</strong><span>" + unitLabel(lot.unit) + '</span></td><td class="description-cell">' + escapeHtml(supplierSpec) + '</td><td class="description-cell">' + escapeHtml(customerBrand) + '</td><td class="description-cell">' + escapeHtml(description) + "</td><td>" + formatDate(lot.updatedAt) + "</td></tr>";
+        return '<tr><td class="select-column"><input class="lot-checkbox" type="checkbox" data-lot-id="' + escapeHtml(lot.lotId) + '"' + (state.selectedLotIds.has(lot.lotId) ? " checked" : "") + ' aria-label="Select ' + escapeHtml(lot.lotId) + '"></td><td><strong>' + escapeHtml(lot.lotId) + '</strong></td><td><button class="batch-link" type="button" data-batch="' + escapeHtml(lot.batchNumber) + '">' + escapeHtml(lot.batchNumber) + "</button></td><td>" + escapeHtml(lot.dimensions) + '</td><td class="quantity-cell"><strong>' + formatNumber(lot.quantity) + "</strong><span>" + unitLabel(lot.unit) + '</span></td><td class="description-cell">' + escapeHtml(supplierSpec) + '</td><td class="description-cell">' + escapeHtml(customerBrand) + '</td><td class="description-cell">' + escapeHtml(description) + "</td><td>" + formatDate(lot.updatedAt) + "</td></tr>";
       }).join("");
       $$("#inventoryBody .lot-checkbox").forEach(function(checkbox) {
         checkbox.addEventListener("change", function() {
           if (checkbox.checked) state.selectedLotIds.add(checkbox.dataset.lotId);
           else state.selectedLotIds.delete(checkbox.dataset.lotId);
           updateSelectionControls();
+        });
+      });
+      $$("#inventoryBody .batch-link").forEach(function(button) {
+        button.addEventListener("click", function() {
+          openBatchTimeline(button.dataset.batch);
         });
       });
     }
@@ -2699,6 +4888,9 @@
     $("#selectedCount").textContent = formatNumber(selected.length);
     $("#transferSelected").disabled = selected.length === 0;
     $("#slitSelected").disabled = selected.length !== 1 || selected[0].unit !== "SHEETS";
+    $("#adjustSelected").disabled = selected.length !== 1;
+    $("#printLabelSelected").disabled = selected.length !== 1;
+    $("#useSelected").disabled = state.currentLocation !== "PRODUCTION_LINE" || selected.length === 0;
   }
   function selectedLots() {
     return state.lots.filter(function(lot) {
@@ -2756,6 +4948,7 @@
       updateConditionalOther(entry[0], entry[1], entry[2]);
     });
     $("#manualSignature").clearSignature();
+    applyPicIdentity($("#manualPic"));
     $("#manualStockDialog").showModal();
     $("#manualSignature").prepareSignature();
   }
@@ -2890,12 +5083,14 @@
     }
   });
   var STOCK_COLUMN_ALIASES = {
+    stockId: ["STOCKID", "LOTID", "STOCKCODE"],
     batchNumber: ["BATCHNO", "BATCHNUMBER", "BATCH"],
     supplierName: ["SUPPLIERNAME", "SUPPLIER"],
     dimensions: ["SIZE", "DIMENSIONS", "DIMENSION"],
     temper: ["TEMP", "TEMPER"],
     tinCoating: ["TINCOATING", "COATING"],
-    sheets: ["SHEETS", "SHEETQUANTITY", "QUANTITY", "QTY"],
+    sheets: ["SHEETS", "BLANKS", "SHEETQUANTITY", "QUANTITY", "QTY", "BALANCE", "COUNTEDBALANCE", "ACTUALQUANTITY"],
+    unit: ["UNIT", "UNITS", "STOCKUNIT"],
     kg: ["KG", "WEIGHTKG", "WEIGHT"],
     price: ["PRICE", "UNITPRICE"],
     totalAmount: ["TOTALAMOUNT", "AMOUNT", "TOTAL"],
@@ -2903,9 +5098,18 @@
   };
   $("#importStock").addEventListener("click", openImportDialog);
   $("#stockFile").addEventListener("change", handleStockFile);
+  $("#importMode").addEventListener("change", function() {
+    configureImportMode();
+    $("#stockFile").value = "";
+    state.importPreview = null;
+    $("#importPreview").classList.add("hidden");
+    $("#importApproval").classList.add("hidden");
+    $("#submitImport").disabled = true;
+  });
   function openImportDialog() {
-    if (state.currentLocation !== "STORAGE") return showToast("Stock files can be imported only from the Storage tab.", true);
     $("#importForm").reset();
+    $("#importMode").value = state.currentLocation === "STORAGE" ? "ADD_NEW" : "RECONCILE";
+    $("#importLocation").value = locationLabel(state.currentLocation);
     $("#importSignature").clearSignature();
     $("#importPreview").classList.add("hidden");
     $("#importApproval").classList.add("hidden");
@@ -2913,8 +5117,22 @@
     $("#submitImport").disabled = true;
     $("#submitImport").textContent = "Import New Batches";
     state.importPreview = null;
+    configureImportMode();
+    applyPicIdentity($("#importPic"));
     $("#importDialog").showModal();
     $("#importSignature").prepareSignature();
+  }
+  function configureImportMode() {
+    const reconcile = $("#importMode").value === "RECONCILE";
+    $("#importLocation").value = locationLabel(state.currentLocation);
+    $("#importInstructions").innerHTML = reconcile ? "Upload the physical stock count for <strong>" + escapeHtml(locationLabel(state.currentLocation)) + "</strong>. Match by Stock ID, or by a unique Batch + Size + Unit combination. Only differences are posted; rows that cannot be matched are safely ignored." : "Select an .xlsx stock-balance file. The system finds the header row automatically and requires <strong>Batch No</strong>, <strong>Size</strong> and <strong>Sheets</strong>. New batches are added to Storage; batches already present in current or historical records are ignored.";
+    $("#stocktakeReasonLabel").classList.toggle("hidden", !reconcile);
+    $("#stocktakeReason").required = reconcile;
+    $("#importNewLabel").textContent = reconcile ? "Adjustments" : "New batches";
+    $("#importIgnoredLabel").textContent = reconcile ? "No change / ignored" : "Ignored";
+    $("#importInvalidLabel").textContent = "Invalid";
+    $("#importSignatureText").textContent = reconcile ? "This signature confirms the physical stock count and every balance change shown in the preview. No second approval is required." : "This signature confirms the selected file and every new stock batch shown in the preview.";
+    $("#submitImport").textContent = reconcile ? "Post Stocktake Reconciliation" : "Import New Batches";
   }
   async function handleStockFile(event) {
     const file = event.target.files && event.target.files[0];
@@ -2934,7 +5152,7 @@
     $("#importReading").classList.remove("hidden");
     try {
       const workbook = await readExcelWorkbook(await readFileAsArrayBuffer(file));
-      const preview = buildStockImportPreview(workbook, file.name);
+      const preview = $("#importMode").value === "RECONCILE" ? buildStocktakePreview(workbook, file.name, state.currentLocation) : buildStockImportPreview(workbook, file.name);
       state.importPreview = preview;
       renderStockImportPreview(preview);
     } catch (error) {
@@ -3034,6 +5252,7 @@
       return row.result === "DUPLICATE_EXISTING" || row.result === "DUPLICATE_IN_FILE";
     }).length;
     return {
+      mode: "ADD_NEW",
       fileName: fileName.slice(0, 180),
       sourceSheet: String(match.sheet).slice(0, 120),
       headerRow: match.headerIndex + 1,
@@ -3044,6 +5263,109 @@
       invalidCount,
       newCount,
       ignoredCount
+    };
+  }
+  function buildStocktakePreview(workbook, fileName, location) {
+    if (!Array.isArray(workbook) || workbook.length === 0) throw new Error("The Excel workbook contains no worksheets.");
+    let match = null;
+    workbook.some(function(sheet) {
+      const data = Array.isArray(sheet.data) ? sheet.data : [];
+      for (let rowIndex = 0; rowIndex < Math.min(data.length, 40); rowIndex += 1) {
+        const headerMap = stockHeaderMap(data[rowIndex] || []);
+        if (headerMap.sheets != null && (headerMap.stockId != null || headerMap.batchNumber != null)) {
+          match = { sheet: sheet.sheet || "Sheet " + (workbook.indexOf(sheet) + 1), data, headerIndex: rowIndex, headerMap };
+          return true;
+        }
+      }
+      return false;
+    });
+    if (!match) throw new Error("No worksheet has a quantity column together with Stock ID or Batch No.");
+    const rows = [];
+    const matchedIds = /* @__PURE__ */ new Set();
+    const activeLots = state.lots.filter(function(lot) {
+      return lot.location === location;
+    });
+    const quantityHeader = normalizeStockHeader(stockCell(match.data[match.headerIndex], match.headerMap.sheets));
+    const dataRows = match.data.slice(match.headerIndex + 1);
+    if (dataRows.length > 1e3) throw new Error("The worksheet has more than 1,000 rows. Split it into smaller stocktake files.");
+    dataRows.forEach(function(cells, offset) {
+      const rawStockId = importedText(stockCell(cells, match.headerMap.stockId), 100).replace(/\s/g, "");
+      const batchNumber = normalizeImportedBatch(stockCell(cells, match.headerMap.batchNumber));
+      const dimensions = normalizeImportedDimensions(stockCell(cells, match.headerMap.dimensions));
+      const countedQuantity = importedWholeNumber(stockCell(cells, match.headerMap.sheets));
+      if (!rawStockId && !batchNumber && isBlankCell(stockCell(cells, match.headerMap.sheets))) return;
+      const errors = [];
+      if (!Number.isSafeInteger(countedQuantity) || countedQuantity < 0) errors.push("Counted balance must be zero or a positive whole number");
+      let unit = importedText(stockCell(cells, match.headerMap.unit), 20).toUpperCase();
+      if (unit.startsWith("SHEET")) unit = "SHEETS";
+      else if (unit.startsWith("BLANK")) unit = "BLANKS";
+      else if (quantityHeader.includes("BLANK")) unit = "BLANKS";
+      else if (quantityHeader.includes("SHEET")) unit = "SHEETS";
+      else unit = "";
+      let candidates = activeLots;
+      if (rawStockId) {
+        candidates = candidates.filter(function(lot) {
+          return lot.lotId === rawStockId;
+        });
+      } else {
+        candidates = candidates.filter(function(lot) {
+          return lot.batchNumber === batchNumber;
+        });
+        if (dimensions) candidates = candidates.filter(function(lot) {
+          return lot.dimensions === dimensions;
+        });
+        if (unit) candidates = candidates.filter(function(lot) {
+          return lot.unit === unit;
+        });
+      }
+      let result = "CHANGE";
+      let matchedLot = null;
+      if (errors.length) result = "INVALID";
+      else if (!candidates.length) result = "NO_MATCH";
+      else if (candidates.length > 1) result = "AMBIGUOUS";
+      else {
+        matchedLot = candidates[0];
+        if (matchedIds.has(matchedLot.lotId)) {
+          result = "INVALID";
+          errors.push("The same stock ID appears more than once in this file");
+        } else {
+          matchedIds.add(matchedLot.lotId);
+          if (Number(matchedLot.quantity) === countedQuantity) result = "UNCHANGED";
+        }
+      }
+      rows.push({
+        sourceRow: match.headerIndex + offset + 2,
+        stockId: rawStockId,
+        sourceLotId: matchedLot ? matchedLot.lotId : "",
+        batchNumber: matchedLot ? matchedLot.batchNumber : batchNumber,
+        dimensions: matchedLot ? matchedLot.dimensions : dimensions,
+        unit: matchedLot ? matchedLot.unit : unit,
+        systemQuantity: matchedLot ? Number(matchedLot.quantity) : null,
+        countedQuantity: Number.isSafeInteger(countedQuantity) ? countedQuantity : null,
+        result,
+        errors
+      });
+    });
+    if (!rows.length) throw new Error("No stocktake rows were found below the worksheet headers.");
+    return {
+      mode: "RECONCILE",
+      location,
+      fileName: fileName.slice(0, 180),
+      sourceSheet: String(match.sheet).slice(0, 120),
+      headerRow: match.headerIndex + 1,
+      rows,
+      validRows: rows.filter(function(row) {
+        return row.result === "CHANGE";
+      }),
+      invalidCount: rows.filter(function(row) {
+        return row.result === "INVALID";
+      }).length,
+      newCount: rows.filter(function(row) {
+        return row.result === "CHANGE";
+      }).length,
+      ignoredCount: rows.filter(function(row) {
+        return row.result !== "CHANGE" && row.result !== "INVALID";
+      }).length
     };
   }
   function stockHeaderMap(row) {
@@ -3097,6 +5419,8 @@
     return String(year).padStart(4, "0") + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
   }
   function renderStockImportPreview(preview) {
+    if (preview.mode === "RECONCILE") return renderStocktakePreview(preview);
+    $("#importPreviewHead").innerHTML = "<tr><th>Excel row</th><th>Batch</th><th>Size</th><th>Sheets</th><th>Supplier</th><th>Result</th></tr>";
     $("#importFoundCount").textContent = formatNumber(preview.rows.length);
     $("#importNewCount").textContent = formatNumber(preview.newCount);
     $("#importIgnoredCount").textContent = formatNumber(preview.ignoredCount);
@@ -3115,6 +5439,34 @@
     $("#submitImport").disabled = !ready;
     if (ready) $("#importSignature").prepareSignature();
   }
+  function renderStocktakePreview(preview) {
+    $("#importPreviewHead").innerHTML = "<tr><th>Excel row</th><th>Stock ID</th><th>Batch / Size</th><th>System</th><th>Counted</th><th>Result</th></tr>";
+    $("#importFoundCount").textContent = formatNumber(preview.rows.length);
+    $("#importNewCount").textContent = formatNumber(preview.newCount);
+    $("#importIgnoredCount").textContent = formatNumber(preview.ignoredCount);
+    $("#importInvalidCount").textContent = formatNumber(preview.invalidCount);
+    $("#importSheetInfo").textContent = preview.fileName + " \xB7 " + preview.sourceSheet + " \xB7 " + locationLabel(preview.location) + " \xB7 headers on row " + preview.headerRow;
+    $("#importPreviewBody").innerHTML = preview.rows.map(function(row) {
+      let resultLabel;
+      if (row.result === "CHANGE") resultLabel = "Adjust " + formatSignedNumber(Number(row.countedQuantity) - Number(row.systemQuantity));
+      else if (row.result === "UNCHANGED") resultLabel = "No change";
+      else if (row.result === "NO_MATCH") resultLabel = "Ignore \u2014 no current stock match";
+      else if (row.result === "AMBIGUOUS") resultLabel = "Ignore \u2014 use Stock ID to identify the split lot";
+      else resultLabel = "Invalid \u2014 " + row.errors.join("; ");
+      return '<tr class="' + row.result + '"><td>' + row.sourceRow + "</td><td>" + escapeHtml(row.sourceLotId || row.stockId || "\u2014") + '</td><td class="stacked-cell"><strong>' + escapeHtml(row.batchNumber || "\u2014") + "</strong><span>" + escapeHtml(row.dimensions || "\u2014") + "</span></td><td>" + (row.systemQuantity == null ? "\u2014" : formatNumber(row.systemQuantity)) + "</td><td>" + (row.countedQuantity == null ? "\u2014" : formatNumber(row.countedQuantity)) + '</td><td class="import-result ' + row.result + '">' + escapeHtml(resultLabel) + "</td></tr>";
+    }).join("");
+    const ready = preview.invalidCount === 0 && preview.newCount > 0;
+    const message = preview.invalidCount ? "Correct the invalid Excel rows before posting. No stock has been changed." : preview.newCount === 0 ? "Every matched count agrees with the system, or unmatched rows were safely ignored. There is nothing to reconcile." : preview.newCount + " balance change" + (preview.newCount === 1 ? " is" : "s are") + " ready. " + preview.ignoredCount + " unchanged or unmatched row" + (preview.ignoredCount === 1 ? " will" : "s will") + " be left untouched.";
+    $("#importValidationMessage").textContent = message;
+    $("#importValidationMessage").className = "info-banner" + (preview.invalidCount ? " error" : "");
+    $("#importPreview").classList.remove("hidden");
+    $("#importApproval").classList.toggle("hidden", !ready);
+    $("#submitImport").disabled = !ready;
+    if (ready) {
+      applyPicIdentity($("#importPic"));
+      $("#importSignature").prepareSignature();
+    }
+  }
   $("#importForm").addEventListener("submit", async function(event) {
     event.preventDefault();
     const preview = state.importPreview;
@@ -3125,45 +5477,61 @@
     if (!picName) return showToast("Importing PIC is required.", true);
     const button = $("#submitImport");
     button.disabled = true;
-    button.textContent = "Importing\u2026";
+    button.textContent = preview.mode === "RECONCILE" ? "Reconciling\u2026" : "Importing\u2026";
     try {
-      const rows = preview.validRows.map(function(row) {
-        return {
-          sourceRow: row.sourceRow,
-          batchNumber: row.batchNumber,
-          supplierName: row.supplierName,
-          dimensions: row.dimensions,
-          temper: row.temper,
-          tinCoating: row.tinCoating,
-          sheets: row.sheets,
-          kg: row.kg,
-          price: row.price,
-          totalAmount: row.totalAmount,
-          dateReceived: row.dateReceived
-        };
-      });
+      const payload = preview.mode === "RECONCILE" ? {
+        type: "STOCKTAKE_RECONCILIATION",
+        location: preview.location,
+        fileName: preview.fileName,
+        sourceSheet: preview.sourceSheet,
+        items: preview.validRows.map(function(row) {
+          return { sourceRow: row.sourceRow, sourceLotId: row.sourceLotId, countedQuantity: row.countedQuantity };
+        }),
+        description: $("#stocktakeReason").value.trim(),
+        picName,
+        signature
+      } : {
+        type: "STOCK_IMPORT",
+        fileName: preview.fileName,
+        sourceSheet: preview.sourceSheet,
+        rows: preview.validRows.map(function(row) {
+          return {
+            sourceRow: row.sourceRow,
+            batchNumber: row.batchNumber,
+            supplierName: row.supplierName,
+            dimensions: row.dimensions,
+            temper: row.temper,
+            tinCoating: row.tinCoating,
+            sheets: row.sheets,
+            kg: row.kg,
+            price: row.price,
+            totalAmount: row.totalAmount,
+            dateReceived: row.dateReceived
+          };
+        }),
+        picName,
+        signature
+      };
       const result = await api("/records", {
         method: "POST",
-        body: JSON.stringify({
-          type: "STOCK_IMPORT",
-          fileName: preview.fileName,
-          sourceSheet: preview.sourceSheet,
-          rows,
-          picName,
-          signature
-        })
+        body: JSON.stringify(payload)
       });
-      const counts = result.record.importResult || {};
       $("#importDialog").close();
       state.importPreview = null;
       state.selectedLotIds.clear();
-      showToast("Record " + result.record.id + " posted: " + formatNumber(counts.added || 0) + " new batch(es), " + formatNumber(counts.ignored || 0) + " ignored.");
+      if (preview.mode === "RECONCILE") {
+        const counts = result.record.stocktakeResult || {};
+        showToast("Record " + result.record.id + " posted: " + formatNumber(counts.adjusted || 0) + " stock balance(s) reconciled.");
+      } else {
+        const counts = result.record.importResult || {};
+        showToast("Record " + result.record.id + " posted: " + formatNumber(counts.added || 0) + " new batch(es), " + formatNumber(counts.ignored || 0) + " ignored.");
+      }
       await Promise.all([loadInventory(), loadRecords(false)]);
     } catch (error) {
       showToast(error.message, true);
     } finally {
       button.disabled = false;
-      button.textContent = "Import New Batches";
+      button.textContent = preview.mode === "RECONCILE" ? "Post Stocktake Reconciliation" : "Import New Batches";
     }
   });
   function standardPurposeOptionsHtml() {
@@ -3227,19 +5595,69 @@
       return '<option value="' + location + '">' + LOCATION_LABELS[location] + "</option>";
     }).join("");
     $("#transferItems").innerHTML = lots.map(function(lot, index) {
-      return '<article class="item-card transfer-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + "<label>Quantity to transfer (" + unitLabel(lot.unit).toLowerCase() + ')<input class="transfer-quantity" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" value="' + Number(lot.quantity) + '" required></label><div class="slitter-item-fields form-grid hidden"><label>Slitting for<select class="slitting-for"><option value="">Select Component or Body</option><option value="COMPONENT">Component</option><option value="BODY">Body</option></select></label><label class="wide">Item description<textarea class="slitter-item-description" rows="2" maxlength="300" placeholder="Describe the component or body this batch will be slitted for"></textarea></label></div></article>';
+      return '<article class="item-card transfer-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + "<label>Quantity to transfer (" + unitLabel(lot.unit).toLowerCase() + ')<input class="transfer-quantity" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" value="' + Number(lot.quantity) + '" required></label><div class="slitter-item-fields form-grid hidden"><label>Slitting for<select class="slitting-for"><option value="">Select Component or Body</option><option value="COMPONENT">Component</option><option value="BODY">Body</option></select></label><label>Customer (optional)<input class="slitter-customer" maxlength="160" placeholder="Customer name"></label><label>Brand / design (optional)<input class="slitter-brand" maxlength="160" placeholder="Brand or item"></label><label>Job / work order (optional)<input class="slitter-work-order" maxlength="100"></label><label>Due date (optional)<input class="slitter-due-date" type="date"></label><label>Expected blank width (mm)<input class="slitter-expected-width" type="number" inputmode="numeric" min="1" step="1"></label><label>Expected blank length (mm)<input class="slitter-expected-length" type="number" inputmode="numeric" min="1" step="1"></label><label>Expected blanks per sheet<input class="slitter-expected-pieces" type="number" inputmode="numeric" min="1" step="1"></label><label class="wide">Item description<textarea class="slitter-item-description" rows="2" maxlength="300" placeholder="Describe the component or body this batch will be slitted for"></textarea></label></div></article>';
     }).join("");
     setupPurposeFields($("#transferPurposeFields"));
     configureTransferDestination();
+    applyPicIdentity($("#transferPic"));
     $("#transferDialog").showModal();
     $("#transferSignature").prepareSignature();
   }
+  function transferDestinationDetailsHtml(destination) {
+    if (destination === "PRINTING") {
+      return '<div class="form-grid destination-details"><label>Printing job / work order (optional)<input class="destination-work-order" maxlength="100"></label><label>Due date (optional)<input class="destination-due-date" type="date"></label><label>Artwork code (optional)<input class="destination-artwork-code" maxlength="120"></label><label>Colours (optional)<input class="destination-colours" maxlength="160" placeholder="e.g. CMYK + spot red"></label><label class="wide">Printing instructions (optional)<textarea class="destination-printing-instructions" rows="2" maxlength="300"></textarea></label></div>';
+    }
+    if (destination === "PRODUCTION_LINE") {
+      return '<div class="form-grid destination-details"><label>Material is for<select class="destination-product-type" required><option value="">Select Body, Component, Blank or Other</option><option value="BODY">Body</option><option value="COMPONENT">Component</option><option value="BLANK">Blank</option><option value="OTHER">Other</option></select></label><label>Product / component<input class="destination-product-description" maxlength="240" required placeholder="e.g. 1 litre paint can body"></label><label>Job / work order<input class="destination-work-order" maxlength="100" required></label><label>Expected production quantity<input class="destination-expected-quantity" type="number" inputmode="numeric" min="1" step="1" required></label><label>Customer (optional)<input class="destination-customer" maxlength="160"></label><label>Brand / design (optional)<input class="destination-brand" maxlength="160"></label><label>Due date (optional)<input class="destination-due-date" type="date"></label></div>';
+    }
+    if (destination === "STORAGE" && state.currentLocation !== "STORAGE") {
+      return '<div class="form-grid destination-details"><label class="wide">Reason for return to Storage<select class="destination-return-reason" required><option value="">Select return reason</option><option value="UNUSED">Unused material</option><option value="OVERPRODUCTION">Overproduction</option><option value="REJECTED_HOLD">Rejected / quality hold</option><option value="JOB_COMPLETE">Job completed</option><option value="OTHER">Other</option></select></label></div>';
+    }
+    return "";
+  }
+  function collectDestinationDetails(destination) {
+    const container = $("#transferDestinationDetails");
+    const value = function(selector) {
+      const input = container.querySelector(selector);
+      return input ? input.value.trim() : "";
+    };
+    const integer = function(selector, label, required) {
+      const raw = value(selector);
+      if (!raw && !required) return null;
+      const number = Number(raw);
+      if (!Number.isSafeInteger(number) || number <= 0) throw new Error(label + " must be a positive whole number.");
+      return number;
+    };
+    const details = {
+      workOrder: value(".destination-work-order"),
+      dueDate: value(".destination-due-date"),
+      artworkCode: value(".destination-artwork-code"),
+      colours: value(".destination-colours"),
+      printingInstructions: value(".destination-printing-instructions"),
+      productType: value(".destination-product-type"),
+      productDescription: value(".destination-product-description"),
+      expectedQuantity: integer(".destination-expected-quantity", "Expected production quantity", destination === "PRODUCTION_LINE"),
+      customer: value(".destination-customer"),
+      brand: value(".destination-brand"),
+      returnReason: value(".destination-return-reason")
+    };
+    if (destination === "PRODUCTION_LINE") {
+      if (!["BODY", "COMPONENT", "BLANK", "OTHER"].includes(details.productType)) throw new Error("Select what the Production Line material is for.");
+      if (!details.productDescription) throw new Error("Production item / product description is required.");
+      if (!details.workOrder) throw new Error("Production job / work order is required.");
+      if (details.customer && !details.brand || !details.customer && details.brand) throw new Error("Enter both customer and brand / design, or leave both blank.");
+    }
+    if (destination === "STORAGE" && !details.returnReason) throw new Error("Select why the material is returning to Storage.");
+    return details;
+  }
   function configureTransferDestination() {
-    const isSlitter = $("#transferDestination").value === "SLITTER";
+    const destination = $("#transferDestination").value;
+    const isSlitter = destination === "SLITTER";
+    const fixedTransferPurpose = isSlitter || destination === "PRODUCTION_LINE" || destination === "STORAGE";
     const purposeContainer = $("#transferPurposeFields");
     const purposeSelect = purposeContainer.querySelector(".purpose-type");
     if (purposeSelect) {
-      if (isSlitter) {
+      if (fixedTransferPurpose) {
         purposeSelect.innerHTML = '<option value="TRANSFER">Transfer</option>';
         purposeContainer.classList.add("hidden");
       } else {
@@ -3251,6 +5669,7 @@
       }
       updatePurposeFields(purposeContainer);
     }
+    $("#transferDestinationDetails").innerHTML = transferDestinationDetailsHtml(destination);
     $$("#transferItems .transfer-item").forEach(function(card) {
       const fields = card.querySelector(".slitter-item-fields");
       const slittingFor = card.querySelector(".slitting-for");
@@ -3261,6 +5680,9 @@
       if (!isSlitter) {
         slittingFor.value = "";
         description.value = "";
+        card.querySelectorAll(".slitter-item-fields input").forEach(function(input) {
+          input.value = "";
+        });
       }
     });
     $("#transferDescriptionLabel").textContent = isSlitter ? "Overall transfer remarks (optional)" : "Movement description / reason";
@@ -3277,6 +5699,7 @@
     let purpose;
     let items;
     let description;
+    let destinationDetails;
     try {
       const destinationLocation = $("#transferDestination").value;
       const isSlitter = destinationLocation === "SLITTER";
@@ -3295,13 +5718,28 @@
           throw new Error("Item " + (index + 1) + ": select whether it is being slitted for a Component or Body.");
         }
         if (isSlitter && !itemDescription) throw new Error("Item " + (index + 1) + ": description is required.");
+        const optionalInteger = function(selector, label) {
+          const input = card.querySelector(selector);
+          if (!isSlitter || !input || !input.value) return null;
+          const value = Number(input.value);
+          if (!Number.isSafeInteger(value) || value <= 0) throw new Error("Item " + (index + 1) + ": " + label + " must be a positive whole number.");
+          return value;
+        };
         return {
           sourceLotId: lot.lotId,
           quantity,
           slittingFor,
-          itemDescription
+          itemDescription,
+          customer: isSlitter ? card.querySelector(".slitter-customer").value.trim() : "",
+          brand: isSlitter ? card.querySelector(".slitter-brand").value.trim() : "",
+          workOrder: isSlitter ? card.querySelector(".slitter-work-order").value.trim() : "",
+          dueDate: isSlitter ? card.querySelector(".slitter-due-date").value : "",
+          expectedBlankWidth: optionalInteger(".slitter-expected-width", "expected blank width"),
+          expectedBlankLength: optionalInteger(".slitter-expected-length", "expected blank length"),
+          expectedBlanksPerSheet: optionalInteger(".slitter-expected-pieces", "expected blanks per sheet")
         };
       });
+      destinationDetails = collectDestinationDetails(destinationLocation);
       description = $("#transferDescription").value.trim();
       if (!description && isSlitter) {
         const uses = Array.from(new Set(items.map(function(item) {
@@ -3318,6 +5756,7 @@
       destinationLocation: $("#transferDestination").value,
       items,
       purpose,
+      destinationDetails,
       description,
       picName: $("#transferPic").value.trim(),
       signature
@@ -3363,6 +5802,7 @@
     setupPurposeFields($("#slittingPurposeFields"));
     $("#areaCheck").className = "info-banner";
     $("#areaCheck").textContent = "Enter the sheets consumed and blank outputs to check material area.";
+    applyPicIdentity($("#slittingPic"));
     $("#slittingDialog").showModal();
     $("#slittingSignature").prepareSignature();
   }
@@ -3466,10 +5906,151 @@
       outputs,
       purpose,
       description: $("#slittingDescription").value.trim(),
+      scrapDescription: $("#slittingScrapDescription").value.trim(),
       picName: $("#slittingPic").value.trim(),
       signature
     };
     await submitMovement($("#submitSlitting"), payload, $("#slittingDialog"), "Post Slitting Record");
+  });
+  $("#useSelected").addEventListener("click", openProductionUsageDialog);
+  function openProductionUsageDialog() {
+    const lots = selectedLots();
+    if (state.currentLocation !== "PRODUCTION_LINE" || !lots.length) {
+      return showToast("Select at least one stock item from the Production Line tab.", true);
+    }
+    $("#productionUsageForm").reset();
+    $("#productionUsageSignature").clearSignature();
+    $("#productionUsageItems").innerHTML = lots.map(function(lot, index) {
+      return '<article class="item-card production-usage-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + '<div class="form-grid"><label>Used (' + unitLabel(lot.unit).toLowerCase() + ')<input class="production-used" type="number" inputmode="numeric" min="0" max="' + Number(lot.quantity) + '" step="1" value="0" required></label><label>Waste (' + unitLabel(lot.unit).toLowerCase() + ')<input class="production-waste" type="number" inputmode="numeric" min="0" max="' + Number(lot.quantity) + '" step="1" value="0" required></label><label class="wide">Balance after<input class="production-balance-after" type="text" value="' + formatNumber(lot.quantity) + " " + unitLabel(lot.unit) + '" readonly></label></div></article>';
+    }).join("");
+    $$("#productionUsageItems .production-used, #productionUsageItems .production-waste").forEach(function(input) {
+      input.addEventListener("input", updateProductionUsageCalculations);
+    });
+    const first = lots[0];
+    if (["BODY", "COMPONENT", "BLANK", "OTHER"].includes(first.productType)) $("#productionItemType").value = first.productType;
+    $("#productionProductDescription").value = first.productDescription || first.itemDescription || "";
+    $("#productionWorkOrder").value = first.workOrder || "";
+    $("#productionExpectedQuantity").value = first.expectedQuantity || "";
+    $("#productionCustomer").value = first.customer || "";
+    $("#productionBrand").value = first.brand || "";
+    $("#productionWasteReasonLabel").classList.add("hidden");
+    $("#productionWasteReason").required = false;
+    applyPicIdentity($("#productionUsagePic"));
+    $("#productionUsageDialog").showModal();
+    $("#productionUsageSignature").prepareSignature();
+  }
+  function updateProductionUsageCalculations() {
+    let hasWaste = false;
+    $$("#productionUsageItems .production-usage-item").forEach(function(card) {
+      const lot = state.lots.find(function(candidate) {
+        return candidate.lotId === card.dataset.lotId;
+      });
+      if (!lot) return;
+      const used = Number(card.querySelector(".production-used").value || 0);
+      const waste = Number(card.querySelector(".production-waste").value || 0);
+      hasWaste = hasWaste || waste > 0;
+      const after = Number(lot.quantity) - used - waste;
+      card.querySelector(".production-balance-after").value = after < 0 ? "Exceeds balance by " + formatNumber(Math.abs(after)) : formatNumber(after) + " " + unitLabel(lot.unit);
+    });
+    $("#productionWasteReasonLabel").classList.toggle("hidden", !hasWaste);
+    $("#productionWasteReason").required = hasWaste;
+    if (!hasWaste) $("#productionWasteReason").value = "";
+  }
+  $("#productionUsageForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const signature = $("#productionUsageSignature").signatureData();
+    if (!signature) return showToast("PIC signature is required.", true);
+    let items;
+    try {
+      items = $$("#productionUsageItems .production-usage-item").map(function(card, index) {
+        const lot = state.lots.find(function(candidate) {
+          return candidate.lotId === card.dataset.lotId;
+        });
+        if (!lot) throw new Error("Item " + (index + 1) + " is no longer available.");
+        const usedQuantity = Number(card.querySelector(".production-used").value);
+        const wasteQuantity = Number(card.querySelector(".production-waste").value);
+        if (![usedQuantity, wasteQuantity].every(function(value) {
+          return Number.isSafeInteger(value) && value >= 0;
+        })) {
+          throw new Error("Item " + (index + 1) + ": used and waste must be zero or positive whole numbers.");
+        }
+        if (usedQuantity + wasteQuantity < 1) throw new Error("Item " + (index + 1) + ": record at least one used or wasted unit.");
+        if (usedQuantity + wasteQuantity > Number(lot.quantity)) throw new Error("Item " + (index + 1) + ": used plus waste exceeds the available balance.");
+        return { sourceLotId: lot.lotId, usedQuantity, wasteQuantity };
+      });
+      const customer = $("#productionCustomer").value.trim();
+      const brand = $("#productionBrand").value.trim();
+      if (customer && !brand || !customer && brand) throw new Error("Enter both customer and brand / design, or leave both blank.");
+    } catch (error) {
+      return showToast(error.message, true);
+    }
+    const payload = {
+      type: "PRODUCTION_USAGE",
+      sourceLocation: "PRODUCTION_LINE",
+      items,
+      production: {
+        productType: $("#productionItemType").value,
+        productDescription: $("#productionProductDescription").value.trim(),
+        workOrder: $("#productionWorkOrder").value.trim(),
+        expectedQuantity: Number($("#productionExpectedQuantity").value),
+        actualQuantity: $("#productionActualQuantity").value ? Number($("#productionActualQuantity").value) : null,
+        customer: $("#productionCustomer").value.trim(),
+        brand: $("#productionBrand").value.trim()
+      },
+      wasteReason: $("#productionWasteReason").value.trim(),
+      description: $("#productionUsageDescription").value.trim(),
+      picName: $("#productionUsagePic").value.trim(),
+      signature
+    };
+    await submitMovement($("#submitProductionUsage"), payload, $("#productionUsageDialog"), "Post Use / Waste Record");
+  });
+  $("#adjustSelected").addEventListener("click", openAdjustmentDialog);
+  $("#adjustmentCounted").addEventListener("input", updateAdjustmentDifference);
+  function openAdjustmentDialog() {
+    const lots = selectedLots();
+    if (lots.length !== 1) return showToast("Select exactly one stock item to adjust.", true);
+    const lot = lots[0];
+    $("#adjustmentForm").reset();
+    $("#adjustmentSignature").clearSignature();
+    $("#adjustmentLot").dataset.lotId = lot.lotId;
+    $("#adjustmentLot").innerHTML = "<h3>" + escapeHtml(lot.lotId) + "</h3>" + stockSnapshotHtml(lot);
+    $("#adjustmentBefore").value = formatNumber(lot.quantity) + " " + unitLabel(lot.unit);
+    $("#adjustmentCounted").value = String(lot.quantity);
+    $("#adjustmentDifference").value = "No change";
+    applyPicIdentity($("#adjustmentPic"));
+    $("#adjustmentDialog").showModal();
+    $("#adjustmentSignature").prepareSignature();
+  }
+  function selectedAdjustmentLot() {
+    return state.lots.find(function(lot) {
+      return lot.lotId === $("#adjustmentLot").dataset.lotId;
+    });
+  }
+  function updateAdjustmentDifference() {
+    const lot = selectedAdjustmentLot();
+    if (!lot) return;
+    const counted = Number($("#adjustmentCounted").value);
+    $("#adjustmentDifference").value = Number.isSafeInteger(counted) && counted >= 0 ? formatSignedNumber(counted - Number(lot.quantity)) + " " + unitLabel(lot.unit) : "Enter a valid whole number";
+  }
+  $("#adjustmentForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const lot = selectedAdjustmentLot();
+    if (!lot) return showToast("The selected stock is no longer available.", true);
+    const countedQuantity = Number($("#adjustmentCounted").value);
+    if (!Number.isSafeInteger(countedQuantity) || countedQuantity < 0) return showToast("Corrected balance must be zero or a positive whole number.", true);
+    if (countedQuantity === Number(lot.quantity)) return showToast("The corrected balance is unchanged.", true);
+    const signature = $("#adjustmentSignature").signatureData();
+    if (!signature) return showToast("PIC signature is required.", true);
+    const payload = {
+      type: "STOCK_ADJUSTMENT",
+      location: lot.location,
+      sourceLotId: lot.lotId,
+      countedQuantity,
+      description: $("#adjustmentReason").value.trim(),
+      picName: $("#adjustmentPic").value.trim(),
+      signature
+    };
+    await submitMovement($("#submitAdjustment"), payload, $("#adjustmentDialog"), "Post Stock Adjustment");
   });
   async function loadRecords(showErrors) {
     if (showErrors) $("#recordsBody").innerHTML = '<tr><td colspan="10" class="empty-cell">Loading records\u2026</td></tr>';
@@ -3483,6 +6064,88 @@
         showToast(error.message, true);
       }
     }
+  }
+  $("#refreshDashboard").addEventListener("click", loadDashboard);
+  async function loadDashboard() {
+    await Promise.all([loadInventory(), loadRecords(false)]);
+    renderDashboard();
+  }
+  function renderDashboard() {
+    const currentMonth = malaysiaMonthKey(/* @__PURE__ */ new Date());
+    const postedThisMonth = state.records.filter(function(record) {
+      return record.status === "POSTED" && malaysiaMonthKey(new Date(record.createdAt)) === currentMonth;
+    });
+    const usageRecords = postedThisMonth.filter(function(record) {
+      return record.type === "PRODUCTION_USAGE";
+    });
+    const used = usageRecords.reduce(function(total, record) {
+      return total + Number(record.totals && record.totals.used || 0);
+    }, 0);
+    const waste = usageRecords.reduce(function(total, record) {
+      return total + Number(record.totals && record.totals.waste || 0);
+    }, 0);
+    const yields = postedThisMonth.filter(function(record) {
+      return record.type === "SLITTING" && Number.isFinite(Number(record.areaUtilizationPercent));
+    }).map(function(record) {
+      return Number(record.areaUtilizationPercent);
+    });
+    const totalValue = state.lots.reduce(function(total, lot) {
+      return total + Number(lot.totalAmount || 0);
+    }, 0);
+    $("#dashboardLots").textContent = formatNumber(state.lots.length);
+    $("#dashboardSheets").textContent = formatNumber(sumUnit(state.lots, "SHEETS"));
+    $("#dashboardBlanks").textContent = formatNumber(sumUnit(state.lots, "BLANKS"));
+    $("#dashboardValue").textContent = formatMoney2(totalValue);
+    $("#dashboardUsed").textContent = formatNumber(used);
+    $("#dashboardWaste").textContent = formatNumber(waste);
+    $("#dashboardYield").textContent = yields.length ? (yields.reduce(function(total, value) {
+      return total + value;
+    }, 0) / yields.length).toFixed(1) + "%" : "\u2014";
+    $("#dashboardAdjustments").textContent = formatNumber(postedThisMonth.filter(function(record) {
+      return record.type === "MANUAL_ADDITION" || record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION";
+    }).length);
+    $("#dashboardLocationBody").innerHTML = LOCATIONS.map(function(location) {
+      const lots = state.lots.filter(function(lot) {
+        return lot.location === location;
+      });
+      const value = lots.reduce(function(total, lot) {
+        return total + Number(lot.totalAmount || 0);
+      }, 0);
+      return "<tr><td><strong>" + escapeHtml(locationLabel(location)) + "</strong></td><td>" + formatNumber(lots.length) + "</td><td>" + formatNumber(sumUnit(lots, "SHEETS")) + "</td><td>" + formatNumber(sumUnit(lots, "BLANKS")) + "</td><td>" + escapeHtml(formatMoney2(value)) + "</td></tr>";
+    }).join("");
+    const alerts = [];
+    const oldLots = state.lots.filter(function(lot) {
+      return lot.updatedAt && Date.now() - new Date(lot.updatedAt).getTime() > 30 * 864e5;
+    });
+    if (oldLots.length) alerts.push({ type: "", title: oldLots.length + " lot(s) have not moved for 30+ days", text: "Review slow-moving stock in the location tabs." });
+    const lowLots = state.lots.filter(function(lot) {
+      return Number(lot.quantity) <= 10;
+    });
+    if (lowLots.length) alerts.push({ type: "", title: lowLots.length + " lot(s) have a balance of 10 or less", text: "Confirm whether these small balances are still physically present." });
+    const wasteRate = used + waste > 0 ? waste / (used + waste) * 100 : 0;
+    if (wasteRate > 5) alerts.push({ type: "danger", title: "Monthly waste rate is " + wasteRate.toFixed(1) + "%", text: "Open Production Use / Waste records to review the stated reasons." });
+    if (!alerts.length) alerts.push({ type: "success", title: "No dashboard alerts", text: "Current stock and this month's activity have no automatic warnings." });
+    $("#dashboardAlerts").innerHTML = alerts.map(function(alert) {
+      return '<article class="dashboard-alert ' + escapeHtml(alert.type) + '"><strong>' + escapeHtml(alert.title) + "</strong><p>" + escapeHtml(alert.text) + "</p></article>";
+    }).join("");
+    const recent = state.records.slice().sort(function(a, b) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    }).slice(0, 10);
+    $("#dashboardRecentBody").innerHTML = recent.length ? recent.map(function(record) {
+      return '<tr><td><button class="batch-link dashboard-record" type="button" data-record-id="' + escapeHtml(record.id) + '">' + escapeHtml(record.id) + "</button></td><td>" + escapeHtml(recordTypeLabel(record.type)) + "</td><td>" + escapeHtml(recordDestinationLabel(record)) + "</td><td>" + escapeHtml(record.picName || "\u2014") + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + escapeHtml(titleCase(record.status)) + "</td></tr>";
+    }).join("") : '<tr><td colspan="6" class="empty-cell">No records have been posted.</td></tr>';
+    $$("#dashboardRecentBody .dashboard-record").forEach(function(button) {
+      button.addEventListener("click", function() {
+        openRecord(button.dataset.recordId);
+      });
+    });
+  }
+  function malaysiaMonthKey(date) {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "2-digit" }).formatToParts(date).reduce(function(result, part) {
+      result[part.type] = part.value;
+      return result;
+    }, {});
+    return parts.year + "-" + parts.month;
   }
   function filteredRecords() {
     const term = $("#recordSearch").value.trim().toLowerCase();
@@ -3500,7 +6163,15 @@
         record.purpose && record.purpose.brand,
         record.purpose && record.purpose.coatingDescription,
         record.fileName,
-        record.sourceSheet
+        record.sourceSheet,
+        record.wasteReason,
+        record.destinationDetails && record.destinationDetails.workOrder,
+        record.destinationDetails && record.destinationDetails.artworkCode,
+        record.destinationDetails && record.destinationDetails.productDescription,
+        record.production && record.production.productDescription,
+        record.production && record.production.workOrder,
+        record.production && record.production.customer,
+        record.production && record.production.brand
       ].concat((record.lines || []).reduce(function(values, line) {
         return values.concat([
           line.sourceLotId,
@@ -3513,7 +6184,15 @@
           line.tinCoating,
           line.dateReceived,
           line.slittingFor,
-          line.itemDescription
+          line.itemDescription,
+          line.customer,
+          line.brand,
+          line.workOrder,
+          line.usedQuantity,
+          line.wasteQuantity,
+          line.quantityBefore,
+          line.quantityAfter,
+          line.difference
         ]);
       }, [])).join(" ").toLowerCase();
       return (!term || text.includes(term)) && (!type || record.type === type) && (!status || record.status === status);
@@ -3527,7 +6206,7 @@
     }
     $("#recordsBody").innerHTML = records.map(function(record) {
       const destination = recordDestinationLabel(record);
-      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : recordPurposeSummary(record);
+      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : record.type === "PRODUCTION_USAGE" ? formatNumber(record.totals && record.totals.used) + " used \xB7 " + formatNumber(record.totals && record.totals.waste) + " waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed balance correction" : record.type === "STOCKTAKE_RECONCILIATION" ? formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " balance(s) reconciled" : recordPurposeSummary(record);
       return "<tr><td><strong>" + escapeHtml(record.id) + "</strong></td><td>" + escapeHtml(recordTypeLabel(record.type)) + "</td><td>" + escapeHtml(locationLabel(record.sourceLocation)) + "</td><td>" + escapeHtml(destination) + "</td><td>" + formatNumber((record.lines || []).length) + '</td><td class="description-cell">' + escapeHtml(purpose) + "</td><td>" + escapeHtml(record.picName) + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + titleCase(record.status) + '</td><td><button class="secondary table-action view-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View</button></td></tr>';
     }).join("");
     $$("#recordsBody .view-record").forEach(function(button) {
@@ -3552,8 +6231,10 @@
       const record = await api("/records/" + encodeURIComponent(id));
       state.selectedRecord = record;
       renderRecordDetail(record);
-      $("#cancelSection").classList.toggle("hidden", record.status !== "POSTED");
+      const canCancel = !state.accountsEnabled || state.currentUser.role === "SUPERVISOR";
+      $("#cancelSection").classList.toggle("hidden", record.status !== "POSTED" || !canCancel);
       $("#cancelForm").reset();
+      applyPicIdentity($("#cancelPic"));
       $("#cancelSignature").clearSignature();
       $("#cancelSignature").prepareSignature();
       loadRecordSignatures(record);
@@ -3563,11 +6244,11 @@
   }
   function renderRecordDetail(record) {
     const destination = recordDestinationLabel(record);
-    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : recordPurposeSummary(record)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + "</dl>";
+    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Staff account", record.actor && record.actor.id ? record.actor.id + " \xB7 " + titleCase(record.actor.role) : "Shared APP PIN") + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : record.type === "PRODUCTION_USAGE" ? "Production use and waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed stock adjustment" : record.type === "STOCKTAKE_RECONCILIATION" ? "Stocktake reconciliation" : recordPurposeSummary(record)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + (record.type === "STOCKTAKE_RECONCILIATION" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Reconciliation result", formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " adjusted") : "") + destinationDetailsCells(record.destinationDetails) + "</dl>";
     if (record.type === "TRANSFER") {
       const slitterTransfer = record.destinationLocation === "SLITTER";
-      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th>' + (slitterTransfer ? "<th>Slitting for</th><th>Item description</th>" : "") + "</tr></thead><tbody>" + record.items.map(function(item) {
-        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td>" + (slitterTransfer ? "<td>" + escapeHtml(slittingForLabel(item.slittingFor)) + '</td><td class="description-cell">' + escapeHtml(item.itemDescription || "\u2014") + "</td>" : "") + "</tr>";
+      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th>' + (slitterTransfer ? "<th>Slitting for</th><th>Customer / Brand</th><th>Job / Expected blank</th><th>Item description</th>" : "") + "</tr></thead><tbody>" + record.items.map(function(item) {
+        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td>" + (slitterTransfer ? "<td>" + escapeHtml(slittingForLabel(item.slittingFor)) + "</td><td>" + escapeHtml([item.customer, item.brand].filter(Boolean).join(" / ") || "\u2014") + '</td><td class="description-cell">' + escapeHtml([item.workOrder, expectedBlankSummary(item)].filter(Boolean).join(" \xB7 ") || "\u2014") + '</td><td class="description-cell">' + escapeHtml(item.itemDescription || "\u2014") + "</td>" : "") + "</tr>";
       }).join("") + "</tbody></table></div></section>";
     } else if (record.type === "MANUAL_ADDITION") {
       html += '<section class="record-items"><h3>Batch added to ' + escapeHtml(locationLabel(record.destinationLocation)) + '</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Price</th><th>Total amount</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
@@ -3584,7 +6265,7 @@
         }).join("") + "</tbody></table></div>";
       }
       html += "</section>";
-    } else {
+    } else if (record.type === "SLITTING") {
       html += '<section class="record-items"><h3>Source sheets consumed</h3><div class="record-summary">' + stockSnapshotHtml({
         batchNumber: record.source.batchNumber,
         dimensions: record.source.dimensions,
@@ -3593,6 +6274,15 @@
         location: record.sourceLocation
       }) + "<strong>Source stock ID: " + escapeHtml(record.source.sourceLotId) + '</strong></div><h3>Blank outputs</h3><div class="table-wrap"><table><thead><tr><th>New stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th></tr></thead><tbody>' + record.outputs.map(function(output) {
         return "<tr><td>" + escapeHtml(output.lotId) + "</td><td>" + escapeHtml(output.batchNumber) + "</td><td>" + escapeHtml(output.dimensions) + "</td><td>" + formatNumber(output.quantity) + " Blanks</td></tr>";
+      }).join("") + '</tbody></table></div><p class="info-banner">Material yield: ' + escapeHtml(Number(record.areaUtilizationPercent || 0).toFixed(1)) + "% \xB7 Scrap / offcut area: " + escapeHtml(Number(record.scrapPercent || 0).toFixed(1)) + "%" + (record.scrapDescription ? " \xB7 " + escapeHtml(record.scrapDescription) : "") + "</p></section>";
+    } else if (record.type === "PRODUCTION_USAGE") {
+      html += '<section class="record-items"><h3>Production job</h3><dl class="detail-grid">' + detailCell("Output type", titleCase(record.production && record.production.productType)) + detailCell("Product / component", record.production && record.production.productDescription) + detailCell("Job / work order", record.production && record.production.workOrder) + detailCell("Expected output", formatNumber(record.production && record.production.expectedQuantity)) + detailCell("Actual output", record.production && record.production.actualQuantity ? formatNumber(record.production.actualQuantity) : "\u2014") + detailCell("Customer / Brand", [record.production && record.production.customer, record.production && record.production.brand].filter(Boolean).join(" / ") || "\u2014") + detailCell("Waste reason", record.wasteReason || "No waste recorded") + '</dl><h3>Stock consumed</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Used</th><th>Waste</th><th>Before</th><th>After</th></tr></thead><tbody>' + record.items.map(function(item) {
+        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.usedQuantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td><td>" + formatNumber(item.wasteQuantity) + "</td><td>" + formatNumber(item.quantityBefore) + "</td><td>" + formatNumber(item.quantityAfter) + "</td></tr>";
+      }).join("") + "</tbody></table></div></section>";
+    } else if (record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION") {
+      const heading = record.type === "STOCK_ADJUSTMENT" ? "Corrected stock balance" : "Reconciled stocktake balances";
+      html += '<section class="record-items"><h3>' + heading + '</h3><div class="table-wrap"><table><thead><tr>' + (record.type === "STOCKTAKE_RECONCILIATION" ? "<th>Excel row</th>" : "") + "<th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Unit</th><th>Before</th><th>After</th><th>Change</th></tr></thead><tbody>" + record.items.map(function(item) {
+        return "<tr>" + (record.type === "STOCKTAKE_RECONCILIATION" ? "<td>" + item.sourceRow + "</td>" : "") + "<td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(unitLabel(item.unit)) + "</td><td>" + formatNumber(item.quantityBefore) + "</td><td>" + formatNumber(item.quantityAfter) + "</td><td>" + escapeHtml(formatSignedNumber(item.difference)) + "</td></tr>";
       }).join("") + "</tbody></table></div></section>";
     }
     html += '<section class="record-items"><h3>Audit trail</h3>' + (record.audit || []).map(function(entry, index) {
@@ -3659,6 +6349,8 @@
       "From",
       "To / Process",
       "PIC",
+      "Staff ID",
+      "Staff Role",
       "Purpose Type",
       "Customer",
       "Brand / Design",
@@ -3672,6 +6364,23 @@
       "Unit",
       "Slitting For",
       "Item Description",
+      "Used Quantity",
+      "Waste Quantity",
+      "Balance Before",
+      "Balance After",
+      "Difference",
+      "Job / Work Order",
+      "Due Date",
+      "Artwork Code",
+      "Colours",
+      "Product Type",
+      "Product / Component",
+      "Expected Output",
+      "Actual Output",
+      "Return Reason",
+      "Waste Reason",
+      "Slitting Yield %",
+      "Scrap %",
       "Import File",
       "Source Sheet",
       "Excel Row",
@@ -3695,6 +6404,8 @@
           locationLabel(record.sourceLocation),
           recordDestinationLabel(record),
           record.picName,
+          record.actor && record.actor.id,
+          record.actor && record.actor.role,
           record.purpose && PURPOSE_LABELS[record.purpose.type],
           record.purpose && record.purpose.customer,
           record.purpose && record.purpose.brand,
@@ -3708,6 +6419,23 @@
           line.unit || "",
           line.slittingFor ? slittingForLabel(line.slittingFor) : "",
           line.itemDescription || "",
+          line.usedQuantity == null ? "" : line.usedQuantity,
+          line.wasteQuantity == null ? "" : line.wasteQuantity,
+          line.quantityBefore == null ? "" : line.quantityBefore,
+          line.quantityAfter == null ? "" : line.quantityAfter,
+          line.difference == null ? "" : line.difference,
+          line.workOrder || record.destinationDetails && record.destinationDetails.workOrder || record.production && record.production.workOrder || "",
+          line.dueDate || record.destinationDetails && record.destinationDetails.dueDate || "",
+          record.destinationDetails && record.destinationDetails.artworkCode,
+          record.destinationDetails && record.destinationDetails.colours,
+          record.destinationDetails && record.destinationDetails.productType || record.production && record.production.productType,
+          record.destinationDetails && record.destinationDetails.productDescription || record.production && record.production.productDescription,
+          record.destinationDetails && record.destinationDetails.expectedQuantity || record.production && record.production.expectedQuantity,
+          record.production && record.production.actualQuantity,
+          record.destinationDetails && record.destinationDetails.returnReason,
+          record.wasteReason || "",
+          record.areaUtilizationPercent == null ? "" : record.areaUtilizationPercent,
+          record.scrapPercent == null ? "" : record.scrapPercent,
           record.fileName || "",
           record.sourceSheet || "",
           line.sourceRow || "",
@@ -3734,6 +6462,67 @@
       URL.revokeObjectURL(link.href);
     }, 0);
   });
+  $("#printLabelSelected").addEventListener("click", function() {
+    const lots = selectedLots();
+    if (lots.length !== 1) return showToast("Select exactly one stock item to print a QR label.", true);
+    openBatchTimeline(lots[0].batchNumber, lots[0].lotId);
+  });
+  $("#printQrLabel").addEventListener("click", function() {
+    window.print();
+  });
+  async function openBatchTimeline(batchNumber, preferredLotId) {
+    if (!batchNumber) return;
+    if (!state.records.length) await loadRecords(false);
+    const currentLots = state.lots.filter(function(lot) {
+      return lot.batchNumber === batchNumber;
+    });
+    const records = state.records.filter(function(record) {
+      return (record.lines || []).some(function(line) {
+        return line.batchNumber === batchNumber;
+      });
+    }).sort(function(a, b) {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    const preferredLot = currentLots.find(function(lot) {
+      return lot.lotId === preferredLotId;
+    }) || currentLots[0] || null;
+    $("#timelineTitle").textContent = "Batch " + batchNumber;
+    $("#timelineCurrentLots").innerHTML = currentLots.length ? currentLots.map(function(lot) {
+      return "<article><strong>" + escapeHtml(lot.lotId) + "</strong>" + stockSnapshotHtml(lot) + "</article>";
+    }).join("") : '<p class="empty-cell">No current balance remains. The historical records below are retained.</p>';
+    $("#timelineEntries").innerHTML = records.length ? records.map(function(record) {
+      const matching = (record.lines || []).filter(function(line) {
+        return line.batchNumber === batchNumber;
+      });
+      const quantityText = matching.map(function(line) {
+        if (record.type === "PRODUCTION_USAGE") return formatNumber(line.usedQuantity) + " used, " + formatNumber(line.wasteQuantity) + " waste";
+        if (record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION") return formatNumber(line.quantityBefore) + " \u2192 " + formatNumber(line.quantityAfter);
+        return formatNumber(line.quantity) + " " + unitLabel(line.unit);
+      }).join(" \xB7 ");
+      return '<article class="timeline-entry ' + escapeHtml(record.status) + '"><strong>' + escapeHtml(recordTypeLabel(record.type)) + " \xB7 " + escapeHtml(record.id) + "</strong><p>" + escapeHtml(locationLabel(record.sourceLocation)) + " \u2192 " + escapeHtml(recordDestinationLabel(record)) + "</p><p>" + escapeHtml(quantityText || record.description || "") + "</p><p>" + escapeHtml(record.picName || "\u2014") + " \xB7 " + formatDate(record.createdAt) + '</p><div class="actions"><button class="secondary table-action timeline-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View record</button></div></article>';
+    }).join("") : '<p class="empty-cell">No batch records were found.</p>';
+    $$("#timelineEntries .timeline-record").forEach(function(button) {
+      button.addEventListener("click", function() {
+        openRecord(button.dataset.recordId);
+      });
+    });
+    const labelValues = preferredLot || { batchNumber, lotId: "Historical batch", dimensions: "\u2014", quantity: 0, unit: "", location: "PRODUCTION_USE" };
+    $("#labelDetails").innerHTML = labelDetail("Batch", batchNumber) + labelDetail("Stock ID", labelValues.lotId) + labelDetail("Size", labelValues.dimensions) + labelDetail("Balance", preferredLot ? formatNumber(preferredLot.quantity) + " " + unitLabel(preferredLot.unit) : "No current stock") + labelDetail("Location", preferredLot ? locationLabel(preferredLot.location) : "Historical / consumed") + labelDetail("Job", preferredLot && preferredLot.workOrder || "\u2014");
+    const qrUrl = window.location.origin + window.location.pathname + "?batch=" + encodeURIComponent(batchNumber);
+    $("#qrSvg").innerHTML = await import_qrcode.default.toString(qrUrl, { type: "svg", width: 230, margin: 1, errorCorrectionLevel: "M" });
+    $("#timelineDialog").showModal();
+  }
+  function applyPendingBatchQuery() {
+    if (!state.pendingBatchQuery) return;
+    const batch = state.pendingBatchQuery;
+    state.pendingBatchQuery = "";
+    openBatchTimeline(batch).catch(function(error) {
+      showToast(error.message, true);
+    });
+  }
+  function labelDetail(label, value) {
+    return "<div><dt>" + escapeHtml(label) + "</dt><dd>" + escapeHtml(value || "\u2014") + "</dd></div>";
+  }
   function parseDimensions2(value) {
     const match = String(value || "").match(/^(0\.\d+)\*(\d+)\*(\d+)$/);
     if (!match) return null;
@@ -3759,14 +6548,51 @@
     if (value === "BODY") return "Body";
     return value || "\u2014";
   }
+  function returnReasonLabel(value) {
+    const labels = {
+      UNUSED: "Unused material",
+      OVERPRODUCTION: "Overproduction",
+      REJECTED_HOLD: "Rejected / quality hold",
+      JOB_COMPLETE: "Job completed",
+      OTHER: "Other"
+    };
+    return labels[value] || titleCase(value);
+  }
+  function expectedBlankSummary(item) {
+    const size = item && item.expectedBlankWidth && item.expectedBlankLength ? item.expectedBlankWidth + "\xD7" + item.expectedBlankLength : "";
+    const pieces = item && item.expectedBlanksPerSheet ? item.expectedBlanksPerSheet + " / sheet" : "";
+    return [size, pieces].filter(Boolean).join(" \xB7 ");
+  }
+  function destinationDetailsCells(details) {
+    if (!details) return "";
+    let html = "";
+    if (details.productType) html += detailCell("Production material", titleCase(details.productType));
+    if (details.productDescription) html += detailCell("Product / component", details.productDescription);
+    if (details.workOrder) html += detailCell("Job / work order", details.workOrder);
+    if (details.expectedQuantity) html += detailCell("Expected quantity", formatNumber(details.expectedQuantity));
+    if (details.customer || details.brand) html += detailCell("Customer / Brand", [details.customer, details.brand].filter(Boolean).join(" / "));
+    if (details.dueDate) html += detailCell("Due date", formatReceivedDate(details.dueDate));
+    if (details.artworkCode) html += detailCell("Artwork code", details.artworkCode);
+    if (details.colours) html += detailCell("Colours", details.colours);
+    if (details.printingInstructions) html += detailCell("Printing instructions", details.printingInstructions);
+    if (details.returnReason) html += detailCell("Storage return reason", returnReasonLabel(details.returnReason));
+    return html;
+  }
   function recordTypeLabel(type) {
     if (type === "STOCK_IMPORT") return "Stock Import";
     if (type === "MANUAL_ADDITION") return "Manual Addition";
     if (type === "SLITTING") return "Slitting";
+    if (type === "PRODUCTION_USAGE") return "Production Use / Waste";
+    if (type === "STOCK_ADJUSTMENT") return "Stock Adjustment";
+    if (type === "STOCKTAKE_RECONCILIATION") return "Stocktake Reconciliation";
     return type === "TRANSFER" ? "Transfer" : titleCase(type);
   }
   function recordDestinationLabel(record) {
-    return record.type === "SLITTING" ? "Slitting conversion" : locationLabel(record.destinationLocation);
+    if (record.type === "SLITTING") return "Slitting conversion";
+    if (record.type === "PRODUCTION_USAGE") return "Consumed / Waste";
+    if (record.type === "STOCK_ADJUSTMENT") return "Balance adjustment at " + locationLabel(record.destinationLocation);
+    if (record.type === "STOCKTAKE_RECONCILIATION") return "Stocktake at " + locationLabel(record.destinationLocation);
+    return locationLabel(record.destinationLocation);
   }
   function detailCell(label, value) {
     const display = value == null || value === "" ? "\u2014" : value;
@@ -3786,6 +6612,10 @@
   function formatNumber(value) {
     return new Intl.NumberFormat("en-MY", { maximumFractionDigits: 0 }).format(Number(value || 0));
   }
+  function formatSignedNumber(value) {
+    const number = Number(value || 0);
+    return (number > 0 ? "+" : "") + formatNumber(number);
+  }
   function formatDecimal(value) {
     if (value == null || value === "") return "\u2014";
     return new Intl.NumberFormat("en-MY", { maximumFractionDigits: 3 }).format(Number(value));
@@ -3793,6 +6623,9 @@
   function formatMoney(value) {
     if (value == null || value === "") return "\u2014";
     return new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", maximumFractionDigits: 4 }).format(Number(value));
+  }
+  function formatMoney2(value) {
+    return new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value || 0));
   }
   function formatReceivedDate(value) {
     if (!value) return "\u2014";
@@ -3815,9 +6648,10 @@
   (async function boot() {
     setupPurposeFields($("#transferPurposeFields"));
     setupPurposeFields($("#slittingPurposeFields"));
-    const savedPin = getPin();
-    if (savedPin) {
-      const success = await authenticate(savedPin, true);
+    const saved = getCredentials();
+    $("#loginStaffId").value = saved.staffId;
+    if (saved.appPin) {
+      const success = await authenticate(saved.appPin, true, saved.staffId, saved.staffPin);
       if (!success) showToast("Saved login is no longer valid. Enter the application PIN.", true);
     } else {
       setLoggedIn(false);
