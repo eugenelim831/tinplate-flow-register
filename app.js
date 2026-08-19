@@ -4627,7 +4627,7 @@
   // app.source.js
   var import_qrcode = __toESM(require_browser(), 1);
   var API_URL = window.TINPLATE_API_URL || "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";
-  var APP_BUILD = "20260817-finished-cans-1";
+  var APP_BUILD = "20260819-process-refinement-1";
   var PIN_STORAGE_KEY = "movementAppPin";
   var STAFF_ID_STORAGE_KEY = "tinplateStaffId";
   var STAFF_PIN_STORAGE_KEY = "tinplateStaffPin";
@@ -4640,7 +4640,8 @@
     EXCEL_IMPORT: "Excel Import",
     MANUAL_ENTRY: "Manual Entry",
     PRODUCTION_USE: "Prior Production Use / Waste",
-    FINISHED_CANS: "Finished Cans"
+    FINISHED_CANS: "Prior Finished Cans",
+    CAN_BODIES: "Can Bodies"
   };
   var PURPOSE_LABELS = {
     CUSTOMER_BRAND: "Customer / Brand",
@@ -5862,6 +5863,9 @@
         if (!lot) throw new Error("Selected stock is no longer available. Refresh and try again.");
         if (!Number.isInteger(quantity) || quantity < 1) throw new Error("Item " + (index + 1) + ": quantity must be a whole number.");
         if (quantity > Number(lot.quantity)) throw new Error("Item " + (index + 1) + ": quantity exceeds the available balance.");
+        if (destinationLocation === "PRODUCTION_LINE" && lot.unit === "BLANKS" && lot.slittingFor === "COMPONENT") {
+          throw new Error("Item " + (index + 1) + ": Component blanks cannot enter the can-body Production Line workflow. Keep them outside Production until the Power Press process is added.");
+        }
         const slittingFor = isSlitter ? card.querySelector(".slitting-for").value : "";
         const itemDescription = isSlitter ? card.querySelector(".slitter-item-description").value.trim() : "";
         if (isSlitter && !["COMPONENT", "BODY"].includes(slittingFor)) {
@@ -5957,6 +5961,8 @@
       card.querySelector(".blank-width").value = initial.width || "";
       card.querySelector(".blank-length").value = initial.length || "";
       card.querySelector(".blank-quantity").value = initial.quantity || "";
+      card.querySelector(".blank-use").value = initial.slittingFor || "";
+      card.querySelector(".blank-description").value = initial.itemDescription || "";
     }
     card.querySelector(".remove-output").addEventListener("click", function() {
       card.remove();
@@ -6025,12 +6031,16 @@
         const width = Number(card.querySelector(".blank-width").value);
         const length = Number(card.querySelector(".blank-length").value);
         const quantity = Number(card.querySelector(".blank-quantity").value);
+        const slittingFor = card.querySelector(".blank-use").value;
+        const itemDescription = card.querySelector(".blank-description").value.trim();
         if (![width, length, quantity].every(function(value) {
           return Number.isInteger(value) && value > 0;
         })) {
           throw new Error("Blank size " + (index + 1) + ": width, length and quantity must be positive whole numbers.");
         }
-        return { width, length, quantity };
+        if (!["BODY", "COMPONENT"].includes(slittingFor)) throw new Error("Blank size " + (index + 1) + ": select Body or Component.");
+        if (!itemDescription) throw new Error("Blank size " + (index + 1) + ": output description is required.");
+        return { width, length, quantity, slittingFor, itemDescription };
       });
       const dimensions = parseDimensions2(lot.dimensions);
       const inputArea = dimensions.width * dimensions.length * sheetsConsumed;
@@ -6065,31 +6075,43 @@
       return lot.unit !== "BLANKS";
     });
     if (nonBlank) {
-      return showToast("Finished cans can only be recorded from blank stock. " + nonBlank.lotId + " is stored as " + unitLabel(nonBlank.unit) + ".", true);
+      return showToast("Production consumption can only be recorded from blank stock. " + nonBlank.lotId + " is stored as " + unitLabel(nonBlank.unit) + ".", true);
     }
+    const componentBlank = lots.find(function(lot) {
+      return lot.slittingFor === "COMPONENT";
+    });
+    if (componentBlank) return showToast(componentBlank.lotId + " is a Component blank and cannot be consumed as a can body.", true);
     $("#productionUsageForm").reset();
     $("#productionUsageSignature").clearSignature();
     $("#productionUsageItems").innerHTML = lots.map(function(lot, index) {
-      return '<article class="item-card production-usage-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + '<div class="form-grid"><label>Blanks used<input class="production-used" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" required placeholder="0"></label><label>Finished cans<input class="production-finished-cans" type="text" value="0" readonly></label><label class="wide">Blank balance after<input class="production-balance-after" type="text" value="' + formatNumber(lot.quantity) + ' Blanks" readonly></label></div></article>';
+      return '<article class="item-card production-usage-item" data-lot-id="' + escapeHtml(lot.lotId) + '"><div class="item-card-head"><strong>Item ' + (index + 1) + " \u2014 " + escapeHtml(lot.lotId) + "</strong></div>" + stockSnapshotHtml(lot) + '<div class="form-grid"><label>Blanks consumed<input class="production-consumed" type="number" inputmode="numeric" min="1" max="' + Number(lot.quantity) + '" step="1" required placeholder="0"></label><label>Rejects<input class="production-rejects" type="number" inputmode="numeric" min="0" max="' + Number(lot.quantity) + '" step="1" value="0" required></label><label>Good can bodies<input class="production-good-bodies" type="text" value="0" readonly></label><label class="wide">Unused blank balance<input class="production-balance-after" type="text" value="' + formatNumber(lot.quantity) + ' Blanks" readonly></label></div></article>';
     }).join("");
-    $$("#productionUsageItems .production-used").forEach(function(input) {
+    $$("#productionUsageItems .production-consumed, #productionUsageItems .production-rejects").forEach(function(input) {
       input.addEventListener("input", updateProductionUsageCalculations);
     });
+    $("#productionRejectReasonLabel").classList.add("hidden");
+    $("#productionRejectReason").required = false;
     applyPicIdentity($("#productionUsagePic"));
     $("#productionUsageDialog").showModal();
     $("#productionUsageSignature").prepareSignature();
   }
   function updateProductionUsageCalculations() {
+    let hasRejects = false;
     $$("#productionUsageItems .production-usage-item").forEach(function(card) {
       const lot = state.lots.find(function(candidate) {
         return candidate.lotId === card.dataset.lotId;
       });
       if (!lot) return;
-      const used = Number(card.querySelector(".production-used").value || 0);
-      const after = Number(lot.quantity) - used;
-      card.querySelector(".production-finished-cans").value = formatNumber(used);
+      const consumed = Number(card.querySelector(".production-consumed").value || 0);
+      const rejects = Number(card.querySelector(".production-rejects").value || 0);
+      hasRejects = hasRejects || rejects > 0;
+      const after = Number(lot.quantity) - consumed;
+      card.querySelector(".production-good-bodies").value = rejects > consumed ? "Rejects exceed consumed" : formatNumber(consumed - rejects);
       card.querySelector(".production-balance-after").value = after < 0 ? "Exceeds balance by " + formatNumber(Math.abs(after)) : formatNumber(after) + " Blanks";
     });
+    $("#productionRejectReasonLabel").classList.toggle("hidden", !hasRejects);
+    $("#productionRejectReason").required = hasRejects;
+    if (!hasRejects) $("#productionRejectReason").value = "";
   }
   $("#productionUsageForm").addEventListener("submit", async function(event) {
     event.preventDefault();
@@ -6102,27 +6124,38 @@
           return candidate.lotId === card.dataset.lotId;
         });
         if (!lot) throw new Error("Item " + (index + 1) + " is no longer available.");
-        if (lot.unit !== "BLANKS") throw new Error("Item " + (index + 1) + ": finished cans can only be recorded from blank stock.");
-        const usedQuantity = Number(card.querySelector(".production-used").value);
-        if (!Number.isSafeInteger(usedQuantity) || usedQuantity < 1) {
-          throw new Error("Item " + (index + 1) + ": blanks used must be a positive whole number.");
+        if (lot.unit !== "BLANKS") throw new Error("Item " + (index + 1) + ": production consumption can only use blank stock.");
+        if (lot.slittingFor === "COMPONENT") throw new Error("Item " + (index + 1) + ": Component blanks cannot be consumed as can bodies.");
+        const consumedQuantity = Number(card.querySelector(".production-consumed").value);
+        const rejectQuantity = Number(card.querySelector(".production-rejects").value);
+        if (!Number.isSafeInteger(consumedQuantity) || consumedQuantity < 1) {
+          throw new Error("Item " + (index + 1) + ": blanks consumed must be a positive whole number.");
         }
-        if (usedQuantity > Number(lot.quantity)) throw new Error("Item " + (index + 1) + ": blanks used exceeds the available balance.");
-        return { sourceLotId: lot.lotId, usedQuantity };
+        if (!Number.isSafeInteger(rejectQuantity) || rejectQuantity < 0) throw new Error("Item " + (index + 1) + ": rejects must be zero or a positive whole number.");
+        if (rejectQuantity > consumedQuantity) throw new Error("Item " + (index + 1) + ": rejects cannot exceed blanks consumed.");
+        if (consumedQuantity > Number(lot.quantity)) throw new Error("Item " + (index + 1) + ": blanks consumed exceeds the available balance.");
+        return { sourceLotId: lot.lotId, consumedQuantity, rejectQuantity };
       });
+      if (items.some(function(item) {
+        return item.rejectQuantity > 0;
+      }) && !$("#productionRejectReason").value.trim()) {
+        throw new Error("Reject reason is required when any rejects are recorded.");
+      }
     } catch (error) {
       return showToast(error.message, true);
     }
     const payload = {
       type: "PRODUCTION_USAGE",
       sourceLocation: "PRODUCTION_LINE",
-      finishedCans: true,
+      productionMode: "CAN_BODY_CONSUMPTION",
+      blanksConsumed: true,
       items,
+      rejectReason: $("#productionRejectReason").value.trim(),
       description: $("#productionUsageDescription").value.trim(),
       picName: $("#productionUsagePic").value.trim(),
       signature
     };
-    await submitMovement($("#submitProductionUsage"), payload, $("#productionUsageDialog"), "Post Finished Cans");
+    await submitMovement($("#submitProductionUsage"), payload, $("#productionUsageDialog"), "Post Blanks Consumed");
   });
   $("#adjustSelected").addEventListener("click", openAdjustmentDialog);
   $("#adjustmentCounted").addEventListener("input", updateAdjustmentDifference);
@@ -6186,22 +6219,31 @@
     }
   }
   $("#refreshDashboard").addEventListener("click", loadDashboard);
+  $("#dashboardMonth").value = malaysiaMonthKey(/* @__PURE__ */ new Date());
+  $("#dashboardMonth").addEventListener("change", renderDashboard);
   async function loadDashboard() {
     await Promise.all([loadInventory(), loadRecords(false)]);
     renderDashboard();
   }
   function renderDashboard() {
-    const currentMonth = malaysiaMonthKey(/* @__PURE__ */ new Date());
+    const selectedMonth = /^\d{4}-\d{2}$/.test($("#dashboardMonth").value) ? $("#dashboardMonth").value : malaysiaMonthKey(/* @__PURE__ */ new Date());
+    const currentDay = malaysiaDateKey(/* @__PURE__ */ new Date());
     const postedThisMonth = state.records.filter(function(record) {
-      return record.status === "POSTED" && malaysiaMonthKey(new Date(record.createdAt)) === currentMonth;
+      return record.status === "POSTED" && malaysiaMonthKey(new Date(record.createdAt)) === selectedMonth;
     });
-    const finishedCanRecords = postedThisMonth.filter(function(record) {
-      return record.type === "PRODUCTION_USAGE" && record.productionMode === "FINISHED_CANS";
+    const movementsToday = state.records.filter(function(record) {
+      return record.status === "POSTED" && malaysiaDateKey(new Date(record.createdAt)) === currentDay;
+    }).length;
+    const productionRecords = postedThisMonth.filter(function(record) {
+      return record.type === "PRODUCTION_USAGE" && record.productionMode === "CAN_BODY_CONSUMPTION";
     });
-    const finishedCans = finishedCanRecords.reduce(function(total, record) {
-      return total + Number(record.totals && (record.totals.finishedCans || record.totals.used) || 0);
+    const blanksConsumed = productionRecords.reduce(function(total, record) {
+      return total + Number(record.totals && (record.totals.blanksConsumed || record.totals.used) || 0);
     }, 0);
-    const productionBatches = finishedCanRecords.reduce(function(total, record) {
+    const goodBodies = productionRecords.reduce(function(total, record) {
+      return total + Number(record.totals && record.totals.goodBodies || 0);
+    }, 0);
+    const productionBatches = productionRecords.reduce(function(total, record) {
       return total + (record.lines || []).length;
     }, 0);
     const yields = postedThisMonth.filter(function(record) {
@@ -6209,14 +6251,12 @@
     }).map(function(record) {
       return Number(record.areaUtilizationPercent);
     });
-    const totalValue = state.lots.reduce(function(total, lot) {
-      return total + Number(lot.totalAmount || 0);
-    }, 0);
     $("#dashboardLots").textContent = formatNumber(state.lots.length);
     $("#dashboardSheets").textContent = formatNumber(sumUnit(state.lots, "SHEETS"));
     $("#dashboardBlanks").textContent = formatNumber(sumUnit(state.lots, "BLANKS"));
-    $("#dashboardValue").textContent = formatMoney2(totalValue);
-    $("#dashboardUsed").textContent = formatNumber(finishedCans);
+    $("#dashboardMovementsToday").textContent = formatNumber(movementsToday);
+    $("#dashboardUsed").textContent = formatNumber(blanksConsumed);
+    $("#dashboardGoodBodies").textContent = formatNumber(goodBodies);
     $("#dashboardProductionBatches").textContent = formatNumber(productionBatches);
     $("#dashboardYield").textContent = yields.length ? (yields.reduce(function(total, value) {
       return total + value;
@@ -6224,14 +6264,59 @@
     $("#dashboardAdjustments").textContent = formatNumber(postedThisMonth.filter(function(record) {
       return record.type === "MANUAL_ADDITION" || record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION";
     }).length);
+    const transferRecords = postedThisMonth.filter(function(record) {
+      return record.type === "TRANSFER";
+    });
+    const transferLines = transferRecords.reduce(function(lines, record) {
+      return lines.concat(record.lines || []);
+    }, []);
+    const slittingRecords = postedThisMonth.filter(function(record) {
+      return record.type === "SLITTING";
+    });
+    const sheetsSlit = slittingRecords.reduce(function(total, record) {
+      return total + Number(record.sheetsConsumed || 0);
+    }, 0);
+    const blanksProduced = slittingRecords.reduce(function(total, record) {
+      return total + (record.lines || []).reduce(function(lineTotal, line) {
+        return lineTotal + Number(line.quantity || 0);
+      }, 0);
+    }, 0);
+    const adjustmentRecords = postedThisMonth.filter(function(record) {
+      return record.type === "MANUAL_ADDITION" || record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION";
+    });
+    const monthlyMeasures = [
+      ["Posted transfers", transferRecords.length],
+      ["Sheets transferred", transferLines.filter(function(line) {
+        return line.unit === "SHEETS";
+      }).reduce(function(total, line) {
+        return total + Number(line.quantity || 0);
+      }, 0)],
+      ["Blanks transferred", transferLines.filter(function(line) {
+        return line.unit === "BLANKS";
+      }).reduce(function(total, line) {
+        return total + Number(line.quantity || 0);
+      }, 0)],
+      ["Sheets consumed at Slitter", sheetsSlit],
+      ["Blanks produced at Slitter", blanksProduced],
+      ["Slitting records", slittingRecords.length],
+      ["Production runs", productionRecords.length],
+      ["Blanks consumed", blanksConsumed],
+      ["Good can bodies", goodBodies],
+      ["Rejects", productionRecords.reduce(function(total, record) {
+        return total + Number(record.totals && record.totals.rejects || 0);
+      }, 0)],
+      ["Production batch lines", productionBatches],
+      ["Stock correction records", adjustmentRecords.length]
+    ];
+    $("#dashboardMonthlyTitle").textContent = "Monthly operations report \u2014 " + selectedMonth;
+    $("#dashboardMonthlyBody").innerHTML = monthlyMeasures.map(function(measure) {
+      return "<tr><td>" + escapeHtml(measure[0]) + "</td><td><strong>" + formatNumber(measure[1]) + "</strong></td></tr>";
+    }).join("");
     $("#dashboardLocationBody").innerHTML = LOCATIONS.map(function(location) {
       const lots = state.lots.filter(function(lot) {
         return lot.location === location;
       });
-      const value = lots.reduce(function(total, lot) {
-        return total + Number(lot.totalAmount || 0);
-      }, 0);
-      return "<tr><td><strong>" + escapeHtml(locationLabel(location)) + "</strong></td><td>" + formatNumber(lots.length) + "</td><td>" + formatNumber(sumUnit(lots, "SHEETS")) + "</td><td>" + formatNumber(sumUnit(lots, "BLANKS")) + "</td><td>" + escapeHtml(formatMoney2(value)) + "</td></tr>";
+      return "<tr><td><strong>" + escapeHtml(locationLabel(location)) + "</strong></td><td>" + formatNumber(lots.length) + "</td><td>" + formatNumber(sumUnit(lots, "SHEETS")) + "</td><td>" + formatNumber(sumUnit(lots, "BLANKS")) + "</td></tr>";
     }).join("");
     const alerts = [];
     const oldLots = state.lots.filter(function(lot) {
@@ -6242,7 +6327,7 @@
       return Number(lot.quantity) <= 10;
     });
     if (lowLots.length) alerts.push({ type: "", title: lowLots.length + " lot(s) have a balance of 10 or less", text: "Confirm whether these small balances are still physically present." });
-    if (!alerts.length) alerts.push({ type: "success", title: "No dashboard alerts", text: "Current stock and this month's activity have no automatic warnings." });
+    if (!alerts.length) alerts.push({ type: "success", title: "No dashboard alerts", text: "Current stock and the selected reporting month have no automatic warnings." });
     $("#dashboardAlerts").innerHTML = alerts.map(function(alert) {
       return '<article class="dashboard-alert ' + escapeHtml(alert.type) + '"><strong>' + escapeHtml(alert.title) + "</strong><p>" + escapeHtml(alert.text) + "</p></article>";
     }).join("");
@@ -6265,10 +6350,18 @@
     }, {});
     return parts.year + "-" + parts.month;
   }
+  function malaysiaDateKey(date) {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date).reduce(function(result, part) {
+      result[part.type] = part.value;
+      return result;
+    }, {});
+    return parts.year + "-" + parts.month + "-" + parts.day;
+  }
   function filteredRecords() {
     const term = $("#recordSearch").value.trim().toLowerCase();
     const type = $("#recordTypeFilter").value;
     const status = $("#recordStatusFilter").value;
+    const month = $("#recordMonthFilter").value;
     return state.records.filter(function(record) {
       const text = [
         record.id,
@@ -6282,6 +6375,7 @@
         record.purpose && record.purpose.coatingDescription,
         record.fileName,
         record.sourceSheet,
+        record.rejectReason,
         record.wasteReason,
         record.destinationDetails && record.destinationDetails.workOrder,
         record.destinationDetails && record.destinationDetails.artworkCode,
@@ -6306,6 +6400,13 @@
           line.customer,
           line.brand,
           line.workOrder,
+          line.productType,
+          line.productDescription,
+          line.expectedQuantity,
+          line.returnReason,
+          line.consumedQuantity,
+          line.goodBodyQuantity,
+          line.rejectQuantity,
           line.usedQuantity,
           line.finishedCans,
           line.wasteQuantity,
@@ -6314,7 +6415,7 @@
           line.difference
         ]);
       }, [])).join(" ").toLowerCase();
-      return (!term || text.includes(term)) && (!type || record.type === type) && (!status || record.status === status);
+      return (!term || text.includes(term)) && (!type || record.type === type) && (!status || record.status === status) && (!month || malaysiaMonthKey(new Date(record.createdAt)) === month);
     });
   }
   function renderRecords() {
@@ -6325,7 +6426,7 @@
     }
     $("#recordsBody").innerHTML = records.map(function(record) {
       const destination = recordDestinationLabel(record);
-      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : record.type === "PRODUCTION_USAGE" ? record.productionMode === "FINISHED_CANS" ? formatNumber(record.totals && (record.totals.finishedCans || record.totals.used)) + " finished cans" : formatNumber(record.totals && record.totals.used) + " used \xB7 " + formatNumber(record.totals && record.totals.waste) + " waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed balance correction" : record.type === "STOCKTAKE_RECONCILIATION" ? formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " balance(s) reconciled" : recordPurposeSummary(record);
+      const purpose = record.type === "STOCK_IMPORT" ? formatNumber(record.importResult && record.importResult.added) + " new \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored" : record.type === "MANUAL_ADDITION" ? "New batch added to " + locationLabel(record.destinationLocation) : record.type === "PRODUCTION_USAGE" ? record.productionMode === "CAN_BODY_CONSUMPTION" ? formatNumber(record.totals && record.totals.blanksConsumed) + " consumed \xB7 " + formatNumber(record.totals && record.totals.goodBodies) + " good bodies \xB7 " + formatNumber(record.totals && record.totals.rejects) + " rejects" : record.productionMode === "FINISHED_CANS" ? formatNumber(record.totals && (record.totals.finishedCans || record.totals.used)) + " prior finished cans" : formatNumber(record.totals && record.totals.used) + " used \xB7 " + formatNumber(record.totals && record.totals.waste) + " waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed balance correction" : record.type === "STOCKTAKE_RECONCILIATION" ? formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " balance(s) reconciled" : recordPurposeSummary(record);
       return "<tr><td><strong>" + escapeHtml(record.id) + "</strong></td><td>" + escapeHtml(recordTypeLabel(record.type, record)) + "</td><td>" + escapeHtml(locationLabel(record.sourceLocation)) + "</td><td>" + escapeHtml(destination) + "</td><td>" + formatNumber((record.lines || []).length) + '</td><td class="description-cell">' + escapeHtml(purpose) + "</td><td>" + escapeHtml(record.picName) + "</td><td>" + formatDate(record.createdAt) + '</td><td class="status-cell ' + escapeHtml(record.status) + '">' + titleCase(record.status) + '</td><td><button class="secondary table-action view-record" type="button" data-record-id="' + escapeHtml(record.id) + '">View</button></td></tr>';
     }).join("");
     $$("#recordsBody .view-record").forEach(function(button) {
@@ -6340,6 +6441,7 @@
   $("#recordSearch").addEventListener("input", renderRecords);
   $("#recordTypeFilter").addEventListener("change", renderRecords);
   $("#recordStatusFilter").addEventListener("change", renderRecords);
+  $("#recordMonthFilter").addEventListener("change", renderRecords);
   async function openRecord(id) {
     revokeSignatureUrls();
     $("#recordDialogTitle").textContent = id;
@@ -6363,22 +6465,23 @@
   }
   function renderRecordDetail(record) {
     const destination = recordDestinationLabel(record);
-    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type, record)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Staff account", record.actor && record.actor.id ? record.actor.id + " \xB7 " + titleCase(record.actor.role) : "Shared APP PIN") + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : record.type === "PRODUCTION_USAGE" ? record.productionMode === "FINISHED_CANS" ? "Blanks converted to finished cans" : "Production use and waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed stock adjustment" : record.type === "STOCKTAKE_RECONCILIATION" ? "Stocktake reconciliation" : recordPurposeSummary(record)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + (record.type === "STOCKTAKE_RECONCILIATION" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Reconciliation result", formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " adjusted") : "") + destinationDetailsCells(record.destinationDetails) + "</dl>";
+    let html = '<dl class="detail-grid">' + detailCell("Record ID", record.id) + detailCell("Type", recordTypeLabel(record.type, record)) + detailCell("Status", titleCase(record.status)) + detailCell("From", locationLabel(record.sourceLocation)) + detailCell("To / Process", destination) + detailCell("Worker date & time", formatDate(record.createdAt)) + detailCell("PIC", record.picName) + detailCell("Staff account", record.actor && record.actor.id ? record.actor.id + " \xB7 " + titleCase(record.actor.role) : "Shared APP PIN") + detailCell("Purpose", record.type === "STOCK_IMPORT" ? "Opening stock import" : record.type === "MANUAL_ADDITION" ? "Manual stock correction" : record.type === "PRODUCTION_USAGE" ? record.productionMode === "CAN_BODY_CONSUMPTION" ? "Blanks consumed for can bodies" : record.productionMode === "FINISHED_CANS" ? "Prior blanks converted to finished cans" : "Prior production use and waste" : record.type === "STOCK_ADJUSTMENT" ? "Signed stock adjustment" : record.type === "STOCKTAKE_RECONCILIATION" ? "Stocktake reconciliation" : recordPurposeSummary(record)) + detailCell("Description", record.description) + (record.type === "STOCK_IMPORT" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Import result", formatNumber(record.importResult && record.importResult.added) + " added \xB7 " + formatNumber(record.importResult && record.importResult.ignored) + " ignored") : "") + (record.type === "STOCKTAKE_RECONCILIATION" ? detailCell("Excel file", record.fileName) + detailCell("Worksheet", record.sourceSheet) + detailCell("Reconciliation result", formatNumber(record.stocktakeResult && record.stocktakeResult.adjusted) + " adjusted") : "") + destinationDetailsCells(record.destinationDetails) + "</dl>";
     if (record.type === "TRANSFER") {
       const slitterTransfer = record.destinationLocation === "SLITTER";
+      const storageReturn = record.destinationLocation === "STORAGE";
       const legacySlitterDetails = slitterTransfer && record.items.some(function(item) {
         return item.customer || item.brand || item.dueDate || item.expectedBlankWidth || item.expectedBlankLength || item.expectedBlanksPerSheet;
       });
-      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th>' + (slitterTransfer ? "<th>Slitting for</th>" + (legacySlitterDetails ? "<th>Customer / Brand</th>" : "") + "<th>Work order</th>" + (legacySlitterDetails ? "<th>Expected blank</th>" : "") + "<th>Item description</th>" : "") + "</tr></thead><tbody>" + record.items.map(function(item) {
-        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td>" + (slitterTransfer ? "<td>" + escapeHtml(slittingForLabel(item.slittingFor)) + "</td>" + (legacySlitterDetails ? "<td>" + escapeHtml([item.customer, item.brand].filter(Boolean).join(" / ") || "\u2014") + "</td>" : "") + '<td class="description-cell">' + escapeHtml(item.workOrder || "\u2014") + "</td>" + (legacySlitterDetails ? '<td class="description-cell">' + escapeHtml(expectedBlankSummary(item) || "\u2014") + "</td>" : "") + '<td class="description-cell">' + escapeHtml(item.itemDescription || "\u2014") + "</td>" : "") + "</tr>";
+      html += '<section class="record-items"><h3>Transferred stock</h3><div class="table-wrap"><table><thead><tr><th>Source stock ID</th><th>Destination stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th>' + (slitterTransfer ? "<th>Slitting for</th>" + (legacySlitterDetails ? "<th>Customer / Brand</th>" : "") + "<th>Work order</th>" + (legacySlitterDetails ? "<th>Expected blank</th>" : "") + "<th>Item description</th>" : storageReturn ? "<th>Retained customer / brand</th><th>Retained job / product</th>" : "") + "</tr></thead><tbody>" + record.items.map(function(item) {
+        return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.destinationLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + formatNumber(item.quantity) + " " + escapeHtml(unitLabel(item.unit)) + "</td>" + (slitterTransfer ? "<td>" + escapeHtml(slittingForLabel(item.slittingFor)) + "</td>" + (legacySlitterDetails ? "<td>" + escapeHtml([item.customer, item.brand].filter(Boolean).join(" / ") || "\u2014") + "</td>" : "") + '<td class="description-cell">' + escapeHtml(item.workOrder || "\u2014") + "</td>" + (legacySlitterDetails ? '<td class="description-cell">' + escapeHtml(expectedBlankSummary(item) || "\u2014") + "</td>" : "") + '<td class="description-cell">' + escapeHtml(item.itemDescription || "\u2014") + "</td>" : storageReturn ? '<td class="description-cell">' + escapeHtml([item.customer, item.brand].filter(Boolean).join(" / ") || "\u2014") + '</td><td class="description-cell">' + escapeHtml([item.workOrder, item.productDescription].filter(Boolean).join(" \xB7 ") || "\u2014") + "</td>" : "") + "</tr>";
       }).join("") + "</tbody></table></div></section>";
     } else if (record.type === "MANUAL_ADDITION") {
-      html += '<section class="record-items"><h3>Batch added to ' + escapeHtml(locationLabel(record.destinationLocation)) + '</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Price</th><th>Total amount</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
-        return "<tr><td>" + escapeHtml(item.lotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.supplierName || "\u2014") + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(item.temper || "\u2014") + "</td><td>" + escapeHtml(item.tinCoating || "\u2014") + "</td><td>" + formatNumber(item.quantity) + "</td><td>" + formatNumber(item.kg) + "</td><td>" + formatMoney(item.price) + "</td><td>" + formatMoney(item.totalAmount) + "</td><td>" + escapeHtml(formatReceivedDate(item.dateReceived)) + "</td></tr>";
+      html += '<section class="record-items"><h3>Batch added to ' + escapeHtml(locationLabel(record.destinationLocation)) + '</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
+        return "<tr><td>" + escapeHtml(item.lotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.supplierName || "\u2014") + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(item.temper || "\u2014") + "</td><td>" + escapeHtml(item.tinCoating || "\u2014") + "</td><td>" + formatNumber(item.quantity) + "</td><td>" + formatNumber(item.kg) + "</td><td>" + escapeHtml(formatReceivedDate(item.dateReceived)) + "</td></tr>";
       }).join("") + "</tbody></table></div></section>";
     } else if (record.type === "STOCK_IMPORT") {
-      html += '<section class="record-items"><h3>Stock batches added to Storage</h3><div class="table-wrap"><table><thead><tr><th>Excel row</th><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Price</th><th>Total amount</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
-        return "<tr><td>" + item.sourceRow + "</td><td>" + escapeHtml(item.lotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.supplierName || "\u2014") + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(item.temper || "\u2014") + "</td><td>" + escapeHtml(item.tinCoating || "\u2014") + "</td><td>" + formatNumber(item.quantity) + "</td><td>" + formatDecimal(item.kg) + "</td><td>" + formatMoney(item.price) + "</td><td>" + formatMoney(item.totalAmount) + "</td><td>" + escapeHtml(formatReceivedDate(item.dateReceived)) + "</td></tr>";
+      html += '<section class="record-items"><h3>Stock batches added to Storage</h3><div class="table-wrap"><table><thead><tr><th>Excel row</th><th>Stock ID</th><th>Batch</th><th>Supplier</th><th>Size</th><th>Temper</th><th>Tin coating</th><th>Sheets</th><th>KG</th><th>Date received</th></tr></thead><tbody>' + record.items.map(function(item) {
+        return "<tr><td>" + item.sourceRow + "</td><td>" + escapeHtml(item.lotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.supplierName || "\u2014") + "</td><td>" + escapeHtml(item.dimensions) + "</td><td>" + escapeHtml(item.temper || "\u2014") + "</td><td>" + escapeHtml(item.tinCoating || "\u2014") + "</td><td>" + formatNumber(item.quantity) + "</td><td>" + formatDecimal(item.kg) + "</td><td>" + escapeHtml(formatReceivedDate(item.dateReceived)) + "</td></tr>";
       }).join("") + "</tbody></table></div>";
       if (Array.isArray(record.ignoredRows) && record.ignoredRows.length) {
         html += '<h3>Rows ignored by the Worker</h3><div class="table-wrap"><table><thead><tr><th>Excel row</th><th>Batch</th><th>Reason</th></tr></thead><tbody>' + record.ignoredRows.map(function(row) {
@@ -6394,11 +6497,15 @@
         quantity: record.source.quantity,
         unit: record.source.unit,
         location: record.sourceLocation
-      }) + "<strong>Source stock ID: " + escapeHtml(record.source.sourceLotId) + '</strong></div><h3>Blank outputs</h3><div class="table-wrap"><table><thead><tr><th>New stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th></tr></thead><tbody>' + record.outputs.map(function(output) {
-        return "<tr><td>" + escapeHtml(output.lotId) + "</td><td>" + escapeHtml(output.batchNumber) + "</td><td>" + escapeHtml(output.dimensions) + "</td><td>" + formatNumber(output.quantity) + " Blanks</td></tr>";
+      }) + "<strong>Source stock ID: " + escapeHtml(record.source.sourceLotId) + '</strong></div><h3>Blank outputs</h3><div class="table-wrap"><table><thead><tr><th>New stock ID</th><th>Batch</th><th>Dimensions</th><th>Quantity</th><th>For</th><th>Description</th></tr></thead><tbody>' + record.outputs.map(function(output) {
+        return "<tr><td>" + escapeHtml(output.lotId) + "</td><td>" + escapeHtml(output.batchNumber) + "</td><td>" + escapeHtml(output.dimensions) + "</td><td>" + formatNumber(output.quantity) + " Blanks</td><td>" + escapeHtml(slittingForLabel(output.slittingFor)) + '</td><td class="description-cell">' + escapeHtml(output.itemDescription || "\u2014") + "</td></tr>";
       }).join("") + '</tbody></table></div><p class="info-banner">Material yield: ' + escapeHtml(Number(record.areaUtilizationPercent || 0).toFixed(1)) + "% \xB7 Scrap / offcut area: " + escapeHtml(Number(record.scrapPercent || 0).toFixed(1)) + "%" + (record.scrapDescription ? " \xB7 " + escapeHtml(record.scrapDescription) : "") + "</p></section>";
     } else if (record.type === "PRODUCTION_USAGE") {
-      if (record.productionMode === "FINISHED_CANS") {
+      if (record.productionMode === "CAN_BODY_CONSUMPTION") {
+        html += '<section class="record-items"><h3>Production consumption</h3><dl class="detail-grid">' + detailCell("Can / product", record.production && record.production.productDescription) + detailCell("Job / work order", record.production && record.production.workOrder) + detailCell("Customer / Brand", [record.production && record.production.customer, record.production && record.production.brand].filter(Boolean).join(" / ") || "\u2014") + detailCell("Blanks consumed", formatNumber(record.totals && record.totals.blanksConsumed)) + detailCell("Good can bodies", formatNumber(record.totals && record.totals.goodBodies)) + detailCell("Rejects", formatNumber(record.totals && record.totals.rejects)) + detailCell("Reject reason", record.rejectReason || "No rejects recorded") + '</dl><h3>Blank batches consumed</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Job / product</th><th>Consumed</th><th>Good bodies</th><th>Rejects</th><th>Before</th><th>Unused after</th></tr></thead><tbody>' + record.items.map(function(item) {
+          return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + '</td><td class="description-cell">' + escapeHtml([item.workOrder, item.productDescription].filter(Boolean).join(" \xB7 ") || "\u2014") + "</td><td>" + formatNumber(item.consumedQuantity) + "</td><td>" + formatNumber(item.goodBodyQuantity) + "</td><td>" + formatNumber(item.rejectQuantity) + "</td><td>" + formatNumber(item.quantityBefore) + "</td><td>" + formatNumber(item.quantityAfter) + "</td></tr>";
+        }).join("") + "</tbody></table></div></section>";
+      } else if (record.productionMode === "FINISHED_CANS") {
         html += '<section class="record-items"><h3>Finished cans</h3><dl class="detail-grid">' + detailCell("Can / product", record.production && record.production.productDescription) + detailCell("Job / work order", record.production && record.production.workOrder) + detailCell("Customer / Brand", [record.production && record.production.customer, record.production && record.production.brand].filter(Boolean).join(" / ") || "\u2014") + detailCell("Total finished cans", formatNumber(record.totals && (record.totals.finishedCans || record.totals.used))) + '</dl><h3>Blank batches consumed</h3><div class="table-wrap"><table><thead><tr><th>Stock ID</th><th>Batch</th><th>Dimensions</th><th>Job / product</th><th>Blanks used</th><th>Finished cans</th><th>Before</th><th>After</th></tr></thead><tbody>' + record.items.map(function(item) {
           return "<tr><td>" + escapeHtml(item.sourceLotId) + "</td><td>" + escapeHtml(item.batchNumber) + "</td><td>" + escapeHtml(item.dimensions) + '</td><td class="description-cell">' + escapeHtml([item.workOrder, item.productDescription].filter(Boolean).join(" \xB7 ") || "\u2014") + "</td><td>" + formatNumber(item.usedQuantity) + " Blanks</td><td>" + formatNumber(item.finishedCans || item.usedQuantity) + "</td><td>" + formatNumber(item.quantityBefore) + "</td><td>" + formatNumber(item.quantityAfter) + "</td></tr>";
         }).join("") + "</tbody></table></div></section>";
@@ -6492,9 +6599,9 @@
       "Unit",
       "Slitting For",
       "Item Description",
-      "Blanks Used",
-      "Finished Cans",
-      "Prior Waste Quantity",
+      "Blanks Consumed",
+      "Good Can Bodies",
+      "Rejects",
       "Balance Before",
       "Balance After",
       "Difference",
@@ -6507,7 +6614,7 @@
       "Expected Output",
       "Actual Output",
       "Return Reason",
-      "Waste Reason",
+      "Reject / Prior Waste Reason",
       "Slitting Yield %",
       "Scrap %",
       "Import File",
@@ -6517,8 +6624,6 @@
       "Temper",
       "Tin Coating",
       "KG",
-      "Price",
-      "Total Amount",
       "Date Received"
     ];
     const rows = [headings];
@@ -6548,9 +6653,9 @@
           line.unit || "",
           line.slittingFor ? slittingForLabel(line.slittingFor) : "",
           line.itemDescription || "",
-          line.usedQuantity == null ? "" : line.usedQuantity,
-          line.finishedCans == null ? "" : line.finishedCans,
-          line.wasteQuantity == null ? "" : line.wasteQuantity,
+          line.consumedQuantity == null ? line.usedQuantity == null ? "" : line.usedQuantity : line.consumedQuantity,
+          line.goodBodyQuantity == null ? line.finishedCans == null ? "" : line.finishedCans : line.goodBodyQuantity,
+          line.rejectQuantity == null ? line.wasteQuantity == null ? "" : line.wasteQuantity : line.rejectQuantity,
           line.quantityBefore == null ? "" : line.quantityBefore,
           line.quantityAfter == null ? "" : line.quantityAfter,
           line.difference == null ? "" : line.difference,
@@ -6558,12 +6663,12 @@
           line.dueDate || record.destinationDetails && record.destinationDetails.dueDate || "",
           record.destinationDetails && record.destinationDetails.artworkCode,
           record.destinationDetails && record.destinationDetails.colours,
-          record.destinationDetails && record.destinationDetails.productType || record.production && record.production.productType,
-          record.destinationDetails && record.destinationDetails.productDescription || record.production && record.production.productDescription,
-          record.destinationDetails && record.destinationDetails.expectedQuantity || record.production && record.production.expectedQuantity,
+          line.productType || record.destinationDetails && record.destinationDetails.productType || record.production && record.production.productType,
+          line.productDescription || record.destinationDetails && record.destinationDetails.productDescription || record.production && record.production.productDescription,
+          line.expectedQuantity || record.destinationDetails && record.destinationDetails.expectedQuantity || record.production && record.production.expectedQuantity,
           record.production && record.production.actualQuantity,
-          record.destinationDetails && record.destinationDetails.returnReason,
-          record.wasteReason || "",
+          line.returnReason || record.destinationDetails && record.destinationDetails.returnReason,
+          record.rejectReason || record.wasteReason || "",
           record.areaUtilizationPercent == null ? "" : record.areaUtilizationPercent,
           record.scrapPercent == null ? "" : record.scrapPercent,
           record.fileName || "",
@@ -6573,8 +6678,6 @@
           line.temper || "",
           line.tinCoating || "",
           line.kg == null ? "" : line.kg,
-          line.price == null ? "" : line.price,
-          line.totalAmount == null ? "" : line.totalAmount,
           line.dateReceived ? formatReceivedDate(line.dateReceived) : ""
         ]);
       });
@@ -6586,7 +6689,7 @@
     }).join("\r\n");
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    link.download = "tinplate-stock-and-movement-records-" + (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) + ".csv";
+    link.download = "tinplate-stock-and-movement-records-" + ($("#recordMonthFilter").value || "all-months") + "-" + (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) + ".csv";
     link.click();
     setTimeout(function() {
       URL.revokeObjectURL(link.href);
@@ -6626,7 +6729,7 @@
       });
       const quantityText = matching.map(function(line) {
         if (record.type === "PRODUCTION_USAGE") {
-          return record.productionMode === "FINISHED_CANS" ? formatNumber(line.finishedCans || line.usedQuantity) + " finished cans" : formatNumber(line.usedQuantity) + " used, " + formatNumber(line.wasteQuantity) + " waste";
+          return record.productionMode === "CAN_BODY_CONSUMPTION" ? formatNumber(line.consumedQuantity) + " consumed, " + formatNumber(line.goodBodyQuantity) + " good bodies, " + formatNumber(line.rejectQuantity) + " rejects" : record.productionMode === "FINISHED_CANS" ? formatNumber(line.finishedCans || line.usedQuantity) + " prior finished cans" : formatNumber(line.usedQuantity) + " used, " + formatNumber(line.wasteQuantity) + " waste";
         }
         if (record.type === "STOCK_ADJUSTMENT" || record.type === "STOCKTAKE_RECONCILIATION") return formatNumber(line.quantityBefore) + " \u2192 " + formatNumber(line.quantityAfter);
         return formatNumber(line.quantity) + " " + unitLabel(line.unit);
@@ -6714,14 +6817,20 @@
     if (type === "STOCK_IMPORT") return "Stock Import";
     if (type === "MANUAL_ADDITION") return "Manual Addition";
     if (type === "SLITTING") return "Slitting";
-    if (type === "PRODUCTION_USAGE") return record && record.productionMode === "FINISHED_CANS" ? "Finished Cans" : "Prior Production Use / Waste";
+    if (type === "PRODUCTION_USAGE") {
+      if (record && record.productionMode === "CAN_BODY_CONSUMPTION") return "Blanks Consumed";
+      return record && record.productionMode === "FINISHED_CANS" ? "Prior Finished Cans" : "Prior Production Use / Waste";
+    }
     if (type === "STOCK_ADJUSTMENT") return "Stock Adjustment";
     if (type === "STOCKTAKE_RECONCILIATION") return "Stocktake Reconciliation";
     return type === "TRANSFER" ? "Transfer" : titleCase(type);
   }
   function recordDestinationLabel(record) {
     if (record.type === "SLITTING") return "Slitting conversion";
-    if (record.type === "PRODUCTION_USAGE") return record.productionMode === "FINISHED_CANS" ? "Finished cans" : "Consumed / Waste";
+    if (record.type === "PRODUCTION_USAGE") {
+      if (record.productionMode === "CAN_BODY_CONSUMPTION") return "Can bodies";
+      return record.productionMode === "FINISHED_CANS" ? "Prior finished cans" : "Consumed / Waste";
+    }
     if (record.type === "STOCK_ADJUSTMENT") return "Balance adjustment at " + locationLabel(record.destinationLocation);
     if (record.type === "STOCKTAKE_RECONCILIATION") return "Stocktake at " + locationLabel(record.destinationLocation);
     return locationLabel(record.destinationLocation);
@@ -6751,13 +6860,6 @@
   function formatDecimal(value) {
     if (value == null || value === "") return "\u2014";
     return new Intl.NumberFormat("en-MY", { maximumFractionDigits: 3 }).format(Number(value));
-  }
-  function formatMoney(value) {
-    if (value == null || value === "") return "\u2014";
-    return new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", maximumFractionDigits: 4 }).format(Number(value));
-  }
-  function formatMoney2(value) {
-    return new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value || 0));
   }
   function formatReceivedDate(value) {
     if (!value) return "\u2014";

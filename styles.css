@@ -124,6 +124,9 @@ main { width: min(1240px, calc(100% - 32px)); margin: 24px auto 60px; }
 .filter-row input { flex: 1; }
 .filter-row select { width: 180px; }
 .records-filter select { width: 150px; }
+.records-filter #recordMonthFilter { flex: 0 0 170px; }
+.reporting-month { min-width: 170px; font-size: 12px; }
+.reporting-month input { min-height: 42px; padding-block: 8px; }
 .login-account-fields { margin-top: 16px; }
 
 label {
@@ -269,6 +272,7 @@ tbody tr:hover td { background: #fbfdfc; }
 .dashboard-kpis { grid-template-columns: repeat(4, 1fr); }
 .dashboard-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
 .dashboard-card { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fbfdfc; }
+.dashboard-grid + .dashboard-card { margin-bottom: 16px; }
 .dashboard-card > h3 { margin-bottom: 14px; }
 .alert-list { display: grid; gap: 10px; }
 .dashboard-alert { padding: 12px; border-left: 4px solid var(--amber); border-radius: 8px; background: #fff8ed; }
@@ -410,11 +414,12 @@ dialog > form, .dialog-content {
   .header-actions { align-items: stretch; flex-direction: column; }
   main { width: min(100% - 20px, 1240px); margin-top: 12px; }
   .panel { padding: 20px 16px; border-radius: 15px; }
-  .inventory-heading, .records-heading { align-items: flex-start; flex-direction: column; }
+  .inventory-heading, .records-heading, .dashboard-heading { align-items: flex-start; flex-direction: column; }
   .actions { width: 100%; justify-content: flex-start; }
   .actions button { flex: 1 1 150px; }
   .filter-row { flex-direction: column; }
   .filter-row select, .records-filter select { width: 100%; }
+  .records-filter #recordMonthFilter { width: 100%; flex-basis: auto; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .detail-grid { grid-template-columns: 1fr 1fr; }
   .dimension-entry-grid { grid-template-columns: 1fr 1fr; }

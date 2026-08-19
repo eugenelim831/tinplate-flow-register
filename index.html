@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#173f35">
   <title>Tinplate Flow Register</title>
-  <link rel="stylesheet" href="styles.css?v=20260817-finished-cans-1">
+  <link rel="stylesheet" href="styles.css?v=20260819-process-refinement-1">
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
@@ -66,7 +66,7 @@
             <button id="refreshInventory" class="secondary" type="button">Refresh</button>
             <button id="transferSelected" class="primary compact" type="button" disabled>Transfer Selected</button>
             <button id="slitSelected" class="primary compact hidden" type="button" disabled>Start Slitting</button>
-            <button id="useSelected" class="primary compact hidden" type="button" disabled>Record Finished Cans</button>
+            <button id="useSelected" class="primary compact hidden" type="button" disabled>Record Blanks Consumed</button>
           </div>
         </div>
 
@@ -110,30 +110,38 @@
       </section>
 
       <section id="dashboardPanel" class="panel">
-        <div class="section-heading">
+        <div class="section-heading dashboard-heading">
           <div><p class="step">Management overview</p><h2>Factory Stock Dashboard</h2></div>
-          <button id="refreshDashboard" class="secondary" type="button">Refresh</button>
+          <div class="actions dashboard-actions">
+            <label class="reporting-month">Reporting month<input id="dashboardMonth" type="month" aria-label="Dashboard reporting month"></label>
+            <button id="refreshDashboard" class="secondary" type="button">Refresh</button>
+          </div>
         </div>
         <div class="kpi-grid dashboard-kpis">
           <article class="kpi-card"><span>Active stock lots</span><strong id="dashboardLots">0</strong></article>
           <article class="kpi-card"><span>Total sheets</span><strong id="dashboardSheets">0</strong></article>
           <article class="kpi-card"><span>Total blanks</span><strong id="dashboardBlanks">0</strong></article>
-          <article class="kpi-card"><span>Stock value</span><strong id="dashboardValue">RM0.00</strong></article>
-          <article class="kpi-card success"><span>Finished cans this month</span><strong id="dashboardUsed">0</strong></article>
+          <article class="kpi-card"><span>Movements today</span><strong id="dashboardMovementsToday">0</strong></article>
+          <article class="kpi-card success"><span>Blanks consumed in month</span><strong id="dashboardUsed">0</strong></article>
+          <article class="kpi-card success"><span>Good can bodies in month</span><strong id="dashboardGoodBodies">0</strong></article>
           <article class="kpi-card"><span>Production batches used</span><strong id="dashboardProductionBatches">0</strong></article>
           <article class="kpi-card"><span>Average slitting yield</span><strong id="dashboardYield">—</strong></article>
-          <article class="kpi-card muted"><span>Adjustments this month</span><strong id="dashboardAdjustments">0</strong></article>
+          <article class="kpi-card muted"><span>Adjustments in month</span><strong id="dashboardAdjustments">0</strong></article>
         </div>
         <div class="dashboard-grid">
           <section class="dashboard-card">
             <h3>Stock by location</h3>
-            <div class="table-wrap"><table><thead><tr><th>Location</th><th>Lots</th><th>Sheets</th><th>Blanks</th><th>Value</th></tr></thead><tbody id="dashboardLocationBody"></tbody></table></div>
+            <div class="table-wrap"><table><thead><tr><th>Location</th><th>Lots</th><th>Sheets</th><th>Blanks</th></tr></thead><tbody id="dashboardLocationBody"></tbody></table></div>
           </section>
           <section class="dashboard-card">
             <h3>Attention needed</h3>
             <div id="dashboardAlerts" class="alert-list"></div>
           </section>
         </div>
+        <section class="dashboard-card">
+          <h3 id="dashboardMonthlyTitle">Monthly operations report</h3>
+          <div class="table-wrap"><table><thead><tr><th>Operational measure</th><th>Result</th></tr></thead><tbody id="dashboardMonthlyBody"></tbody></table></div>
+        </section>
         <section class="dashboard-card">
           <h3>Recent activity</h3>
           <div class="table-wrap"><table><thead><tr><th>Record</th><th>Type</th><th>Location / Process</th><th>PIC</th><th>Worker time</th><th>Status</th></tr></thead><tbody id="dashboardRecentBody"></tbody></table></div>
@@ -150,13 +158,14 @@
         </div>
         <div class="filter-row records-filter">
           <input id="recordSearch" type="search" placeholder="Search record, batch, stock ID, customer, brand, PIC or description">
+          <input id="recordMonthFilter" type="month" aria-label="Filter records by Worker month" title="Filter by Worker month">
           <select id="recordTypeFilter">
             <option value="">All types</option>
             <option value="STOCK_IMPORT">Stock Import</option>
             <option value="MANUAL_ADDITION">Manual Addition</option>
             <option value="TRANSFER">Transfer</option>
             <option value="SLITTING">Slitting</option>
-            <option value="PRODUCTION_USAGE">Finished Cans</option>
+            <option value="PRODUCTION_USAGE">Production Consumption</option>
             <option value="STOCK_ADJUSTMENT">Stock Adjustment</option>
             <option value="STOCKTAKE_RECONCILIATION">Stocktake Reconciliation</option>
           </select>
@@ -428,6 +437,14 @@
         <label>Blank length (mm)<input class="blank-length" type="number" inputmode="numeric" min="1" step="1" required placeholder="e.g. 177"></label>
         <label>Quantity of blanks<input class="blank-quantity" type="number" inputmode="numeric" min="1" step="1" required></label>
         <label>Generated dimensions<input class="blank-dimensions" type="text" readonly></label>
+        <label>Blank is for
+          <select class="blank-use" required>
+            <option value="">Select Body or Component</option>
+            <option value="BODY">Body</option>
+            <option value="COMPONENT">Component</option>
+          </select>
+        </label>
+        <label class="wide">Output description<textarea class="blank-description" rows="2" maxlength="300" required placeholder="Describe the can body or component made from this blank size"></textarea></label>
       </div>
     </article>
   </template>
@@ -435,24 +452,27 @@
   <dialog id="productionUsageDialog" class="wide-dialog">
     <form id="productionUsageForm">
       <div class="dialog-heading">
-        <div><p class="step">Production consumption</p><h2>Record Finished Cans</h2></div>
-        <button class="icon-button close-dialog" type="button" aria-label="Close finished cans form">×</button>
+        <div><p class="step">Production consumption</p><h2>Record Blanks Consumed</h2></div>
+        <button class="icon-button close-dialog" type="button" aria-label="Close blank consumption form">×</button>
       </div>
-      <p class="info-banner">Enter how many blanks from each selected batch were used to make finished cans. The Worker deducts that quantity from the live blank balance.</p>
+      <p class="info-banner">Enter the blanks consumed and any rejects for each selected batch. Unused blanks remain in stock; good can bodies equal consumed blanks minus rejects.</p>
       <div id="productionUsageItems" class="item-list"></div>
       <div class="form-grid">
+        <label id="productionRejectReasonLabel" class="wide hidden">Reject reason
+          <textarea id="productionRejectReason" rows="2" maxlength="300" placeholder="Explain the rejected blanks or can bodies"></textarea>
+        </label>
         <label class="wide">Production notes (optional)
-          <textarea id="productionUsageDescription" rows="3" maxlength="500" placeholder="Optional notes about the finished cans or production run"></textarea>
+          <textarea id="productionUsageDescription" rows="3" maxlength="500" placeholder="Optional notes about the can-body production run"></textarea>
         </label>
         <label class="wide">Person-in-charge<input id="productionUsagePic" maxlength="120" autocomplete="name" required placeholder="Full name"></label>
       </div>
       <div class="signature-group">
-        <div><h3>PIC signature</h3><p>This signature confirms the blanks used, finished cans recorded and remaining batch balance.</p></div>
-        <canvas id="productionUsageSignature" class="signature" aria-label="Finished cans PIC signature"></canvas>
+        <div><h3>PIC signature</h3><p>This signature confirms blanks consumed, rejects, good can bodies and the unused balance.</p></div>
+        <canvas id="productionUsageSignature" class="signature" aria-label="Production blank-consumption PIC signature"></canvas>
         <button class="link-button clear-signature" data-canvas="productionUsageSignature" type="button">Clear signature</button>
       </div>
       <p class="server-time-note">The production record date and time are generated by the Cloudflare Worker.</p>
-      <button id="submitProductionUsage" class="primary submit-button" type="submit">Post Finished Cans</button>
+      <button id="submitProductionUsage" class="primary submit-button" type="submit">Post Blanks Consumed</button>
     </form>
   </dialog>
 
@@ -535,6 +555,6 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>window.TINPLATE_API_URL = "https://tinplate-flow-api.eugenelim831-1b3.workers.dev";</script>
-  <script src="app.js?v=20260817-finished-cans-1"></script>
+  <script src="app.js?v=20260819-process-refinement-1"></script>
 </body>
 </html>
